@@ -1,0 +1,15 @@
+# VS Code - Live Server Settings
+.vscode/settings.json
+.vscode/launch.json
+.vscode/
+
+# Live Server Extensions
+.liveserver.json
+.liveserverrc
+
+# Node modules (if applicable)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,19 +1,39 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Hello, WebVR! - A-Frame</title>
-    <meta name="description" content="Hello, WebVR! - A-Frame">
-    <script src="https://aframe.io/releases/1.0.0/aframe.min.js"></script>
-  </head>
-  <body>
+
+<head>
+  <title>Hello, WebVR! - A-Frame</title>
+  <meta name="description" content="Hello, WebVR! - A-Frame">
+  <script src="https://aframe.io/releases/1.0.0/aframe.min.js"></script>
+</head>
+
+<body>
 
 
-    <a-scene>      <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9" animation="property: rotation; to: 0 405 0; loop: true; dur: 5000"></a-box>
-      <a-sphere position="0 1.25 -5" radius="1.25" color="#EF2D5E" animation="property: position; dir: alternate; dur: 2000; loop: true; to: 0 2.5 -5"></a-sphere>
-      <a-cylinder position="1 0.75 -3" radius="0.5" height="1.5" color="#FFC65D" animation="property: scale; dir: alternate; dur: 1500; loop: true; to: 1 2 1"></a-cylinder>
-      <a-box position="2 1 -3" rotation="0 45 0" color="#7BC8A4" animation="property: position; dir: alternate; dur: 3000; loop: true; to: 2 3 -3"></a-box>
-      <a-plane position="0 0 -4" rotation="-90 0 0" width="15" height="20" color="green"></a-plane>
-      <a-sky color="turquoise"></a-sky>
-    </a-scene>
-  </body>
+  <a-scene>
+    <!-- Vlad -->
+    <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"
+      animation="property: rotation; to: 0 405 0; loop: true; dur: 5000"></a-box>
+    <a-sphere position="0 1.25 -5" radius="1.25" color="#EF2D5E"
+      animation="property: position; dir: alternate; dur: 2000; loop: true; to: 0 2.5 -5"></a-sphere>
+    <a-cylinder position="1 0.75 -3" radius="0.5" height="1.5" color="#FFC65D"
+      animation="property: scale; dir: alternate; dur: 1500; loop: true; to: 1 2 1"></a-cylinder>
+    <a-box position="2 1 -3" rotation="0 45 0" color="#7BC8A4"
+      animation="property: position; dir: alternate; dur: 3000; loop: true; to: 2 3 -3"></a-box>
+
+    <!-- Isra -->
+    <a-cone position="-3 0.75 -3" radius-bottom="0.5" radius-top="0.1" height="1.5" color="#FF5733"
+      animation="property: rotation; to: 0 0 360; loop: true; dur: 4000"></a-cone>
+    <a-torus position="-2 1 -4" radius="0.5" tube="0.1" color="#33FF57"
+      animation="property: position; dir: alternate; dur: 2500; loop: true; to: -2 2 -4"></a-torus>
+    <a-dodecahedron position="3 1 -5" radius="0.7" color="#3357FF"
+      animation="property: scale; dir: alternate; dur: 2000; loop: true; to: 1.5 1.5 1.5"></a-dodecahedron>
+
+    <!-- Jaque-->
+
+    <a-plane position="0 0 -4" rotation="-90 0 0" width="15" height="20" color="green"></a-plane>
+    <a-sky color="turquoise"></a-sky>
+  </a-scene>
+</body>
+
 </html>
