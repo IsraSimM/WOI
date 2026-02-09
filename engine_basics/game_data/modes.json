@@ -1,0 +1,225 @@
+{
+  "modos": [
+    {
+      "id": "modo_classic",
+      "nombre": "Clásico / Survival",
+      "descripcion": "Modo principal estilo arcade: recolecta puntos/boosts, evita o elimina enemigos, llega a la salida antes de perder todas las vidas. Ideal para partidas rápidas y aprender mecánicas.",
+      "dificultades_disponibles": ["facil", "normal", "dificil", "experto"],
+      "personajes_disponibles": [
+        "Personaje",
+        "Personaje_advanced",
+        "Personaje_stealth",
+        "Personaje_tank",
+        "Personaje_asesino",
+        "Personaje_healer",
+        "Personaje_speedster",
+        "Personaje_strategist"
+      ],
+      "enemigos_disponibles": [
+        "enemy_basic",
+        "enemy_advanced",
+        "enemy_tank",
+        "enemy_speedster",
+        "enemy_ranged"
+      ],
+      "bots_disponibles": [
+        "Personaje",
+        "Personaje_advanced",
+        "Personaje_stealth",
+        "Personaje_tank",
+        "Personaje_asesino"
+      ],
+      "boosts_disponibles": [
+        "power_pellet",
+        "speed_boost",
+        "shield",
+        "extra_points",
+        "freeze",
+        "slow",
+        "extra_life",
+        "magnet",
+        "bomb",
+        "map_enemies",
+        "map_boosts",
+        "invisibility",
+        "end_exit",
+        "double_score"
+      ],
+      "boosts_prohibidos": [
+        "hard_world",
+        "hard_run",
+        "map_shuffle",
+        "fake_exit",
+        "fake_boost"
+      ],
+      "reglas_especiales": {
+        "vidas_iniciales": 3,
+        "tiempo_partida": "sin límite",
+        "objetivo_principal": "llegar a la salida con al menos 1 vida",
+        "puntuacion": "puntos recolectados + bonus por tiempo + bonus por enemigos eliminados",
+        "spawns_enemigos": "progresivo (aumenta cada 30-60 segundos)",
+        "max_enemigos_simultaneos": "8 en fácil → 20 en experto"
+      }
+    },
+    {
+      "id": "modo_chaos",
+      "nombre": "Caos Total",
+      "descripcion": "Todo puede pasar: boosts trampa, cambios de mapa repentinos, enemigos muy agresivos y modificadores globales locos. Para quienes quieren adrenalina y risas.",
+      "dificultades_disponibles": ["normal", "dificil", "experto", "pesadilla"],
+      "personajes_disponibles": "todos",
+      "enemigos_disponibles": "todos",
+      "bots_disponibles": "todos",
+      "boosts_disponibles": "todos",
+      "boosts_prohibidos": [],
+      "reglas_especiales": {
+        "vidas_iniciales": 2,
+        "tiempo_partida": "sin límite (pero mapa se vuelve más caótico con el tiempo)",
+        "objetivo_principal": "sobrevivir el mayor tiempo posible / llegar a salida",
+        "modificadores_aleatorios": true,
+        "frecuencia_modificadores": "cada 45-90 segundos",
+        "prob_boost_trampa": 0.25,
+        "prob_map_shuffle": 0.15,
+        "max_enemigos_simultaneos": "25–40",
+        "regla_extra": "cada 3 minutos aparece un 'Evento Caos' (hard_world, hard_run, map_shuffle, etc.)"
+      }
+    },
+    {
+      "id": "modo_challenge",
+      "nombre": "Desafío / Hard Run",
+      "descripcion": "Partidas cortas e intensas con temporizador estricto. Enfocado en velocidad, decisiones rápidas y uso óptimo de boosts. Ideal para leaderboards.",
+      "dificultades_disponibles": ["dificil", "experto", "pesadilla"],
+      "personajes_disponibles": [
+        "Personaje_speedster",
+        "Personaje_asesino",
+        "Personaje_advanced",
+        "Personaje_stealth"
+      ],
+      "enemigos_disponibles": [
+        "enemy_assassin",
+        "enemy_speedster",
+        "enemy_kamikaze",
+        "enemy_ranged",
+        "enemy_strategist"
+      ],
+      "bots_disponibles": [
+        "Personaje_asesino",
+        "Personaje_speedster",
+        "Personaje_advanced"
+      ],
+      "boosts_disponibles": [
+        "speed_boost",
+        "invisibility",
+        "bomb",
+        "freeze",
+        "magnet",
+        "power_pellet",
+        "hard_run",
+        "end_exit"
+      ],
+      "boosts_prohibidos": [
+        "extra_life",
+        "shield",
+        "mass_damage"
+      ],
+      "reglas_especiales": {
+        "vidas_iniciales": 1,
+        "tiempo_partida": "60–120 segundos (según dificultad)",
+        "objetivo_principal": "llegar a la salida antes de que se acabe el tiempo",
+        "penalizacion_muerte": "partida terminada inmediatamente",
+        "bonus_tiempo": "puntos extra por segundos sobrantes",
+        "evento_hard_run": "aparece al 50% del tiempo restante (invulnerabilidad + visión reducida)",
+        "max_enemigos_simultaneos": "15–30"
+      }
+    },
+    {
+      "id": "modo_defense",
+      "nombre": "Defensa de Zona",
+      "descripcion": "Protege una zona central (la salida o un punto clave) de oleadas crecientes de enemigos. Enfoque cooperativo o solitario defensivo.",
+      "dificultades_disponibles": ["normal", "dificil", "experto"],
+      "personajes_disponibles": [
+        "Personaje_tank",
+        "Personaje_healer",
+        "Personaje_strategist",
+        "Personaje_advanced"
+      ],
+      "enemigos_disponibles": [
+        "enemy_tank",
+        "enemy_basic",
+        "enemy_advanced",
+        "enemy_healer",
+        "enemy_strategist",
+        "enemy_kamikaze"
+      ],
+      "bots_disponibles": [
+        "Personaje_tank",
+        "Personaje_healer",
+        "Personaje_strategist"
+      ],
+      "boosts_disponibles": [
+        "shield",
+        "extra_life",
+        "freeze",
+        "slow",
+        "bomb",
+        "map_enemies",
+        "double_score"
+      ],
+      "boosts_prohibidos": [
+        "hard_run",
+        "map_shuffle",
+        "fake_exit"
+      ],
+      "reglas_especiales": {
+        "vidas_iniciales": "5 (zona) + 2 (jugador)",
+        "tiempo_partida": "oleadas de 90 segundos cada una (máx 10–15 oleadas)",
+        "objetivo_principal": "sobrevivir X oleadas / mantener zona con vida >0",
+        "zona_vulnerable": "daño continuo si enemigo entra en radio",
+        "regeneracion_zona": "lenta con healer cerca",
+        "oleada_bonus": "más enemigos + tipos nuevos cada 3 oleadas"
+      }
+    },
+    {
+      "id": "modo_ghost_hunt",
+      "nombre": "Caza de Fantasmas",
+      "descripcion": "Tú eres el cazador: usa power pellets y boosts ofensivos para eliminar la mayor cantidad de enemigos posible en tiempo limitado.",
+      "dificultades_disponibles": ["normal", "dificil", "experto"],
+      "personajes_disponibles": [
+        "Personaje_asesino",
+        "Personaje_advanced",
+        "Personaje_speedster"
+      ],
+      "enemigos_disponibles": "todos",
+      "bots_disponibles": [],
+      "boosts_disponibles": [
+        "power_pellet",
+        "bomb",
+        "freeze",
+        "speed_boost",
+        "mass_damage",
+        "map_enemies",
+        "invisibility"
+      ],
+      "boosts_prohibidos": [
+        "extra_life",
+        "shield",
+        "hard_world",
+        "fake_boost"
+      ],
+      "reglas_especiales": {
+        "vidas_iniciales": 3,
+        "tiempo_partida": "180–300 segundos",
+        "objetivo_principal": "máximo puntaje por eliminaciones + combos",
+        "combo_multiplier": "x1.5 cada 5 eliminaciones consecutivas sin morir",
+        "power_pellet_spawn": "más frecuente",
+        "regla_especial": "enemigos huyen o se agrupan cuando power_pellet activo"
+      }
+    }
+  ],
+  "notas_generales": {
+    "personajes_no_disponibles": "si no están listados en un modo → bloqueados por diseño temático o balance",
+    "enemigos_escalado": "todos los modos usan las fórmulas de difficulty.json para escalar stats",
+    "boosts_raros": "en modos chaos y pesadilla → mayor probabilidad de boosts trampa y modificadores globales",
+    "seleccion_jugador": "en la mayoría de modos el jugador elige personaje; en algunos es aleatorio o fijo",
+    "leaderboards": "separados por modo + dificultad"
+  }
+}

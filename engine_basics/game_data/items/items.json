@@ -1,0 +1,333 @@
+[
+    {
+        "id": "power_pellet",
+        "nombre": "Pastilla de Poder",
+        "descripcion": "Convierte al jugador en cazador temporal: puede eliminar enemigos al tocarlos.",
+        "tipo_efecto": "transformacion_ofensiva",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "rareza": 4,
+        "efectos": {
+            "duracion_ms": 8000,
+            "invulnerabilidad": true,
+            "toque_eliminatorio": true,
+            "velocidad_multiplicador": 1.25,
+            "color_fantasma_inverso": true
+        },
+        "color": "#FFB8D1",
+        "asset": "assets/items/power_pill.glb"
+    },
+    {
+        "id": "speed_boost",
+        "nombre": "Acelerador",
+        "descripcion": "Aumenta significativamente la velocidad de movimiento.",
+        "tipo_efecto": "movilidad",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 6000,
+            "velocidad_multiplicador": 1.6
+        },
+        "color": "#FF6B6B",
+        "asset": "assets/items/speeder.glb"
+    },
+    {
+        "id": "shield",
+        "nombre": "Escudo Temporal",
+        "descripcion": "Absorbe un impacto enemigo (o dos en algunos casos).",
+        "tipo_efecto": "defensa",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "rareza": 3,
+        "efectos": {
+            "duracion_ms": 12000,
+            "golpes_absorbidos": 1,
+            "vidas_bonus": 0
+        },
+        "color": "#4ECDC4",
+        "asset": "assets/items/shield.glb"
+    },
+    {
+        "id": "extra_points",
+        "nombre": "Puntos Bonus",
+        "descripcion": "Otorga una cantidad considerable de puntos al instante.",
+        "tipo_efecto": "recompensa",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "rareza": 1,
+        "efectos": {
+            "puntos": 500
+        },
+        "color": "#FFE66D",
+        "asset": "assets/items/double_points.glb"
+    },
+    {
+        "id": "freeze",
+        "nombre": "Congelación",
+        "descripcion": "Detiene completamente a todos los enemigos cercanos o en pantalla.",
+        "tipo_efecto": "control_enemigos",
+        "aplicacion": "enemigos",
+        "es_instantaneo": false,
+        "rareza": 4,
+        "efectos": {
+            "duracion_ms": 5000,
+            "velocidad_multiplicador": 0.0,
+            "rango": "global"
+        },
+        "color": "#A8E6CF",
+        "asset": "assets/items/freezer.glb"
+    },
+    {
+        "id": "slow",
+        "nombre": "Ralentización",
+        "descripcion": "Reduce drásticamente la velocidad de los enemigos.",
+        "tipo_efecto": "control_enemigos",
+        "aplicacion": "enemigos",
+        "es_instantaneo": false,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 7000,
+            "velocidad_multiplicador": 0.4,
+            "rango": "global"
+        },
+        "color": "#FFD700",
+        "asset": "assets/items/slower.glb"
+    },
+    {
+        "id": "extra_life",
+        "nombre": "Vida Extra",
+        "descripcion": "Añade una vida adicional al jugador de forma permanente.",
+        "tipo_efecto": "supervivencia",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "rareza": 5,
+        "efectos": {
+            "vidas_bonus": 1
+        },
+        "color": "#FF4500",
+        "asset": "assets/items/extra_life.glb"
+    },
+    {
+        "id": "bomb",
+        "nombre": "Bomba de Área",
+        "descripcion": "Explosión que elimina a todos los enemigos en un radio considerable.",
+        "tipo_efecto": "daño_area",
+        "aplicacion": "enemigos",
+        "es_instantaneo": true,
+        "rareza": 4,
+        "efectos": {
+            "radio_explosion": 120,
+            "daño": "eliminacion_total"
+        },
+        "color": "#DC143C",
+        "asset": "assets/items/bomb.glb"
+    },
+    {
+        "id": "map_enemies",
+        "nombre": "Radar de Enemigos",
+        "descripcion": "Muestra la posición de todos los enemigos en el minimapa.",
+        "tipo_efecto": "vision",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 10000,
+            "revelar": "enemigos",
+            "rango": "global"
+        },
+        "color": "#00CED1",
+        "asset": "assets/items/map_enemies.glb"
+    },
+    {
+        "id": "map_boosts",
+        "nombre": "Radar de Power-ups",
+        "descripcion": "Revela la ubicación de los power-ups/boosts más cercanos.",
+        "tipo_efecto": "vision",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 12000,
+            "revelar": "boosts",
+            "cantidad": 4
+        },
+        "color": "#20B2AA",
+        "asset": "assets/items/map_boosts.glb"
+    },
+    {
+        "id": "invisibility",
+        "nombre": "Invisibilidad",
+        "descripcion": "El jugador se vuelve invisible para los enemigos (no detectado).",
+        "tipo_efecto": "sigilo",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "rareza": 4,
+        "efectos": {
+            "duracion_ms": 7000,
+            "invisible": true,
+            "deteccion_reducida": 0
+        },
+        "color": "#C0C0C0",
+        "asset": "assets/items/invisibility.glb"
+    },
+    {
+        "id": "end_exit",
+        "nombre": "Brújula de Salida",
+        "descripcion": "Indica la dirección exacta hacia la salida más cercana.",
+        "tipo_efecto": "navegacion",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "rareza": 3,
+        "efectos": {
+            "duracion_ms": 15000,
+            "revelar": "salida",
+            "flecha_direccion": true
+        },
+        "color": "#708090",
+        "asset": "assets/items/the_end.glb"
+    },
+    {
+        "id": "mass_damage",
+        "nombre": "Daño Masivo",
+        "descripcion": "Inflige daño significativo a todos los enemigos en el mapa (no eliminación instantánea).",
+        "tipo_efecto": "daño_global",
+        "aplicacion": "enemigos",
+        "es_instantaneo": true,
+        "rareza": 5,
+        "efectos": {
+            "daño": 3,
+            "rango": "global"
+        },
+        "color": "#000000",
+        "asset": "assets/items/power_pill.glb"
+    },
+    {
+        "id": "double_score",
+        "nombre": "Puntuación Doble",
+        "descripcion": "Duplica todos los puntos obtenidos durante un tiempo.",
+        "tipo_efecto": "recompensa",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "rareza": 3,
+        "efectos": {
+            "duracion_ms": 10000,
+            "multiplicador_puntos": 2.0
+        },
+        "color": "#FFD700",
+        "asset": "assets/items/double_points.glb"
+    },
+    {
+        "id": "hard_world",
+        "nombre": "El Mundo es Duro",
+        "descripcion": "Reduce todas las vidas a 1 para todos y desactiva boosts que aumenten vidas o den escudos.",
+        "tipo_efecto": "debuff_global",
+        "aplicacion": "todos",
+        "es_instantaneo": true,
+        "rareza": 5,
+        "efectos": {
+            "set_vidas": 1,
+            "disable_boosts": [
+                "supervivencia",
+                "defensa"
+            ],
+            "rango": "global"
+        },
+        "color": "#8B0000",
+        "asset": "assets/items/power_pill.glb"
+    },
+    {
+        "id": "hard_run",
+        "nombre": "Duro de Correr",
+        "descripcion": "Otorga invulnerabilidad y prolonga efectos activos, pero reduce la visión y activa un temporizador de 1 minuto para completar el mapa (falla resulta en muerte).",
+        "tipo_efecto": "challenge_mode",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "rareza": 4,
+        "efectos": {
+            "invulnerabilidad": true,
+            "prolong_effects": true,
+            "vision_reduction_multiplicador": 0.5,
+            "duracion_ms": 60000,
+            "failure_effect": "muerte"
+        },
+        "color": "#FF8C00",
+        "asset": "assets/items/power_pill.glb"
+    },
+    {
+        "id": "map_shuffle",
+        "nombre": "¿Y si Muevo Esto?",
+        "descripcion": "Modifica drásticamente el mapa de forma aleatoria y reposiciona a todos los jugadores y enemigos.",
+        "tipo_efecto": "map_alteration",
+        "aplicacion": "mapa",
+        "es_instantaneo": true,
+        "rareza": 5,
+        "efectos": {
+            "shuffle_map": true,
+            "reposition_all": true,
+            "rango": "global"
+        },
+        "color": "#556B2F",
+        "asset": "assets/items/power_pill.glb"
+    },
+    {
+        "id": "fake_exit",
+        "nombre": "Salida??",
+        "descripcion": "Crea una salida falsa en el mapa; si se activa, encierra al jugador por 20 segundos.",
+        "tipo_efecto": "trampa",
+        "aplicacion": "mapa",
+        "es_instantaneo": true,
+        "rareza": 4,
+        "efectos": {
+            "create_fake_exit": true,
+            "trap_duracion_ms": 20000,
+            "daño": 0
+        },
+        "color": "#696969",
+        "asset": "assets/items/the_end_trap.glb"
+    },
+    {
+        "id": "fake_boost",
+        "nombre": "Boost??",
+        "descripcion": "Un boost falso que inflige daño al jugador que lo recoge.",
+        "tipo_efecto": "trampa",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "rareza": 3,
+        "efectos": {
+            "daño": 1
+        },
+        "color": "#B22222",
+        "asset": "assets/items/double_points_trap.glb"
+    },
+    {
+        "id": "teleport_swap",
+        "nombre": "Intercambio Teleport",
+        "descripcion": "Intercambia la posición del jugador con un enemigo aleatorio para crear caos o escapes rápidos.",
+        "tipo_efecto": "movilidad",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "rareza": 3,
+        "efectos": {
+            "swap_with": "enemigo_aleatorio"
+        },
+        "color": "#9370DB",
+        "asset": "assets/items/power_pill.glb"
+    },
+    {
+        "id": "enemy_confusion",
+        "nombre": "Confusión Enemiga",
+        "descripcion": "Hace que los enemigos se muevan de forma errática e impredecible por un tiempo, reduciendo su efectividad.",
+        "tipo_efecto": "control_enemigos",
+        "aplicacion": "enemigos",
+        "es_instantaneo": false,
+        "rareza": 3,
+        "efectos": {
+            "duracion_ms": 10000,
+            "movement_mode": "random",
+            "rango": "global"
+        },
+        "color": "#FF69B4",
+        "asset": "assets/items/power_pill.glb"
+    }
+]

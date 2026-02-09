@@ -1,0 +1,63 @@
+{
+    "Personaje": {
+        "objetivos": [
+            "salir",
+            "huir"
+        ],
+        "detalles": "Bot básico que prioriza la supervivencia. Se genera con stats base, pero puede calcular variaciones aleatorias en detección (±10%) para imprevisibilidad. Comportamiento: Patrulla áreas neutrales, evita combates innecesarios, busca salidas seguras. Probabilidad de generación: Alta en niveles iniciales."
+    },
+    "Personaje_advanced": {
+        "objetivos": [
+            "salir",
+            "huir",
+            "atacar"
+        ],
+        "detalles": "Bot versátil para escenarios intermedios. Al generarse, ajusta stats con un multiplicador de 1.05 en ataque y defensa si el nivel es alto. Comportamiento: Equilibra exploración y agresión, ataca si detecta debilidad. Probabilidad de generación: Media, con chequeo de equilibrio en equipo."
+    },
+    "Personaje_stealth": {
+        "objetivos": [
+            "robar",
+            "huir",
+            "atacar_jugador"
+        ],
+        "detalles": "Bot sigiloso para misiones de infiltración. Generación incluye activación aleatoria de invisibilidad (probabilidad 0.7). Comportamiento: Se mueve en sombras, roba items clave, embosca jugadores solos. Ajuste: Reduce detección en entornos oscuros. Probabilidad: Baja, en mapas con muchos escondites."
+    },
+    "Personaje_tank": {
+        "objetivos": [
+            "defender",
+            "atacar"
+        ],
+        "detalles": "Bot defensivo para protección de zonas. Al generar, suma +1 vida extra si aliados cercanos. Comportamiento: Bloquea pasajes, absorbe daño, contraataca en melee. Cálculo: Defensa efectiva = defensa * (1 + aliados/2). Probabilidad: Alta en defensas de base."
+    },
+    "Personaje_asesino": {
+        "objetivos": [
+            "atacar",
+            "perseguir"
+        ],
+        "detalles": "Bot agresivo para eliminaciones. Generación con boost de velocidad (+0.2) en persecuciones. Comportamiento: Acecha, ataca por sorpresa, persigue hasta eliminar. Ajuste: Ataque aumenta 20% si objetivo herido. Probabilidad: Media, en modos PvP."
+    },
+    "Personaje_healer": {
+        "objetivos": [
+            "apoyar",
+            "defender",
+            "huir"
+        ],
+        "detalles": "Bot de soporte para equipos. Genera con regeneración activa (cura 1 vida cada 10s a aliados). Comportamiento: Sigue a aliados, cura en combate, defiende posiciones clave. Cálculo: Estrategia determina radio de cura (estrategia * 50 unidades). Probabilidad: Baja, en juegos cooperativos."
+    },
+    "Personaje_speedster": {
+        "objetivos": [
+            "explorar",
+            "robar",
+            "huir"
+        ],
+        "detalles": "Bot móvil para reconnaissance. Generación incluye dash aleatorio (velocidad * 1.5 por 2s). Comportamiento: Cubre mapa rápidamente, roba items expuestos, escapa amenazas. Ajuste: Velocidad reduce cooldowns en 10%. Probabilidad: Alta en mapas grandes."
+    },
+    "Personaje_strategist": {
+        "objetivos": [
+            "planificar",
+            "atacar",
+            "defender"
+        ],
+        "detalles": "Bot táctico para control. Genera trampas (número = estrategia / 2). Comportamiento: Coloca trampas en choke points, coordina ataques, defiende con buffs. Cálculo: Estrategia aumenta daño aliado en 15%. Probabilidad: Media, en escenarios estratégicos."
+    }
+}

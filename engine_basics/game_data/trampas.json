@@ -1,0 +1,44 @@
+[
+	{
+		"id": "trap_spike",
+		"nombre": "Púas",
+		"descripcion": "Daño instantáneo al tocar. Se activa al pisar.",
+		"tipo": "daño",
+		"rareza": 2,
+		"efectos": {
+			"daño": 1,
+			"duracion_ms": 0,
+			"cooldown_ms": 3000
+		},
+		"color": "#8B0000",
+		"asset": "assets/personaje.glb"
+	},
+	{
+		"id": "trap_slow",
+		"nombre": "Gel Ralentizante",
+		"descripcion": "Reduce velocidad por un corto tiempo.",
+		"tipo": "debuff",
+		"rareza": 3,
+		"efectos": {
+			"velocidad_multiplicador": 0.5,
+			"duracion_ms": 4000,
+			"cooldown_ms": 5000
+		},
+		"color": "#1E90FF",
+		"asset": "assets/personaje_avanzado.glb"
+	},
+	{
+		"id": "trap_fog",
+		"nombre": "Niebla Densa",
+		"descripcion": "Reduce temporalmente el radio de visión.",
+		"tipo": "vision",
+		"rareza": 4,
+		"efectos": {
+			"vision_multiplicador": 0.6,
+			"duracion_ms": 5000,
+			"cooldown_ms": 6000
+		},
+		"color": "#778899",
+		"asset": "assets/personaje_stealth.glb"
+	}
+]

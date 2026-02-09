@@ -1,0 +1,236 @@
+{
+    "niveles": {
+        "facil": {
+            "descripcion": "Dificultad para principiantes. Enemigos débiles, más boosts, menos spawns.",
+            "multiplicadores": {
+                "enemigos": {
+                    "vidas": 0.7,
+                    "ataque": 0.6,
+                    "defensa": 0.7,
+                    "deteccion": 0.8,
+                    "estrategia": 0.6,
+                    "velocidad": 0.85,
+                    "sigilo": 0.8
+                },
+                "spawns": {
+                    "densidad_enemigos": 0.5,
+                    "numero_enemigos": 0.6,
+                    "rareza_boosts_mult": 0.8
+                },
+                "bots": {
+                    "agresividad": 0.5,
+                    "estrategia": 0.7
+                },
+                "mapa": {
+                    "tamaño_mult": 1.0,
+                    "obstaculos": 0.7
+                },
+                "combate": {
+                    "daño_jugador": 1.2,
+                    "daño_enemigo": 0.8
+                },
+                "recompensas": {
+                    "puntos_mult": 1.3,
+                    "drop_rate": 1.5
+                }
+            },
+            "ajustes_especiales": {
+                "invulnerabilidad_enemigos": false,
+                "regeneracion_enemigos": false
+            }
+        },
+        "normal": {
+            "descripcion": "Equilibrado para jugadores intermedios. Stats base con spawns estándar.",
+            "multiplicadores": {
+                "enemigos": {
+                    "vidas": 1.0,
+                    "ataque": 1.0,
+                    "defensa": 1.0,
+                    "deteccion": 1.0,
+                    "estrategia": 1.0,
+                    "velocidad": 1.0,
+                    "sigilo": 1.0
+                },
+                "spawns": {
+                    "densidad_enemigos": 1.0,
+                    "numero_enemigos": 1.0,
+                    "rareza_boosts_mult": 1.0
+                },
+                "bots": {
+                    "agresividad": 1.0,
+                    "estrategia": 1.0
+                },
+                "mapa": {
+                    "tamaño_mult": 1.0,
+                    "obstaculos": 1.0
+                },
+                "combate": {
+                    "daño_jugador": 1.0,
+                    "daño_enemigo": 1.0
+                },
+                "recompensas": {
+                    "puntos_mult": 1.0,
+                    "drop_rate": 1.0
+                }
+            },
+            "ajustes_especiales": {
+                "invulnerabilidad_enemigos": false,
+                "regeneracion_enemigos": false
+            }
+        },
+        "dificil": {
+            "descripcion": "Mayor desafío. Enemigos más rápidos y resistentes, boosts más raros.",
+            "multiplicadores": {
+                "enemigos": {
+                    "vidas": 1.3,
+                    "ataque": 1.4,
+                    "defensa": 1.2,
+                    "deteccion": 1.2,
+                    "estrategia": 1.3,
+                    "velocidad": 1.15,
+                    "sigilo": 1.2
+                },
+                "spawns": {
+                    "densidad_enemigos": 1.4,
+                    "numero_enemigos": 1.3,
+                    "rareza_boosts_mult": 1.3
+                },
+                "bots": {
+                    "agresividad": 1.3,
+                    "estrategia": 1.2
+                },
+                "mapa": {
+                    "tamaño_mult": 1.1,
+                    "obstaculos": 1.2
+                },
+                "combate": {
+                    "daño_jugador": 0.9,
+                    "daño_enemigo": 1.2
+                },
+                "recompensas": {
+                    "puntos_mult": 1.1,
+                    "drop_rate": 0.9
+                }
+            },
+            "ajustes_especiales": {
+                "invulnerabilidad_enemigos": true,
+                "regeneracion_enemigos": true
+            }
+        },
+        "experto": {
+            "descripcion": "Para expertos. Enemigos letales, oleadas intensas, mapa complejo.",
+            "multiplicadores": {
+                "enemigos": {
+                    "vidas": 1.7,
+                    "ataque": 1.8,
+                    "defensa": 1.6,
+                    "deteccion": 1.5,
+                    "estrategia": 1.6,
+                    "velocidad": 1.3,
+                    "sigilo": 1.5
+                },
+                "spawns": {
+                    "densidad_enemigos": 1.8,
+                    "numero_enemigos": 1.6,
+                    "rareza_boosts_mult": 1.6
+                },
+                "bots": {
+                    "agresividad": 1.6,
+                    "estrategia": 1.5
+                },
+                "mapa": {
+                    "tamaño_mult": 1.2,
+                    "obstaculos": 1.4
+                },
+                "combate": {
+                    "daño_jugador": 0.8,
+                    "daño_enemigo": 1.4
+                },
+                "recompensas": {
+                    "puntos_mult": 1.2,
+                    "drop_rate": 0.8
+                }
+            },
+            "ajustes_especiales": {
+                "invulnerabilidad_intermitente": true,
+                "regeneracion_enemigos": true,
+                "oleadas_continuas": true
+            }
+        },
+        "pesadilla": {
+            "descripcion": "Modo infierno. Enemigos imparables, sin piedad, boosts ultra raros.",
+            "multiplicadores": {
+                "enemigos": {
+                    "vidas": 2.2,
+                    "ataque": 2.2,
+                    "defensa": 2.0,
+                    "deteccion": 1.8,
+                    "estrategia": 2.0,
+                    "velocidad": 1.5,
+                    "sigilo": 1.8
+                },
+                "spawns": {
+                    "densidad_enemigos": 2.5,
+                    "numero_enemigos": 2.2,
+                    "rareza_boosts_mult": 2.0
+                },
+                "bots": {
+                    "agresividad": 2.0,
+                    "estrategia": 1.8
+                },
+                "mapa": {
+                    "tamaño_mult": 1.3,
+                    "obstaculos": 1.6
+                },
+                "combate": {
+                    "daño_jugador": 0.7,
+                    "daño_enemigo": 1.6
+                },
+                "recompensas": {
+                    "puntos_mult": 1.4,
+                    "drop_rate": 0.7
+                }
+            },
+            "ajustes_especiales": {
+                "invulnerabilidad_permanente": false,
+                "regeneracion_rapida": true,
+                "spawns_instantaneos": true,
+                "sin_pausa": true
+            }
+        }
+    },
+    "formulas_calculo": {
+        "stats_finales": "stat_final = base_stat * multiplicadores.enemigos[stat] + (nivel_mapa * 0.1) * dificultad_index",
+        "prob_spawn": "prob_final = prob_base * spawns.densidad_enemigos * (1 + bots.agresividad / 10)",
+        "rareza_boost_final": "rareza_final = rareza_base * spawns.rareza_boosts_mult",
+        "puntos_muerte": "puntos_final = puntos_base * recompensas.puntos_mult * (1 + dificultad_index * 0.2)",
+        "daño_efectivo": "daño_final = ataque * combate.daño_enemigo * (1 - defensa_objetivo / (defensa_objetivo + 10))",
+        "prob_deteccion": "prob_det = (deteccion / distancia_al_jugador) * (1 + estrategia / 20) * (1 - sigilo_jugador / 10)",
+        "tiempo_regeneracion": "regen_time = 10 / (estrategia * regeneracion_enemigos_mult) + (dificultad_index * 0.5)",
+        "velocidad_efectiva": "vel_final = velocidad * (1 + burst_active ? 0.3 : 0) * combate.velocidad_mult",
+        "drop_boost": "drop_prob_final = boost_drop_prob * recompensas.drop_rate * (1 - (tiempo_vivo / 60))",
+        "peso_comportamiento": "peso_accion = agresividad * estrategia * (distancia_jugador < deteccion ? 2 : 0.5)",
+        "numero_obstaculos": "obs_final = mapa.obstaculos * mapa.tamaño_mult * (1 + dificultad_index * 0.1)",
+        "tamaño_mapa": "area_mapa = pow(mapa.tamaño_mult * base_tamaño, 2) * (1 + spawns.numero_enemigos / 10)",
+        "cooldown_ability": "cd_final = base_cooldown * (1 / (1 + estrategia / 10)) * (dificultad_index * 0.05)",
+        "multiplicador_puntos_boss": "puntos_boss = puntos_muerte * 3 * recompensas.puntos_mult * oleadas_continuas ? 1.5 : 1",
+        "radio_interaccion": "radio_final = base_radio * (1 + estrategia / 5) * spawns.densidad_enemigos",
+        "prob_emboscada": "prob_emb = sigilo * estrategia / 50 * (luz_baja ? 1.5 : 1) * bots.agresividad",
+        "daño_critico": "dmg_crit = daño_efectivo * (1 + (velocidad_relativa / 2) * rand(0.5, 1.5))",
+        "score_final_nivel": "score_total = suma_puntos * (tiempo_restante / tiempo_total) * (1 + boosts_recogidos * 0.1)"
+    },
+    "indices_dificultad": {
+        "facil": 0,
+        "normal": 1,
+        "dificil": 2,
+        "experto": 3,
+        "pesadilla": 4
+    },
+    "constantes_globales": {
+        "dificultad_index_max": 4,
+        "base_tiempo_regen": 10,
+        "defensa_divisor": 10,
+        "sigilo_penalizacion": 10,
+        "burst_bonus": 0.3
+    }
+}

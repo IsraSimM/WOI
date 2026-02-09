@@ -1,0 +1,268 @@
+[
+    {
+        "id": "enemy_basic",
+        "nombre": "Fantasma Básico",
+        "descripcion": "Enemigo simple y predecible, patrulla rutas fijas y persigue al jugador cuando lo detecta. Fácil de evadir para principiantes.",
+        "nivel_min": 1,
+        "stats": {
+            "vidas": 1,
+            "invulnerabilidad": false,
+            "deteccion": 110,
+            "ataque": 1,
+            "robo": 0,
+            "defensa": 0,
+            "estrategia": 1,
+            "velocidad": 0.9,
+            "sigilo": 0
+        },
+        "base_modificadores": {},
+        "puntos_muerte": 40,
+        "boost_drop_prob": 0.03,
+        "tamaño_visual": 1.0,
+        "color": "#FF4444",
+        "asset": "assets/bot%20copy%202.glb"
+    },
+    {
+        "id": "enemy_advanced",
+        "nombre": "Fantasma Avanzado",
+        "descripcion": "Versión equilibrada con detección media y resistencia ligera. Combina persecución con bloqueo ocasional de rutas.",
+        "nivel_min": 2,
+        "stats": {
+            "vidas": 2,
+            "invulnerabilidad": false,
+            "deteccion": 150,
+            "ataque": 1.5,
+            "robo": 0,
+            "defensa": 1,
+            "estrategia": 2,
+            "velocidad": 1.0,
+            "sigilo": 0.5
+        },
+        "base_modificadores": {},
+        "puntos_muerte": 80,
+        "boost_drop_prob": 0.06,
+        "tamaño_visual": 1.05,
+        "color": "#FF8888",
+        "asset": "assets/bot%20copy%203.glb"
+    },
+    {
+        "id": "enemy_stealth",
+        "nombre": "Fantasma Sigiloso",
+        "descripcion": "Acecha con alto sigilo para emboscadas sorpresa. Bajo en detección frontal, pero letal si se acerca sin ser visto.",
+        "nivel_min": 3,
+        "stats": {
+            "vidas": 1,
+            "invulnerabilidad": false,
+            "deteccion": 90,
+            "ataque": 2,
+            "robo": 0,
+            "defensa": 0.5,
+            "estrategia": 3,
+            "velocidad": 1.2,
+            "sigilo": 4
+        },
+        "base_modificadores": {
+            "invisibilidad_intermitente": true,
+            "cooldown_modificador": 5.0,
+            "duracion_modificador": 1.2
+        },
+        "puntos_muerte": 100,
+        "boost_drop_prob": 0.08,
+        "tamaño_visual": 0.85,
+        "color": "#88CCDD",
+        "asset": "assets/bot%20copy%204.glb"
+    },
+    {
+        "id": "enemy_tank",
+        "nombre": "Fantasma Tanque",
+        "descripcion": "Resistente y lento, bloquea pasajes clave y absorbe múltiples impactos. Ideal para defender salidas.",
+        "nivel_min": 2,
+        "stats": {
+            "vidas": 4,
+            "invulnerabilidad": false,
+            "deteccion": 120,
+            "ataque": 1.5,
+            "robo": 0,
+            "defensa": 3.5,
+            "estrategia": 1.5,
+            "velocidad": 0.75,
+            "sigilo": 0
+        },
+        "base_modificadores": {
+            "aumento_defensa": true,
+            "cooldown_modificador": 7.0,
+            "duracion_modificador": 1.5
+        },
+        "puntos_muerte": 160,
+        "boost_drop_prob": 0.10,
+        "tamaño_visual": 1.3,
+        "color": "#DD4444",
+        "asset": "assets/bot%20copy%205.glb"
+    },
+    {
+        "id": "enemy_assassin",
+        "nombre": "Fantasma Asesino",
+        "descripcion": "Rápido y letal en golpes precisos, prioriza jugadores heridos. Frágil pero con alto daño por impacto.",
+        "nivel_min": 4,
+        "stats": {
+            "vidas": 1,
+            "invulnerabilidad": false,
+            "deteccion": 180,
+            "ataque": 3.5,
+            "robo": 0,
+            "defensa": 0,
+            "estrategia": 2.5,
+            "velocidad": 1.4,
+            "sigilo": 2.5
+        },
+        "base_modificadores": {
+            "dash_ataque": true,
+            "cooldown_modificador": 4.0,
+            "duracion_modificador": 0.9
+        },
+        "puntos_muerte": 130,
+        "boost_drop_prob": 0.12,
+        "tamaño_visual": 0.95,
+        "color": "#DDDD44",
+        "asset": "assets/bot%20copy%206.glb"
+    },
+    {
+        "id": "enemy_healer",
+        "nombre": "Fantasma Curador",
+        "descripcion": "Soporte que regenera aliados cercanos lentamente. Elimínalo primero en grupos para romper formaciones.",
+        "nivel_min": 5,
+        "stats": {
+            "vidas": 2,
+            "invulnerabilidad": false,
+            "deteccion": 130,
+            "ataque": 1,
+            "robo": 0,
+            "defensa": 1.5,
+            "estrategia": 4,
+            "velocidad": 0.95,
+            "sigilo": 1
+        },
+        "base_modificadores": {
+            "regeneracion_aliados": true,
+            "cooldown_modificador": 6.0,
+            "duracion_modificador": 2.5,
+            "radio_regeneracion": 120
+        },
+        "puntos_muerte": 140,
+        "boost_drop_prob": 0.09,
+        "tamaño_visual": 1.1,
+        "color": "#44DD88",
+        "asset": "assets/bot%20copy%207.glb"
+    },
+    {
+        "id": "enemy_speedster",
+        "nombre": "Fantasma Veloz",
+        "descripcion": "Extremadamente ágil para flanqueos y cortes de escape. Sacrifica todo por velocidad pura.",
+        "nivel_min": 3,
+        "stats": {
+            "vidas": 1,
+            "invulnerabilidad": false,
+            "deteccion": 140,
+            "ataque": 1.8,
+            "robo": 0,
+            "defensa": 0,
+            "estrategia": 1,
+            "velocidad": 1.65,
+            "sigilo": 1.5
+        },
+        "base_modificadores": {
+            "burst_velocidad": true,
+            "cooldown_modificador": 3.0,
+            "duracion_modificador": 1.2
+        },
+        "puntos_muerte": 90,
+        "boost_drop_prob": 0.07,
+        "tamaño_visual": 0.8,
+        "color": "#DDDD88",
+        "asset": "assets/bot%20copy%202.glb"
+    },
+    {
+        "id": "enemy_strategist",
+        "nombre": "Fantasma Estratega",
+        "descripcion": "Inteligente con predicción de rutas y buffs a aliados. Alto valor táctico en oleadas.",
+        "nivel_min": 6,
+        "stats": {
+            "vidas": 2.5,
+            "invulnerabilidad": false,
+            "deteccion": 200,
+            "ataque": 1.2,
+            "robo": 0,
+            "defensa": 1.8,
+            "estrategia": 5,
+            "velocidad": 1.0,
+            "sigilo": 1.2
+        },
+        "base_modificadores": {
+            "buff_aliados": true,
+            "cooldown_modificador": 5.0,
+            "duracion_modificador": 2.0,
+            "radio_buff": 160
+        },
+        "puntos_muerte": 220,
+        "boost_drop_prob": 0.18,
+        "tamaño_visual": 1.15,
+        "color": "#8888DD",
+        "asset": "assets/bot%20copy%203.glb"
+    },
+    {
+        "id": "enemy_ranged",
+        "nombre": "Fantasma Tirador",
+        "descripcion": "Ataca a distancia con proyectiles lentos pero precisos. Mantén distancia para evitar fuego cruzado.",
+        "nivel_min": 4,
+        "stats": {
+            "vidas": 2,
+            "invulnerabilidad": false,
+            "deteccion": 170,
+            "ataque": 2.5,
+            "robo": 0,
+            "defensa": 1,
+            "estrategia": 2.5,
+            "velocidad": 0.85,
+            "sigilo": 1
+        },
+        "base_modificadores": {
+            "proyectil_rapido": true,
+            "cooldown_modificador": 4.5,
+            "duracion_modificador": 1.0,
+            "rango_ataque": 250
+        },
+        "puntos_muerte": 150,
+        "boost_drop_prob": 0.11,
+        "tamaño_visual": 1.0,
+        "color": "#44DDDD",
+        "asset": "assets/bot%20copy%204.glb"
+    },
+    {
+        "id": "enemy_kamikaze",
+        "nombre": "Fantasma Kamikaze",
+        "descripcion": "Carga suicida con explosión en contacto. Alto daño en área, pero se autodestruye al impactar.",
+        "nivel_min": 5,
+        "stats": {
+            "vidas": 1,
+            "invulnerabilidad": false,
+            "deteccion": 130,
+            "ataque": 4,
+            "robo": 0,
+            "defensa": 0,
+            "estrategia": 1.5,
+            "velocidad": 1.55,
+            "sigilo": 0.5
+        },
+        "base_modificadores": {
+            "explosion_contacto": true,
+            "cooldown_modificador": 2.0,
+            "duracion_modificador": 0.5,
+            "radio_explosion": 80
+        },
+        "puntos_muerte": 120,
+        "boost_drop_prob": 0.14,
+        "tamaño_visual": 1.2,
+        "color": "#FFAA00",
+        "asset": "assets/bot%20copy%205.glb"
+    }
+]
