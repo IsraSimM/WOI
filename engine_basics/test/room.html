@@ -103,6 +103,101 @@
         font-size: 11px;
         color: var(--muted);
       }
+      .hud .coords {
+        display: grid;
+        gap: 4px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .hud .compass {
+        margin-top: 8px;
+        width: 96px;
+        height: 96px;
+        position: relative;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, rgba(30, 39, 54, 0.85), rgba(12, 16, 24, 0.6));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        display: grid;
+        place-items: center;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+      }
+      .hud .compass .ring {
+        position: absolute;
+        inset: 8px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .hud .compass .cardinal {
+        position: absolute;
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 1px;
+        font-weight: 600;
+      }
+      .hud .compass .cardinal.n {
+        top: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: var(--accent);
+      }
+      .hud .compass .cardinal.e {
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .hud .compass .cardinal.s {
+        bottom: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+      .hud .compass .cardinal.w {
+        left: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .hud .compass .needle {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 4px;
+        height: 34px;
+        background: linear-gradient(to bottom, #f7b32b 0%, #f97316 55%, rgba(0, 0, 0, 0) 100%);
+        border-radius: 999px;
+        transform-origin: 50% 80%;
+        transform: translate(-50%, -80%) rotate(var(--needle-rot, 0deg));
+        box-shadow: 0 0 6px rgba(247, 179, 43, 0.5);
+      }
+      .hud .compass .pivot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #e7e3d9;
+        box-shadow: 0 0 6px rgba(231, 227, 217, 0.5);
+      }
+      .hud .heading {
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .hud .focus {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .hud .focus[hidden] {
+        display: none;
+      }
+      .hud .focus-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--accent);
+      }
+      .hud .focus-desc {
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--text);
+        line-height: 1.35;
+      }
     </style>
   </head>
   <body>
@@ -177,6 +272,49 @@
         <div id="availList" class="list">
         </div>
       </div>
+      <div class="section">
+        <div class="row">
+          <div>
+            <strong>
+              Posicion
+            </strong>
+          </div>
+          <div class="muted" id="coordCell">
+            cell 0,0
+          </div>
+        </div>
+        <div class="coords">
+          <div>
+            BX:
+            <span id="coordX">0</span>
+            BY:
+            <span id="coordY">0</span>
+            BZ:
+            <span id="coordZ">0</span>
+          </div>
+        </div>
+        <div class="compass" id="compass">
+          <div class="ring"></div>
+          <div class="cardinal n">N</div>
+          <div class="cardinal e">E</div>
+          <div class="cardinal s">S</div>
+          <div class="cardinal w">W</div>
+          <div class="needle" id="compassNeedle"></div>
+          <div class="pivot"></div>
+        </div>
+        <div class="heading">
+          Heading:
+          <span id="headingDeg">0</span>
+          °
+        </div>
+      </div>
+      <div class="focus" id="focusPanel" hidden>
+        <div class="focus-title" id="focusName">
+          Item
+        </div>
+        <div class="focus-desc" id="focusDesc">
+        </div>
+      </div>
       <div class="status" id="statusMsg">
         E para recoger
       </div>
@@ -213,6 +351,7 @@
       const bobToggle = document.getElementById('bobToggle');
       const headEl = document.getElementById('head');
       const bodyEl = document.getElementById('body');
+      const cameraEl = headEl?.querySelector('[camera]');
       const modeSelect = document.getElementById('modeSelect');
       const invListEl = document.getElementById('invList');
       const availListEl = document.getElementById('availList');
@@ -221,6 +360,16 @@
       const invMaxLabelEl = document.getElementById('invMaxLabel');
       const availCountEl = document.getElementById('availCount');
       const statusEl = document.getElementById('statusMsg');
+      const coordXEl = document.getElementById('coordX');
+      const coordYEl = document.getElementById('coordY');
+      const coordZEl = document.getElementById('coordZ');
+      const coordCellEl = document.getElementById('coordCell');
+      const compassEl = document.getElementById('compass');
+      const compassNeedleEl = document.getElementById('compassNeedle');
+      const headingEl = document.getElementById('headingDeg');
+      const focusPanelEl = document.getElementById('focusPanel');
+      const focusNameEl = document.getElementById('focusName');
+      const focusDescEl = document.getElementById('focusDesc');
       const CALIB_KEY = 'mazeAssetCalibration';
       const ITEMS_URL = '../game_data/items/items.json';
       const ROOM_W = 9;
@@ -250,40 +399,64 @@
       };
       const MODEL_SCALE = (CELL_SIZE / ASSET_SIZE) * WALL_SCALE * FULL_ADJ.scale;
       const BLOCK_SIZE = CELL_SIZE * WALL_SCALE * FULL_ADJ.scale;
+      const WALL_EDGE_SHIFT = (BLOCK_SIZE - CELL_SIZE) * 0.5;
       const halfW = (ROOM_W - 1) * CELL_SIZE * 0.5;
       const halfD = (ROOM_D - 1) * CELL_SIZE * 0.5;
       const wallHeight = WALL_LAYERS * BLOCK_SIZE;
       const baseY = ASSET_ORIGIN === 'center' ? (BLOCK_SIZE * 0.5) : 0;
       const ITEM_BASE_SCALE = (CELL_SIZE / ASSET_SIZE) * 0.55;
-      const ITEM_Y = BLOCK_SIZE * 0.15;
+      const ITEM_BASE_Y = BLOCK_SIZE * 0.15;
+      // Ajusta altura global de items (negativo baja). Cambialo para mover todos los items.
+      const ITEM_Y_OFFSET = -BLOCK_SIZE * 0.05;
+      // Ajusta distancia maxima para mostrar info del item al mirarlo.
+      const ITEM_FOCUS_DISTANCE = CELL_SIZE * 1.6;
+      // Ajusta el angulo del cono de mirada (1 = muy estricto, 0.9 = mas ancho).
+      const ITEM_FOCUS_DOT = 0.94;
       const colliders = [];
       const itemsState = [];
       const inventory = [];
       const MODE_LIMITS = {
         casual: 6,        normal: 4,        dificil: 2,        hardcore: 1,
       };
+      const headingVector = new THREE.Vector3();
+      const cameraWorldPos = new THREE.Vector3();
+      const cameraForward = new THREE.Vector3();
+      const itemWorldPos = new THREE.Vector3();
+      const toItemDir = new THREE.Vector3();
       let statusTimer = null;
       function addWall(ix, iz) {
-        const wxCell = (ix * CELL_SIZE) - halfW;
-        const wzCell = (iz * CELL_SIZE) - halfD;
-        const wx = wxCell + FULL_ADJ.pos.x;
-        const wz = wzCell + FULL_ADJ.pos.z;
+        const shiftX = (ix === 0) ? WALL_EDGE_SHIFT : (ix === ROOM_W - 1) ? -WALL_EDGE_SHIFT : 0;
+        const shiftZ = (iz === 0) ? WALL_EDGE_SHIFT : (iz === ROOM_D - 1) ? -WALL_EDGE_SHIFT : 0;
+        const wxCell = (ix * CELL_SIZE) - halfW + shiftX;
+        const wzCell = (iz * CELL_SIZE) - halfD + shiftZ;
         const yaw = FULL_ADJ.rotY || 0;
+        const rad = yaw * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        const ox = FULL_ADJ.pos.x;
+        const oz = FULL_ADJ.pos.z;
+        const rx = (ox * cos) + (oz * sin);
+        const rz = (-ox * sin) + (oz * cos);
+        const wx = wxCell;
+        const wz = wzCell;
         for (let layer = 0;
         layer < WALL_LAYERS;
         layer++) {
-          const ent = document.createElement('a-entity');
-          const wy = baseY + FULL_ADJ.pos.y + (layer * BLOCK_SIZE);
-          ent.setAttribute('gltf-model', '#mdl-full');
-          ent.setAttribute('position', `${wx} ${wy} ${wz}`);
-          ent.setAttribute('rotation', `0 ${yaw} 0`);
-          ent.setAttribute('scale', `${MODEL_SCALE} ${MODEL_SCALE} ${MODEL_SCALE}`);
-          roomEl.appendChild(ent);
+          const holder = document.createElement('a-entity');
+          const wy = baseY + (layer * BLOCK_SIZE);
+          holder.setAttribute('position', `${wx} ${wy} ${wz}`);
+          const model = document.createElement('a-entity');
+          model.setAttribute('gltf-model', '#mdl-full');
+          model.setAttribute('position', `${rx} ${FULL_ADJ.pos.y} ${rz}`);
+          model.setAttribute('rotation', `0 ${yaw} 0`);
+          model.setAttribute('scale', `${MODEL_SCALE} ${MODEL_SCALE} ${MODEL_SCALE}`);
+          holder.appendChild(model);
+          roomEl.appendChild(holder);
         }
         const half = BLOCK_SIZE * 0.5;
-        const colliderX = wxCell + FULL_ADJ.pos.x;
-        const colliderZ = wzCell + FULL_ADJ.pos.z;
-        const colliderMinY = FULL_ADJ.pos.y;
+        const colliderX = wxCell;
+        const colliderZ = wzCell;
+        const colliderMinY = 0;
         colliders.push({
           minX: colliderX - half,          maxX: colliderX + half,          minZ: colliderZ - half,          maxZ: colliderZ + half,          minY: colliderMinY,          maxY: colliderMinY + wallHeight,
         });
@@ -366,6 +539,92 @@
           available.forEach((item) => availListEl.appendChild(renderItemRow(item)));
         }
       }
+      function normalizeHeading(deg) {
+        return ((deg % 360) + 360) % 360;
+      }
+      function headingFromCamera() {
+        const headingSource = cameraEl?.object3D || headEl?.object3D;
+        if (!headingSource) return 0;
+        headingSource.getWorldDirection(headingVector);
+        headingVector.y = 0;
+        if (headingVector.lengthSq() < 0.0001) return 0;
+        headingVector.normalize();
+        const rad = Math.atan2(headingVector.x, -headingVector.z);
+        return normalizeHeading(rad * 180 / Math.PI);
+      }
+      function headingToCardinal(deg) {
+        if (deg >= 315 || deg < 45) return 'N';
+        if (deg >= 45 && deg < 135) return 'E';
+        if (deg >= 135 && deg < 225) return 'S';
+        return 'W';
+      }
+      function findLookedItem() {
+        const source = cameraEl?.object3D || headEl?.object3D;
+        if (!source) return null;
+        source.getWorldPosition(cameraWorldPos);
+        source.getWorldDirection(cameraForward);
+        cameraForward.normalize();
+        let best = null;
+        let bestScore = -Infinity;
+        for (const entry of itemsState) {
+          if (!entry || entry.picked || !entry.el) continue;
+          entry.el.object3D.getWorldPosition(itemWorldPos);
+          toItemDir.copy(itemWorldPos).sub(cameraWorldPos);
+          const dist = toItemDir.length();
+          if (!Number.isFinite(dist) || dist <= 0.001 || dist > ITEM_FOCUS_DISTANCE) continue;
+          toItemDir.divideScalar(dist);
+          const dot = cameraForward.dot(toItemDir);
+          if (dot < ITEM_FOCUS_DOT) continue;
+          const score = (dot * 2) - (dist / ITEM_FOCUS_DISTANCE);
+          if (score > bestScore) {
+            bestScore = score;
+            best = entry;
+          }
+        }
+        return best;
+      }
+      function updateFocusHud() {
+        if (!focusPanelEl || !focusNameEl || !focusDescEl) return;
+        const entry = findLookedItem();
+        if (!entry) {
+          focusPanelEl.hidden = true;
+          return;
+        }
+        const name = entry.data?.nombre || entry.data?.name || entry.data?.id || 'Item';
+        const desc = entry.data?.descripcion || entry.data?.description || '';
+        focusNameEl.textContent = name;
+        focusDescEl.textContent = desc;
+        focusDescEl.style.display = desc ? 'block' : 'none';
+        focusPanelEl.hidden = false;
+      }
+      function updateNavHud() {
+        const player = document.getElementById('player');
+        if (player && player.object3D) {
+          const pos = player.object3D.position;
+          const step = Math.max(0.01, BLOCK_SIZE);
+          const bx = Math.round(pos.x / step);
+          const by = Math.round(pos.y / step);
+          const bz = Math.round(pos.z / step);
+          if (coordXEl) coordXEl.textContent = String(bx);
+          if (coordYEl) coordYEl.textContent = String(by);
+          if (coordZEl) coordZEl.textContent = String(bz);
+          if (coordCellEl) {
+            const cx = Math.round((pos.x + halfW) / CELL_SIZE);
+            const cz = Math.round((pos.z + halfD) / CELL_SIZE);
+            const clampedX = Math.max(0, Math.min(ROOM_W - 1, cx));
+            const clampedZ = Math.max(0, Math.min(ROOM_D - 1, cz));
+            coordCellEl.textContent = `cell ${clampedX},${clampedZ}`;
+          }
+        }
+        const heading = headingFromCamera();
+        if (headingEl) headingEl.textContent = heading.toFixed(0);
+        if (compassNeedleEl) {
+          const needleRot = -heading;
+          compassNeedleEl.style.setProperty('--needle-rot', `${needleRot}deg`);
+        }
+        updateFocusHud();
+        requestAnimationFrame(updateNavHud);
+      }
       function createFallbackDiamond(parentEl, color) {
         const diamond = document.createElement('a-octahedron');
         diamond.setAttribute('radius', BLOCK_SIZE * 0.22);
@@ -374,29 +633,68 @@
         diamond.setAttribute('material', 'metalness: 0.1; roughness: 0.35');
         parentEl.appendChild(diamond);
       }
+      function recenterItemModel(el, origin = 'base') {
+        const model = el.getObject3D('mesh');
+        if (!model) return;
+        model.updateMatrixWorld(true);
+        const box = new THREE.Box3();
+        const centerWorld = new THREE.Vector3();
+        const sizeWorld = new THREE.Vector3();
+        let hasMesh = false;
+        model.traverse((node) => {
+          if (!node.isMesh && !node.isSkinnedMesh) return;
+          if (!node.geometry) return;
+          node.geometry.computeBoundingBox();
+          if (!node.geometry.boundingBox) return;
+          const nodeBox = node.geometry.boundingBox.clone();
+          nodeBox.applyMatrix4(node.matrixWorld);
+          box.union(nodeBox);
+          hasMesh = true;
+        });
+        if (!hasMesh || box.isEmpty()) return;
+        box.getCenter(centerWorld);
+        box.getSize(sizeWorld);
+        const maxDim = Math.max(sizeWorld.x, sizeWorld.y, sizeWorld.z);
+        if (!Number.isFinite(maxDim) || maxDim <= 0) return;
+        if (maxDim > (BLOCK_SIZE * 10)) return;
+        const parent = model.parent || model;
+        const centerLocal = parent.worldToLocal(centerWorld.clone());
+        const minLocal = parent.worldToLocal(box.min.clone());
+        if (!Number.isFinite(centerLocal.x) || !Number.isFinite(centerLocal.y) || !Number.isFinite(centerLocal.z)) return;
+        model.position.x -= centerLocal.x;
+        model.position.z -= centerLocal.z;
+        if (origin === 'center') model.position.y -= centerLocal.y;
+        else model.position.y -= minLocal.y;
+        model.updateMatrixWorld(true);
+      }
       function placeItems(items) {
-        const innerW = (ROOM_W - 2) * CELL_SIZE;
-        const innerD = (ROOM_D - 2) * CELL_SIZE;
-        const spacing = CELL_SIZE * 0.85;
-        const perRow = Math.max(1, Math.floor(innerW / spacing));
-        const maxRows = Math.max(1, Math.floor(innerD / spacing));
-        const startX = -halfW + CELL_SIZE;
-        const startZ = -halfD + CELL_SIZE;
+        const innerCells = [];
+        for (let z = 1; z < ROOM_D - 1; z++) {
+          for (let x = 1; x < ROOM_W - 1; x++) {
+            innerCells.push({ x, z });
+          }
+        }
         items.forEach((item, index) => {
-          const row = Math.min(Math.floor(index / perRow), maxRows - 1);
-          const col = index % perRow;
-          const x = startX + col * spacing;
-          const z = startZ + row * spacing;
+          const cell = innerCells[index % innerCells.length];
+          const x = (cell.x * CELL_SIZE) - halfW;
+          const z = (cell.z * CELL_SIZE) - halfD;
           const entity = document.createElement('a-entity');
           const assetPath = resolveAssetPath(item.asset);
           const itemScale = ITEM_BASE_SCALE * (Number(item.scale) || 1);
-          const y = ITEM_Y + (Number(item.yOffset) || 0);
-          entity.setAttribute('position', `${x} ${y} ${z}`);
+          const y = ITEM_BASE_Y + ITEM_Y_OFFSET + (Number(item.yOffset) || 0);
+          const xOffset = Number(item.xOffset) || 0;
+          const zOffset = Number(item.zOffset) || 0;
+          entity.setAttribute('position', `${x + xOffset} ${y} ${z + zOffset}`);
           entity.setAttribute('data-item-id', item.id || '');
           entity.setAttribute('data-item-name', item.nombre || '');
           entity.setAttribute('class', 'pickup-item');
           if (assetPath) {
             entity.setAttribute('gltf-model', assetPath);
+            entity.addEventListener('model-loaded', () => {
+              if (item?.recenter === false) return;
+              const origin = (item?.origin === 'center') ? 'center' : 'base';
+              recenterItemModel(entity, origin);
+            }, { once: true });
             entity.addEventListener('model-error', () => {
               entity.removeAttribute('gltf-model');
               createFallbackDiamond(entity, item.color);
@@ -672,6 +970,7 @@
       buildRoom();
       loadItems();
       updateHud();
+      updateNavHud();
       if (modeSelect) {
         modeSelect.addEventListener('change', () => updateHud());
       }
@@ -681,3 +980,5 @@
     </script>
   </body>
 </html>
+
+

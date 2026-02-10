@@ -60,7 +60,7 @@
             "puntos": 500
         },
         "color": "#FFE66D",
-        "asset": "assets/items/double_points.glb"
+        "asset": "assets/items/extra_points.glb"
     },
     {
         "id": "freeze",
@@ -200,7 +200,7 @@
             "rango": "global"
         },
         "color": "#000000",
-        "asset": "assets/items/power_pill.glb"
+        "asset": "assets/items/mass_damage.glb"
     },
     {
         "id": "double_score",
@@ -234,7 +234,7 @@
             "rango": "global"
         },
         "color": "#8B0000",
-        "asset": "assets/items/power_pill.glb"
+        "asset": "assets/items/hard_world.glb"
     },
     {
         "id": "hard_run",
@@ -252,7 +252,7 @@
             "failure_effect": "muerte"
         },
         "color": "#FF8C00",
-        "asset": "assets/items/power_pill.glb"
+        "asset": "assets/items/hard_run.glb"
     },
     {
         "id": "map_shuffle",
@@ -268,7 +268,7 @@
             "rango": "global"
         },
         "color": "#556B2F",
-        "asset": "assets/items/power_pill.glb"
+        "asset": "assets/items/map_shuffle.glb"
     },
     {
         "id": "fake_exit",
@@ -284,7 +284,7 @@
             "daño": 0
         },
         "color": "#696969",
-        "asset": "assets/items/the_end_trap.glb"
+        "asset": "assets/items/fake_exit.glb"
     },
     {
         "id": "fake_boost",
@@ -298,7 +298,7 @@
             "daño": 1
         },
         "color": "#B22222",
-        "asset": "assets/items/double_points_trap.glb"
+        "asset": "assets/items/fake_boost.glb"
     },
     {
         "id": "teleport_swap",
@@ -312,7 +312,7 @@
             "swap_with": "enemigo_aleatorio"
         },
         "color": "#9370DB",
-        "asset": "assets/items/power_pill.glb"
+        "asset": "assets/items/teleport_swap.glb"
     },
     {
         "id": "enemy_confusion",
@@ -328,6 +328,6 @@
             "rango": "global"
         },
         "color": "#FF69B4",
-        "asset": "assets/items/power_pill.glb"
+        "asset": "assets/items/enemy_confusion.glb"
     }
 ]
