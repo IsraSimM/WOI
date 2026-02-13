@@ -13,3 +13,14 @@ node_modules/
 # OS files
 .DS_Store
 Thumbs.db
+
+# extra
+.gitignore
+ejemplo.html
+PARED.glb
+scene.gltf
+scene.bin
+/PracticaAnimacion/oiiaioooooiai_cat.glb
+/PracticaAnimacion/oiia-oiia-sound.mp3
+/PracticaAnimacion/textures/
+

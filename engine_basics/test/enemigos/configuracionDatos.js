@@ -30,9 +30,9 @@ const focusDescEl = document.getElementById('focusDesc');
 // ============= CONSTANTES DE CONFIGURACIÓN =============
 const CALIB_KEY = 'mazeAssetCalibration';
 const ITEMS_URL = '../game_data/items/items.json';
-const ROOM_W = 9;
-const ROOM_D = 9;
-const WALL_LAYERS = 3;
+const ROOM_W = 5;  // Ancho para mini arena
+const ROOM_D = 5;  // Profundidad para mini arena
+const WALL_LAYERS = 2;  // Altura de 2 bloques para el mini escenario
 
 // ============= CARGA DE CALIBRACIÓN =============
 function loadCalibration() {

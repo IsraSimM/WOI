@@ -7,11 +7,17 @@
  * Construye la sala, carga items y configura eventos
  */
 function initGame() {
-  // Construye la sala con muros
-  buildRoom();
+  // *** ELIGE TU ESCENARIO ***
+  // Opción 1: Mini arena 5x5 con salida al sur (por defecto)
+  buildMiniArena();
   
-  // Carga los items desde el JSON
-  loadItems();
+  // Opción 2: Sala completa (descomenta para usar)
+  // NOTA: Si usas buildRoom(), cambia ROOM_W y ROOM_D a 9 en configuracionDatos.js
+  // buildRoom();
+  
+  // Carga los items desde el JSON (comentado para el mini escenario)
+  // Descomenta si quieres items en el escenario:
+  // loadItems();
   
   // Actualiza el HUD inicial
   updateHud();
@@ -36,7 +42,8 @@ function initGame() {
     });
   }
   
-  console.log('Juego inicializado correctamente');
+  console.log('Mini escenario inicializado - Arena 5x5 con salida al sur');
+  console.log('Controles: WASD=mover, Espacio=saltar, Shift=correr, Mouse=mirar');
 }
 
 // Inicializa el juego cuando el DOM esté listo

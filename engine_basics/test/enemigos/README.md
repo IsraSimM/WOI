@@ -14,7 +14,8 @@ enemigos/
 ├── Movimiento.js           # Componentes A-Frame de movimiento
 ├── Inicializacion.js       # Inicialización del juego
 ├── enemies.html            # Archivo HTML principal
-└── README.md               # Esta documentación
+├── README.md               # Esta documentación
+└── MINI_ARENA.md           # Guía del mini escenario 5x5
 ```
 
 ## 🔗 Dependencias entre Módulos
@@ -60,6 +61,7 @@ Inicializacion.js (requiere todos)
 **Funciones:**
 - `addWall(ix, iz)` - Añade un muro en la cuadrícula
 - `buildRoom()` - Construye la sala completa con perímetro de muros
+- `buildMiniArena()` - Construye un mini escenario 5x5 con salida al sur (para pruebas)
 
 ### 4. Items.js
 **Dependencias:** `configuracionDatos.js`
@@ -108,6 +110,8 @@ Inicializacion.js (requiere todos)
 
 ## 🚀 Uso
 
+**Por defecto, el proyecto está configurado con un mini escenario de prueba (5x5 con 2 bloques de altura)**. Ver [MINI_ARENA.md](MINI_ARENA.md) para detalles.
+
 ### Orden de Carga en HTML
 
 ```html
@@ -127,6 +131,12 @@ Inicializacion.js (requiere todos)
 ### Elementos HTML Requeridos
 
 ```html
+<!-- Assets necesarios -->
+<a-assets>
+  <a-asset-item id="mdl-full" src="../assets/blocks/full.glb"></a-asset-item>
+</a-assets>
+
+<!-- Estructura de entidades -->
 <a-entity id="player" room-player>
   <a-entity id="head" step-bob>
     <a-entity camera></a-entity>
@@ -138,6 +148,8 @@ Inicializacion.js (requiere todos)
 <a-plane id="floor"></a-plane>
 ```
 
+**Nota importante**: Asegúrate de tener el modelo `full.glb` en la ruta `../assets/blocks/` relativa al HTML.
+
 ### Controles
 
 - **WASD** - Movimiento
@@ -148,6 +160,33 @@ Inicializacion.js (requiere todos)
 
 ## 🔧 Personalización
 
+### Escenarios Disponibles
+
+#### Mini Arena (por defecto)
+- **Tamaño**: 5x5 celdas
+- **Altura**: 2 bloques  
+- **Salida**: Sur (centro)
+- **Uso**: `buildMiniArena()` en Inicializacion.js
+- **Documentación**: Ver [MINI_ARENA.md](MINI_ARENA.md)
+
+#### Sala Completa
+- **Tamaño**: 9x9 celdas (configurable)
+- **Altura**: 2-3 bloques (configurable)
+- **Salida**: Sin salidas (arena cerrada)
+- **Uso**: `buildRoom()` en Inicializacion.js
+- **Nota**: Cambia `ROOM_W` y `ROOM_D` a 9 en configuracionDatos.js
+
+### Cambiar entre Escenarios
+
+En [Inicializacion.js](Inicializacion.js):
+```javascript
+// Mini arena (actual)
+buildMiniArena();
+
+// O sala completa
+// buildRoom();
+```
+
 ### Cambiar Velocidad del Jugador
 
 En el HTML:
@@ -157,12 +196,20 @@ En el HTML:
 
 ### Ajustar Dimensiones de Sala
 
-En `configuracionDatos.js`:
+En [configuracionDatos.js](configuracionDatos.js):
 ```javascript
+// Para Mini Arena (actual):
+const ROOM_W = 5;
+const ROOM_D = 5;
+const WALL_LAYERS = 2;
+
+// Para Sala Completa grande:
 const ROOM_W = 15;  // Ancho
 const ROOM_D = 15;  // Profundidad
-const WALL_LAYERS = 5;  // Altura en capas
+const WALL_LAYERS = 3;  // Altura en capas (3 = 3 bloques)
 ```
+
+**Importante**: Al cambiar tamaño, también cambia la función en Inicializacion.js
 
 ### Configurar Límites de Items
 

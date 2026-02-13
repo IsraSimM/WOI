@@ -86,3 +86,40 @@ function buildRoom() {
     addWall(ROOM_W - 1, z);     // Este
   }
 }
+
+/**
+ * Construye un mini escenario de prueba alrededor del spawn
+ * Arena pequeña de 5x5 con 2 bloques de altura y una salida al sur
+ */
+function buildMiniArena() {
+  // Limpia sala anterior
+  roomEl.innerHTML = '';
+  colliders.length = 0;
+  
+  // Configura el piso para una arena de 5x5 centrada
+  const arenaSize = 5;
+  floorEl.setAttribute('width', arenaSize * CELL_SIZE);
+  floorEl.setAttribute('height', arenaSize * CELL_SIZE);
+  floorEl.setAttribute('position', '0 0 0');
+  
+  // Calcula posiciones para centrar la arena (0 a 4, con centro en 2)
+  const start = 2; // Centro de la arena de 5x5
+  
+  // Muro norte (completo) - fila 0
+  for (let x = 0; x < 5; x++) {
+    addWall(x, 0);
+  }
+  
+  // Muro sur con apertura en el centro - fila 4
+  addWall(0, 4);  // Oeste
+  addWall(1, 4);  // Medio-oeste
+  // x=2 es la apertura (salida)
+  addWall(3, 4);  // Medio-este
+  addWall(4, 4);  // Este
+  
+  // Muros laterales (columnas 0 y 4)
+  for (let z = 1; z < 4; z++) {
+    addWall(0, z);  // Muro oeste
+    addWall(4, z);  // Muro este
+  }
+}
