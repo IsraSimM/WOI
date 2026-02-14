@@ -10,13 +10,13 @@
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     
     <!-- Scripts modulares en orden de dependencias -->
-    <script src="configuracionDatos.js"></script>
-    <script src="Coliciones.js"></script>
-    <script src="ConstruccionSala.js"></script>
-    <script src="Items.js"></script>
-    <script src="Navegacion.js"></script>
-    <script src="Movimiento.js"></script>
-    <script src="Inicializacion.js"></script>
+    <script defer src="configuracionDatos.js"></script>
+    <script defer src="Coliciones.js"></script>
+    <script defer src="ConstruccionSala.js"></script>
+    <script defer src="Items.js"></script>
+    <script defer src="Navegacion.js"></script>
+    <script defer src="Movimiento.js"></script>
+    <script defer src="Inicializacion.js"></script>
   </head>
   
   <body>
@@ -25,7 +25,7 @@
       <!-- Assets -->
       <a-assets>
         <a-asset-item id="pacmanModel" src="pacman.glb"></a-asset-item>
-        <a-asset-item id="mdl-full" src="../assets/blocks/full.glb"></a-asset-item>
+        <a-asset-item id="mdl-full" src="../../assets/blocks/full.glb"></a-asset-item>
       </a-assets>
 
       <!-- Player con controles de movimiento -->

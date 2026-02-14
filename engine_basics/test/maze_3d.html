@@ -397,6 +397,28 @@
         <small>
           Vista general del laberinto (click en Generar para actualizar).
         </small>
+        <div class="row">
+          <button id="runPath" type="button">
+            Dijkstra
+          </button>
+          <button id="clearPath" class="secondary" type="button">
+            Limpiar ruta
+          </button>
+        </div>
+        <div class="option">
+          <span>
+            Mostrar ruta
+          </span>
+          <input id="showPath" type="checkbox" checked />
+        </div>
+        <div class="option">
+          <span>
+            Animar ruta
+          </span>
+          <input id="animatePath" type="checkbox" checked />
+        </div>
+        <small id="pathStatus" class="hint">
+        </small>
       </div>
       <div class="section">
         <h2>
@@ -604,7 +626,66 @@
       from '../world/world_procesing/world_saver.js';
       const $ = (id) => document.getElementById(id);
       const ui = {
-        width: $('width'),        height: $('height'),        seed: $('seed'),        noBorders: $('noBorders'),        pacmanize: $('pacmanize'),        roomAttempts: $('roomAttempts'),        roomMin: $('roomMin'),        roomMax: $('roomMax'),        useRoomTemplate: $('useRoomTemplate'),        forceRoomTemplate: $('forceRoomTemplate'),        roomBrush: $('roomBrush'),        roomTemplate: $('roomTemplate'),        roomTemplateWrap: $('roomTemplateWrap'),        roomClear: $('roomClear'),        roomFill: $('roomFill'),        roomInvert: $('roomInvert'),        roomRect: $('roomRect'),        assetSize: $('assetSize'),        wallScale: $('wallScale'),        assetOrigin: $('assetOrigin'),        computedScale: $('computedScale'),        uniBase: $('uniBase'),        biBase: $('biBase'),        cornerBase: $('cornerBase'),        triBase: $('triBase'),        assetPreview: $('assetPreview'),        minimap: $('minimap'),        goalMode: $('goalMode'),        markCells: $('markCells'),        allowSame: $('allowSame'),        resetBorders: $('resetBorders'),        manualGoals: $('manualGoals'),        entranceX: $('entranceX'),        entranceY: $('entranceY'),        exitX: $('exitX'),        exitY: $('exitY'),        startX: $('startX'),        startY: $('startY'),        endX: $('endX'),        endY: $('endY'),        applyGoals: $('applyGoals'),        clearGoals: $('clearGoals'),        cellSize: $('cellSize'),        wallHeight: $('wallHeight'),        yawOffset: $('yawOffset'),        includeInner: $('includeInner'),        roofEnabled: $('roofEnabled'),        worldName: $('worldName'),        saveWorld: $('saveWorld'),        exportWorld: $('exportWorld'),        worldList: $('worldList'),        loadWorld: $('loadWorld'),        deleteWorld: $('deleteWorld'),        importWorld: $('importWorld'),        generate: $('generate'),
+        width: $('width'),
+        height: $('height'),
+        seed: $('seed'),
+        noBorders: $('noBorders'),
+        pacmanize: $('pacmanize'),
+        roomAttempts: $('roomAttempts'),
+        roomMin: $('roomMin'),
+        roomMax: $('roomMax'),
+        useRoomTemplate: $('useRoomTemplate'),
+        forceRoomTemplate: $('forceRoomTemplate'),
+        roomBrush: $('roomBrush'),
+        roomTemplate: $('roomTemplate'),
+        roomTemplateWrap: $('roomTemplateWrap'),
+        roomClear: $('roomClear'),
+        roomFill: $('roomFill'),
+        roomInvert: $('roomInvert'),
+        roomRect: $('roomRect'),
+        assetSize: $('assetSize'),
+        wallScale: $('wallScale'),
+        assetOrigin: $('assetOrigin'),
+        computedScale: $('computedScale'),
+        uniBase: $('uniBase'),
+        biBase: $('biBase'),
+        cornerBase: $('cornerBase'),
+        triBase: $('triBase'),
+        assetPreview: $('assetPreview'),
+        minimap: $('minimap'),
+        runPath: $('runPath'),
+        clearPath: $('clearPath'),
+        showPath: $('showPath'),
+        animatePath: $('animatePath'),
+        pathStatus: $('pathStatus'),
+        goalMode: $('goalMode'),
+        markCells: $('markCells'),
+        allowSame: $('allowSame'),
+        resetBorders: $('resetBorders'),
+        manualGoals: $('manualGoals'),
+        entranceX: $('entranceX'),
+        entranceY: $('entranceY'),
+        exitX: $('exitX'),
+        exitY: $('exitY'),
+        startX: $('startX'),
+        startY: $('startY'),
+        endX: $('endX'),
+        endY: $('endY'),
+        applyGoals: $('applyGoals'),
+        clearGoals: $('clearGoals'),
+        cellSize: $('cellSize'),
+        wallHeight: $('wallHeight'),
+        yawOffset: $('yawOffset'),
+        includeInner: $('includeInner'),
+        roofEnabled: $('roofEnabled'),
+        worldName: $('worldName'),
+        saveWorld: $('saveWorld'),
+        exportWorld: $('exportWorld'),
+        worldList: $('worldList'),
+        loadWorld: $('loadWorld'),
+        deleteWorld: $('deleteWorld'),
+        importWorld: $('importWorld'),
+        generate: $('generate'),
       };
       const mazeEl = document.getElementById('maze');
       const floorEl = document.getElementById('floor');
@@ -653,7 +734,7 @@
               x: 0, y: 0, z: 0
             }, rotY: 0, scale: 1
           },
-        },        yawOffset: 0,        includeInner: true,        roofEnabled: false,        halfW: 0,        halfH: 0,
+        },        yawOffset: 0,        includeInner: true,        roofEnabled: false,        halfW: 0,        halfH: 0,        path: [],        pathProgress: 0,        showPath: true,        animatePath: true,        pathAnimId: null,        pathAnimLast: 0,        pathSpeed: 40,
       };
       const TEMPLATE_SIZE = 16;
       const templateData = new Uint8Array(TEMPLATE_SIZE * TEMPLATE_SIZE);
@@ -834,6 +915,10 @@
         }, data.meta || {
         });
         state.gen = gen;
+        stopPathAnimation();
+        state.path = [];
+        state.pathProgress = 0;
+        setPathStatus('');
         state.cellSize = parseNumber(ui.cellSize, 6, 0.2);
         state.wallHeight = Math.max(1, Math.round(parseNumber(ui.wallHeight, 1, 1, 50)));
         state.yawOffset = parseNumber(ui.yawOffset, 0, -360, 360);
@@ -1174,6 +1259,22 @@
           drawMeta(meta.start, 'rgba(96,165,250,0.95)');
           drawMeta(meta.end, 'rgba(239,68,68,0.95)');
         }
+        if (state.showPath && state.path && state.path.length) {
+          const maxSteps = state.animatePath ? Math.floor(state.pathProgress) : state.path.length;
+          if (maxSteps <= 0) return;
+          const count = Math.min(state.path.length, maxSteps);
+          minimapCtx.strokeStyle = 'rgba(245, 204, 46, 0.95)';
+          minimapCtx.lineWidth = 2;
+          minimapCtx.beginPath();
+          for (let i = 0; i < count; i++) {
+            const p = state.path[i];
+            const px = Math.floor((p.x / w) * cw) + 0.5;
+            const py = Math.floor((p.y / h) * ch) + 0.5;
+            if (i === 0) minimapCtx.moveTo(px, py);
+            else minimapCtx.lineTo(px, py);
+          }
+          minimapCtx.stroke();
+        }
       }
       function modelFor(maskInfo, includeInner) {
         const {
@@ -1222,12 +1323,193 @@
         }
       }
       function parseCoordPair(xEl, yEl) {
-        const x = Number(xEl.value);
-        const y = Number(yEl.value);
+        const rawX = String(xEl.value ?? '').trim();
+        const rawY = String(yEl.value ?? '').trim();
+        if (rawX === '' || rawY === '') return null;
+        const x = Number(rawX);
+        const y = Number(rawY);
         if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
         return {
           x: Math.round(x), y: Math.round(y)
         };
+      }
+      function setPathStatus(text) {
+        if (!ui.pathStatus) return;
+        ui.pathStatus.textContent = text || '';
+      }
+      function stopPathAnimation() {
+        if (state.pathAnimId != null) {
+          cancelAnimationFrame(state.pathAnimId);
+        }
+        state.pathAnimId = null;
+        state.pathAnimLast = 0;
+      }
+      function startPathAnimation() {
+        stopPathAnimation();
+        if (!state.path || !state.path.length) return;
+        state.pathProgress = 1;
+        const stepPerSec = Math.max(1, state.pathSpeed || 30);
+        const tick = (ts) => {
+          if (!state.path || !state.path.length) {
+            stopPathAnimation();
+            return;
+          }
+          if (!state.pathAnimLast) state.pathAnimLast = ts;
+          const dt = Math.max(0, (ts - state.pathAnimLast) / 1000);
+          state.pathAnimLast = ts;
+          state.pathProgress = Math.min(state.path.length, state.pathProgress + dt * stepPerSec);
+          renderMinimap();
+          if (state.pathProgress < state.path.length) {
+            state.pathAnimId = requestAnimationFrame(tick);
+          }
+          else {
+            state.pathAnimId = null;
+          }
+        };
+        state.pathAnimId = requestAnimationFrame(tick);
+      }
+      function isWalkable(cell) {
+        return cell !== CELL.WALL;
+      }
+      function cellLabel(cell) {
+        if (cell === CELL.WALL) return 'WALL';
+        if (cell === CELL.ENTRANCE) return 'ENTRANCE';
+        if (cell === CELL.EXIT) return 'EXIT';
+        if (cell === CELL.START) return 'START';
+        if (cell === CELL.END) return 'END';
+        return 'PATH';
+      }
+      function pickDefaultGoal(meta) {
+        if (meta?.start && meta?.end) return {
+          start: meta.start, end: meta.end
+        };
+        if (meta?.entrance && meta?.exit) return {
+          start: meta.entrance, end: meta.exit
+        };
+        if (meta?.start && meta?.exit) return {
+          start: meta.start, end: meta.exit
+        };
+        return null;
+      }
+      function dijkstraPath(map, w, h, start, end) {
+        if (!start || !end) return [];
+        const key = (x, y) => y * w + x;
+        const inBounds = (x, y) => x >= 0 && y >= 0 && x < w && y < h;
+        if (!inBounds(start.x, start.y) || !inBounds(end.x, end.y)) return [];
+        if (!isWalkable(map[key(start.x, start.y)]) || !isWalkable(map[key(end.x, end.y)])) return [];
+        const total = w * h;
+        const dist = new Int32Array(total);
+        const prev = new Int32Array(total);
+        const visited = new Uint8Array(total);
+        for (let i = 0; i < total; i++) {
+          dist[i] = 2147483647;
+          prev[i] = -1;
+        }
+        const startIdx = key(start.x, start.y);
+        const endIdx = key(end.x, end.y);
+        dist[startIdx] = 0;
+        const queue = [startIdx];
+        while (queue.length) {
+          let bestIdx = 0;
+          let bestDist = dist[queue[0]];
+          for (let i = 1; i < queue.length; i++) {
+            const d = dist[queue[i]];
+            if (d < bestDist) {
+              bestDist = d;
+              bestIdx = i;
+            }
+          }
+          const current = queue.splice(bestIdx, 1)[0];
+          if (visited[current]) continue;
+          visited[current] = 1;
+          if (current === endIdx) break;
+          const cx = current % w;
+          const cy = Math.floor(current / w);
+          const neighbors = [
+            [cx, cy - 1],
+            [cx + 1, cy],
+            [cx, cy + 1],
+            [cx - 1, cy],
+          ];
+          for (const [nx, ny] of neighbors) {
+            if (!inBounds(nx, ny)) continue;
+            const nIdx = key(nx, ny);
+            if (visited[nIdx]) continue;
+            if (!isWalkable(map[nIdx])) continue;
+            const alt = dist[current] + 1;
+            if (alt < dist[nIdx]) {
+              dist[nIdx] = alt;
+              prev[nIdx] = current;
+              queue.push(nIdx);
+            }
+          }
+        }
+        if (prev[endIdx] === -1 && endIdx !== startIdx) return [];
+        const path = [];
+        let cur = endIdx;
+        while (cur !== -1) {
+          path.push({
+            x: cur % w, y: Math.floor(cur / w)
+          });
+          if (cur === startIdx) break;
+          cur = prev[cur];
+        }
+        path.reverse();
+        return path;
+      }
+      function runDijkstra() {
+        if (!state.gen || !state.map) return;
+        const meta = state.gen.meta || {};
+        let start = parseCoordPair(ui.startX, ui.startY);
+        let end = parseCoordPair(ui.endX, ui.endY);
+        if (!start || !end) {
+          const fallback = pickDefaultGoal(meta);
+          start = fallback?.start || meta.start || meta.entrance || null;
+          end = fallback?.end || meta.end || meta.exit || null;
+        }
+        if (!start || !end) {
+          setPathStatus('Sin inicio/fin. Usa Generar objetivos.');
+          state.path = [];
+          renderMinimap();
+          return;
+        }
+        const inBounds = (p) => p.x >= 0 && p.y >= 0 && p.x < state.width && p.y < state.height;
+        if (!inBounds(start) || !inBounds(end)) {
+          setPathStatus(`Fuera de rango: (${start.x},${start.y}) -> (${end.x},${end.y})`);
+          state.path = [];
+          renderMinimap();
+          return;
+        }
+        const startCell = state.map[start.y * state.width + start.x];
+        const endCell = state.map[end.y * state.width + end.x];
+        if (!isWalkable(startCell) || !isWalkable(endCell)) {
+          setPathStatus(`Inicio/fin en muro: ${cellLabel(startCell)} -> ${cellLabel(endCell)}`);
+          state.path = [];
+          renderMinimap();
+          return;
+        }
+        state.path = dijkstraPath(state.map, state.width, state.height, start, end);
+        stopPathAnimation();
+        if (!state.path.length) {
+          setPathStatus('Sin ruta. Inicio y fin no conectados.');
+          renderMinimap();
+          return;
+        }
+        setPathStatus(`Ruta: ${state.path.length} celdas`);
+        if (state.animatePath) {
+          startPathAnimation();
+        }
+        else {
+          state.pathProgress = state.path.length;
+          renderMinimap();
+        }
+      }
+      function clearPath() {
+        stopPathAnimation();
+        state.path = [];
+        state.pathProgress = 0;
+        setPathStatus('');
+        renderMinimap();
       }
       function addGoalMarker(pos, color, shape) {
         if (!pos) return;
@@ -1430,6 +1712,10 @@
           gen.pacmanizeMap();
         }
         state.gen = gen;
+        stopPathAnimation();
+        state.path = [];
+        state.pathProgress = 0;
+        setPathStatus('');
         state.cellSize = cellSize;
         state.wallHeight = wallHeight;
         state.yawOffset = yawOffset;
@@ -1511,6 +1797,22 @@
       ui.goalMode.addEventListener('change', updateGoalUI);
       ui.applyGoals.addEventListener('click', () => applyGoals());
       ui.clearGoals.addEventListener('click', clearGoals);
+      ui.runPath.addEventListener('click', runDijkstra);
+      ui.clearPath.addEventListener('click', clearPath);
+      ui.showPath.addEventListener('change', () => {
+        state.showPath = ui.showPath.checked;
+        renderMinimap();
+      });
+      ui.animatePath.addEventListener('change', () => {
+        state.animatePath = ui.animatePath.checked;
+        if (!state.animatePath) {
+          stopPathAnimation();
+          state.pathProgress = state.path.length;
+          renderMinimap();
+          return;
+        }
+        if (state.path && state.path.length) startPathAnimation();
+      });
       ui.noBorders.addEventListener('change', updateGoalUI);
       ui.useRoomTemplate.addEventListener('change', updateTemplateUI);
       ui.roomClear.addEventListener('click', () => {
@@ -1573,6 +1875,9 @@
       fillTemplateRect(3);
       updateTemplateUI();
       updateGoalUI();
+      state.showPath = ui.showPath.checked;
+      state.animatePath = ui.animatePath.checked;
+      setPathStatus('');
       const storedCfg = loadCalibrationConfig();
       if (!applyCalibrationConfig(storedCfg)) {
         updateAssetConfig();

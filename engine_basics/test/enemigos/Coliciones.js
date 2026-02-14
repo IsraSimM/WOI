@@ -1,5 +1,8 @@
 /* Colisiones */
 
+// Margen pequeno para evitar engancharse en esquinas
+const COLLISION_SKIN = 0.06;
+
 // Requiere: configuracionDatos.js (para acceso a array colliders)
 
 /**
@@ -14,10 +17,11 @@
  */
 function intersectsAabb(px, py, pz, radius, height, box) {
   // Define los límites del jugador como un AABB
-  const minX = px - radius;
-  const maxX = px + radius;
-  const minZ = pz - radius;
-  const maxZ = pz + radius;
+  const skin = Math.max(0, Math.min(radius * 0.5, COLLISION_SKIN));
+  const minX = px - radius + skin;
+  const maxX = px + radius - skin;
+  const minZ = pz - radius + skin;
+  const maxZ = pz + radius - skin;
   const minY = py;
   const maxY = py + height;
   

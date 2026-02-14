@@ -64,6 +64,12 @@ const FULL_ADJ = {
   scale: Number(calib.adjust?.full?.scale) || 1,
 };
 
+const COLLIDER_ADJ = {
+  x: Number(calib.adjust?.full?.collider?.x) || 0,
+  y: Number(calib.adjust?.full?.collider?.y) || 0,
+  z: Number(calib.adjust?.full?.collider?.z) || 0,
+};
+
 const MODEL_SCALE = (CELL_SIZE / ASSET_SIZE) * WALL_SCALE * FULL_ADJ.scale;
 const BLOCK_SIZE = CELL_SIZE * WALL_SCALE * FULL_ADJ.scale;
 const WALL_EDGE_SHIFT = (BLOCK_SIZE - CELL_SIZE) * 0.5;

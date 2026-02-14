@@ -47,9 +47,9 @@ function addWall(ix, iz) {
   
   // Agrega el collider para este muro
   const half = BLOCK_SIZE * 0.5;
-  const colliderX = wxCell;
-  const colliderZ = wzCell;
-  const colliderMinY = 0;
+  const colliderX = wxCell + COLLIDER_ADJ.x;
+  const colliderZ = wzCell + COLLIDER_ADJ.z;
+  const colliderMinY = COLLIDER_ADJ.y;
   
   colliders.push({
     minX: colliderX - half,
