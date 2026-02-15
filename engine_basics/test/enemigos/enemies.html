@@ -10,13 +10,166 @@
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     
     <!-- Scripts modulares en orden de dependencias -->
-    <script defer src="configuracionDatos.js"></script>
-    <script defer src="Coliciones.js"></script>
-    <script defer src="ConstruccionSala.js"></script>
-    <script defer src="Items.js"></script>
-    <script defer src="Navegacion.js"></script>
-    <script defer src="Movimiento.js"></script>
-    <script defer src="Inicializacion.js"></script>
+    <script defer src="scripts/core/configuracionDatos.js"></script>
+    <script defer src="scripts/systems/Coliciones.js"></script>
+    <script defer src="scripts/systems/ConstruccionSala.js"></script>
+    <script defer src="scripts/systems/Items.js"></script>
+    <script defer src="scripts/systems/Navegacion.js"></script>
+    <script defer src="scripts/systems/Movimiento.js"></script>
+    <script defer src="scripts/core/Inicializacion.js"></script>
+    
+    <style>
+      :root {
+        --bg-panel: rgba(16, 21, 29, 0.95);
+        --text: #e7e3d9;
+        --muted: #9aa3ad;
+        --accent: #f7b32b;
+        --border: rgba(255, 255, 255, 0.1);
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+      
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, sans-serif;
+      }
+      
+      /* Panel de control de expresiones */
+      .expression-panel {
+        position: fixed;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 220px;
+        background: var(--bg-panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        backdrop-filter: blur(10px);
+        z-index: 100;
+      }
+      
+      .expression-panel h2 {
+        font-size: 14px;
+        margin: 0 0 12px 0;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-align: center;
+      }
+      
+      .expression-btn {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 8px;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.15));
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        border-radius: 8px;
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      
+      .expression-btn:hover {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(139, 92, 246, 0.25));
+        transform: translateX(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      }
+      
+      .expression-btn.active {
+        background: linear-gradient(135deg, rgba(247, 179, 43, 0.35), rgba(45, 212, 191, 0.25));
+        border-color: var(--accent);
+        box-shadow: 0 0 16px rgba(247, 179, 43, 0.4);
+      }
+      
+      .expression-btn .emoji {
+        font-size: 18px;
+      }
+      
+      .divider {
+        height: 1px;
+        background: var(--border);
+        margin: 12px 0;
+      }
+      
+      .morph-control {
+        margin-bottom: 12px;
+      }
+      
+      .morph-control label {
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      
+      .morph-slider {
+        width: 100%;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.1);
+        outline: none;
+      }
+      
+      .morph-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      
+      .morph-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: 0 0 8px var(--accent);
+      }
+      
+      .morph-slider::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+        border: none;
+      }
+      
+      .morph-value {
+        display: inline-block;
+        font-size: 10px;
+        color: var(--accent);
+        font-weight: 600;
+        margin-left: 4px;
+      }
+      
+      .status-indicator {
+        font-size: 10px;
+        color: var(--muted);
+        text-align: center;
+        padding: 8px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 6px;
+        margin-top: 12px;
+      }
+      
+      .status-indicator.ready {
+        color: #22c55e;
+      }
+    </style>
   </head>
   
   <body>
@@ -24,7 +177,7 @@
       
       <!-- Assets -->
       <a-assets>
-        <a-asset-item id="pacmanModel" src="pacman.glb"></a-asset-item>
+        <a-asset-item id="pacmanModel" src="assets/Pacman.glb"></a-asset-item>
         <a-asset-item id="mdl-full" src="../../assets/blocks/full.glb"></a-asset-item>
       </a-assets>
 
@@ -75,5 +228,279 @@
       <a-sky color="#9aa0a6"></a-sky>
       
     </a-scene>
+    
+    <!-- Panel de Control de Expresiones -->
+    <div class="expression-panel">
+      <h2>🎭 Expresiones</h2>
+      
+      <button class="expression-btn active" data-expression="neutral">
+        <span class="emoji">😐</span>
+        <span>Neutral</span>
+      </button>
+      
+      <button class="expression-btn" data-expression="happy">
+        <span class="emoji">😊</span>
+        <span>Feliz</span>
+      </button>
+      
+      <button class="expression-btn" data-expression="angry">
+        <span class="emoji">😠</span>
+        <span>Enojado</span>
+      </button>
+      
+      <div class="divider"></div>
+      
+      <div id="morphControls">
+        <!-- Los controles deslizantes se generarán dinámicamente -->
+      </div>
+      
+      <button class="expression-btn" id="diagnosticBtn" style="background: rgba(249, 115, 22, 0.2); border-color: rgba(249, 115, 22, 0.5); margin-top: 8px;">
+        <span class="emoji">🔍</span>
+        <span>Diagnóstico</span>
+      </button>
+      
+      <div class="status-indicator" id="morphStatus">
+        Cargando...
+      </div>
+    </div>
+    
+    <!-- Script de control de Morph Targets -->
+    <script type="module">
+      import { MorphTargetController, morphTargetManager } from './scripts/systems/MorphTargetController.js';
+      
+      let enemyMorphController;
+      
+      // Esperar a que A-Frame esté listo
+      document.querySelector('a-scene').addEventListener('loaded', async () => {
+        console.log('🎬 Escena cargada, inicializando control de expresiones...');
+        
+        // Esperar un poco más para asegurar que el modelo esté completamente cargado
+        setTimeout(async () => {
+          await initializeMorphControl();
+        }, 1500);
+      });
+      
+      async function initializeMorphControl() {
+        try {
+          // Crear controlador para el enemigo
+          enemyMorphController = new MorphTargetController('enemy');
+          await enemyMorphController.initialize();
+          
+          // Registrar en el manager global
+          morphTargetManager.register('enemy', enemyMorphController);
+          
+          // Configurar callback
+          enemyMorphController.onExpressionChange = (expression) => {
+            updateActiveButton(expression);
+          };
+          
+          // Actualizar UI
+          updateStatus('ready');
+          createMorphSliders();
+          
+          // Sincronizar sliders con el estado inicial (neutral)
+          setTimeout(() => {
+            updateSlidersFromCurrentExpression('neutral');
+          }, 100);
+          
+          console.log('✅ Sistema de expresiones inicializado');
+          console.log('🎭 Morph targets disponibles:', enemyMorphController.getMorphTargets());
+          
+        } catch (error) {
+          console.error('❌ Error al inicializar control de expresiones:', error);
+          updateStatus('error');
+        }
+      }
+      
+      // Crear sliders para cada morph target
+      function createMorphSliders() {
+        const morphControls = document.getElementById('morphControls');
+        const morphTargets = enemyMorphController.getMorphTargets();
+        
+        morphControls.innerHTML = '';
+        
+        Object.keys(morphTargets).forEach(key => {
+          const control = document.createElement('div');
+          control.className = 'morph-control';
+          
+          const label = document.createElement('label');
+          label.innerHTML = `${key} <span class="morph-value" id="value-${key}">0.00</span>`;
+          
+          const slider = document.createElement('input');
+          slider.type = 'range';
+          slider.className = 'morph-slider';
+          slider.min = '0';
+          slider.max = '100';
+          slider.value = '0';
+          slider.dataset.morphKey = key;
+          
+          slider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) / 100;
+            enemyMorphController.setMorphTarget(key, value);
+            document.getElementById(`value-${key}`).textContent = value.toFixed(2);
+          });
+          
+          control.appendChild(label);
+          control.appendChild(slider);
+          morphControls.appendChild(control);
+        });
+      }
+      
+      // Actualizar estado visual
+      function updateStatus(status) {
+        const statusEl = document.getElementById('morphStatus');
+        
+        if (status === 'ready') {
+          statusEl.textContent = '✅ Sistema listo';
+          statusEl.classList.add('ready');
+        } else if (status === 'error') {
+          statusEl.textContent = '❌ Error al cargar';
+          statusEl.classList.remove('ready');
+        }
+      }
+      
+      // Actualizar botón activo
+      function updateActiveButton(expression) {
+        document.querySelectorAll('.expression-btn').forEach(btn => {
+          btn.classList.remove('active');
+          if (btn.dataset.expression === expression) {
+            btn.classList.add('active');
+          }
+        });
+      }
+      
+      // Event listeners para botones de expresión
+      document.querySelectorAll('.expression-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const expression = btn.dataset.expression;
+          
+          if (enemyMorphController && enemyMorphController.isReady) {
+            enemyMorphController.setExpression(expression, 300);
+            
+            // Actualizar sliders para reflejar la expresión
+            setTimeout(() => {
+              updateSlidersFromCurrentExpression(expression);
+            }, 350);
+          }
+        });
+      });
+      
+      // Actualizar sliders según la expresión actual
+      function updateSlidersFromCurrentExpression(expressionName) {
+        if (!enemyMorphController || !enemyMorphController.isReady) return;
+        if (!expressionName) {
+          console.warn('⚠️ No se especificó nombre de expresión');
+          return;
+        }
+        
+        const expression = enemyMorphController.expressions[expressionName];
+        
+        if (!expression) {
+          console.warn(`⚠️ Expresión "${expressionName}" no existe`);
+          return;
+        }
+        
+        if (expression) {
+          Object.keys(expression).forEach(key => {
+            const slider = document.querySelector(`[data-morph-key="${key}"]`);
+            const valueEl = document.getElementById(`value-${key}`);
+            
+            if (slider && valueEl) {
+              const value = expression[key] || 0;
+              slider.value = value * 100;
+              valueEl.textContent = value.toFixed(2);
+            }
+          });
+        }
+      }
+      
+      // Botón de diagnóstico
+      document.getElementById('diagnosticBtn').addEventListener('click', () => {
+        console.log('═══════════════════════════════════');
+        console.log('🔍 DIAGNÓSTICO DE MORPH TARGETS');
+        console.log('═══════════════════════════════════');
+        
+        const enemy = document.getElementById('enemy');
+        
+        if (!enemy) {
+          console.error('❌ No se encontró la entidad "enemy"');
+          return;
+        }
+        
+        console.log('📦 Entidad enemy:', enemy);
+        console.log('📦 Has loaded:', enemy.hasLoaded);
+        
+        const model = enemy.getObject3D('mesh');
+        console.log('📦 Objeto 3D (mesh):', model);
+        
+        if (!model) {
+          console.error('❌ No hay modelo 3D cargado');
+          console.error('💡 Espera unos segundos más o recarga la página');
+          return;
+        }
+        
+        console.log('\n🔍 Inspeccionando estructura del modelo...\n');
+        let foundMeshes = 0;
+        let meshesWithMorphs = 0;
+        
+        model.traverse((node) => {
+          if (node.isMesh) {
+            foundMeshes++;
+            console.log(`\n📦 Mesh #${foundMeshes}: "${node.name || 'sin nombre'}"`);
+            console.log('   Tipo:', node.type);
+            console.log('   Geometría:', node.geometry);
+            console.log('   Material:', node.material?.name || 'sin nombre');
+            
+            if (node.morphTargetDictionary) {
+              meshesWithMorphs++;
+              console.log('   ✅ TIENE MORPH TARGETS:');
+              console.log('      Dictionary:', node.morphTargetDictionary);
+              console.log('      Influences:', node.morphTargetInfluences);
+              console.log('      Cantidad:', Object.keys(node.morphTargetDictionary).length);
+            } else {
+              console.log('   ❌ NO tiene morphTargetDictionary');
+            }
+            
+            if (!node.morphTargetInfluences) {
+              console.log('   ❌ NO tiene morphTargetInfluences');
+            }
+          }
+        });
+        
+        console.log(`\n📊 RESUMEN:`);
+        console.log(`   Meshes encontrados: ${foundMeshes}`);
+        console.log(`   Meshes con morph targets: ${meshesWithMorphs}`);
+        
+        if (meshesWithMorphs === 0) {
+          console.log('\n❌ NO SE ENCONTRARON MORPH TARGETS');
+          console.log('\n💡 SOLUCIÓN:');
+          console.log('   1. Abre tu modelo en Blender');
+          console.log('   2. Verifica que tenga Shape Keys en Object Data Properties');
+          console.log('   3. Exporta como GLB con estas opciones:');
+          console.log('      - Pestaña Animation: ☑️ Animation');
+          console.log('      - Pestaña Animation: ☑️ Shape Keys ⬅️ CRÍTICO');
+          console.log('      - Pestaña Animation: ☑️ Shape Key Normals');
+          console.log('      - Pestaña Animation: ☑️ Shape Key Tangents');
+          console.log('   4. Lee la guía: docs/BLENDER_SHAPE_KEYS_EXPORT.md');
+          console.log('\n🌐 Verifica tu modelo en:');
+          console.log('   https://gltf-viewer.donmccurdy.com/');
+        } else {
+          console.log('\n✅ MODELO CORRECTO - Morph targets detectados');
+          
+          if (enemyMorphController) {
+            console.log('\n🎭 Estado del controlador:');
+            console.log('   isReady:', enemyMorphController.isReady);
+            console.log('   currentExpression:', enemyMorphController.currentExpression);
+            console.log('   Expresiones disponibles:', Object.keys(enemyMorphController.expressions));
+          }
+        }
+        
+        console.log('═══════════════════════════════════\n');
+      });
+      
+      // Exponer globalmente para debugging
+      window.enemyMorphController = enemyMorphController;
+      window.morphTargetManager = morphTargetManager;
+    </script>
   </body>
 </html>        
