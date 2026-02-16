@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tests - Enemigos</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .tests {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .test-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-color: #667eea;
+        }
+        
+        .test-card h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-card .icon {
+            font-size: 1.3em;
+        }
+        
+        .test-card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .test-card .features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .test-card .tag {
+            background: #f0f0f0;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            color: #555;
+        }
+        
+        .test-card .tag.highlight {
+            background: #667eea;
+            color: white;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #333;
+            font-size: 0.9em;
+        }
+        
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Tests - Enemigos</h1>
+        <p class="subtitle">Suite de pruebas para sistemas de enemigos y navegación</p>
+        
+        <div class="tests">
+            <!-- Test de Enemigos -->
+            <a href="enemies.html" class="test-card">
+                <h2>
+                    <span class="icon">👾</span>
+                    Simulación de Enemigos
+                </h2>
+                <p>
+                    Prueba completa del sistema de enemigos con IA, movimiento, colisiones y navegación. 
+                    Incluye construcción de salas y sistemas de items.
+                </p>
+                <div class="features">
+                    <span class="tag highlight">Enemigos</span>
+                    <span class="tag">IA</span>
+                    <span class="tag">Colisiones</span>
+                    <span class="tag">Navegación</span>
+                    <span class="tag">Items</span>
+                </div>
+            </a>
+            
+            <!-- Test de Dijkstra -->
+            <a href="dijkstra_test.html" class="test-card">
+                <h2>
+                    <span class="icon">🎯</span>
+                    Algoritmo Dijkstra
+                </h2>
+                <p>
+                    Visualizador interactivo del algoritmo de pathfinding Dijkstra. 
+                    Genera mapas aleatorios, define puntos de inicio/fin y visualiza el camino en 2D y 3D.
+                    Usa el modelo de Pacman que se mueve a la velocidad del jugador (8 unidades/segundo).
+                </p>
+                <div class="features">
+                    <span class="tag highlight">Pathfinding</span>
+                    <span class="tag">Dijkstra</span>
+                    <span class="tag">Visualización</span>
+                    <span class="tag">Animación</span>
+                    <span class="tag">Interactivo</span>
+                </div>
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p>
+                📚 Ver <a href="docs/ESTRUCTURA.md">estructura del proyecto</a> | 
+                📖 <a href="docs/DIJKSTRA_TEST.md">Guía de Dijkstra</a>
+            </p>
+            <p style="margin-top: 10px; color: #999;">
+                Classic Game - Suicide Squad | Engine Basics
+            </p>
+        </div>
+    </div>
+</body>
+</html>
