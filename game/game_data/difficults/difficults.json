@@ -1,417 +1,417 @@
 {
-    "niveles": {
-        "facil": {
-            "descripcion": "Dificultad para principiantes. Enemigos débiles, más boosts, menos spawns.",
-            "rango_tier": {
-                "minimo": 1,
-                "maximo": 1,
-                "progresion": "lineal"
-            },
-            "multiplicadores": {
-                "enemigos": {
-                    "vidas": 0.7,
-                    "ataque": 0.6,
-                    "defensa": 0.7,
-                    "deteccion": 0.8,
-                    "estrategia": 0.6,
-                    "velocidad": 0.85,
-                    "sigilo": 0.8,
-                    "tier_base": 1
-                },
-                "spawns": {
-                    "densidad_enemigos": 0.5,
-                    "numero_enemigos": 0.6,
-                    "rareza_boosts_mult": 0.8,
-                    "tier_spawn_control": 1.0
-                },
-                "items": {
-                    "tier_drop_rates": {
-                        "comun": 0.6,
-                        "raro": 0.3,
-                        "epico": 0.08,
-                        "legendario": 0.02
-                    },
-                    "boost_spawn_mult": 1.5,
-                    "tier_item_lock": 1
-                },
-                "bots": {
-                    "agresividad": 0.5,
-                    "estrategia": 0.7
-                },
-                "mapa": {
-                    "tamaño_mult": 1.0,
-                    "obstaculos": 0.7
-                },
-                "combate": {
-                    "daño_jugador": 1.2,
-                    "daño_enemigo": 0.8
-                },
-                "recompensas": {
-                    "puntos_mult": 1.3,
-                    "drop_rate": 1.5
-                }
-            },
-            "ajustes_especiales": {
-                "invulnerabilidad_enemigos": false,
-                "regeneracion_enemigos": false,
-                "retreat_on_hit": true
-            }
+  "niveles": {
+    "facil": {
+      "descripcion": "Dificultad para principiantes. Enemigos débiles, más boosts, menos spawns.",
+      "rango_tier": {
+        "minimo": 1,
+        "maximo": 1,
+        "progresion": "lineal"
+      },
+      "multiplicadores": {
+        "enemigos": {
+          "vidas": 0.7,
+          "ataque": 0.6,
+          "defensa": 0.7,
+          "deteccion": 0.8,
+          "estrategia": 0.6,
+          "velocidad": 0.85,
+          "sigilo": 0.8,
+          "tier_base": 1
         },
-        "normal": {
-            "descripcion": "Equilibrado para jugadores intermedios. Stats base con spawns estándar.",
-            "rango_tier": {
-                "minimo": 1,
-                "maximo": 2,
-                "progresion": "gradual"
-            },
-            "multiplicadores": {
-                "enemigos": {
-                    "vidas": 1.0,
-                    "ataque": 1.0,
-                    "defensa": 1.0,
-                    "deteccion": 1.0,
-                    "estrategia": 1.0,
-                    "velocidad": 1.0,
-                    "sigilo": 1.0,
-                    "tier_base": 1
-                },
-                "spawns": {
-                    "densidad_enemigos": 1.0,
-                    "numero_enemigos": 1.0,
-                    "rareza_boosts_mult": 1.0,
-                    "tier_spawn_control": 1.1
-                },
-                "items": {
-                    "tier_drop_rates": {
-                        "comun": 0.45,
-                        "raro": 0.35,
-                        "epico": 0.15,
-                        "legendario": 0.05
-                    },
-                    "boost_spawn_mult": 1.0,
-                    "tier_item_lock": 2
-                },
-                "bots": {
-                    "agresividad": 1.0,
-                    "estrategia": 1.0
-                },
-                "mapa": {
-                    "tamaño_mult": 1.0,
-                    "obstaculos": 1.0
-                },
-                "combate": {
-                    "daño_jugador": 1.0,
-                    "daño_enemigo": 1.0
-                },
-                "recompensas": {
-                    "puntos_mult": 1.0,
-                    "drop_rate": 1.0
-                }
-            },
-            "ajustes_especiales": {
-                "invulnerabilidad_enemigos": false,
-                "regeneracion_enemigos": false,
-                "retreat_on_hit": false
-            }
+        "spawns": {
+          "densidad_enemigos": 0.5,
+          "numero_enemigos": 0.6,
+          "rareza_boosts_mult": 0.8,
+          "tier_spawn_control": 1.0
         },
-        "dificil": {
-            "descripcion": "Mayor desafío. Enemigos más rápidos y resistentes, boosts más raros.",
-            "rango_tier": {
-                "minimo": 2,
-                "maximo": 3,
-                "progresion": "exponencial"
-            },
-            "multiplicadores": {
-                "enemigos": {
-                    "vidas": 1.3,
-                    "ataque": 1.4,
-                    "defensa": 1.2,
-                    "deteccion": 1.2,
-                    "estrategia": 1.3,
-                    "velocidad": 1.15,
-                    "sigilo": 1.2,
-                    "tier_base": 2
-                },
-                "spawns": {
-                    "densidad_enemigos": 1.4,
-                    "numero_enemigos": 1.3,
-                    "rareza_boosts_mult": 1.3,
-                    "tier_spawn_control": 1.3
-                },
-                "items": {
-                    "tier_drop_rates": {
-                        "comun": 0.3,
-                        "raro": 0.35,
-                        "epico": 0.25,
-                        "legendario": 0.1
-                    },
-                    "boost_spawn_mult": 0.9,
-                    "tier_item_lock": 3
-                },
-                "bots": {
-                    "agresividad": 1.3,
-                    "estrategia": 1.2
-                },
-                "mapa": {
-                    "tamaño_mult": 1.1,
-                    "obstaculos": 1.2
-                },
-                "combate": {
-                    "daño_jugador": 0.9,
-                    "daño_enemigo": 1.2
-                },
-                "recompensas": {
-                    "puntos_mult": 1.1,
-                    "drop_rate": 0.9
-                }
-            },
-            "ajustes_especiales": {
-                "invulnerabilidad_enemigos": true,
-                "regeneracion_enemigos": true,
-                "retreat_on_hit": false
-            }
+        "items": {
+          "tier_drop_rates": {
+            "comun": 0.6,
+            "raro": 0.3,
+            "epico": 0.08,
+            "legendario": 0.02
+          },
+          "boost_spawn_mult": 1.5,
+          "tier_item_lock": 1
         },
-        "experto": {
-            "descripcion": "Para expertos. Enemigos letales, oleadas intensas, mapa complejo.",
-            "rango_tier": {
-                "minimo": 3,
-                "maximo": 4,
-                "progresion": "exponencial_acelerada"
-            },
-            "multiplicadores": {
-                "enemigos": {
-                    "vidas": 1.7,
-                    "ataque": 1.8,
-                    "defensa": 1.6,
-                    "deteccion": 1.5,
-                    "estrategia": 1.6,
-                    "velocidad": 1.3,
-                    "sigilo": 1.5,
-                    "tier_base": 3
-                },
-                "spawns": {
-                    "densidad_enemigos": 1.8,
-                    "numero_enemigos": 1.6,
-                    "rareza_boosts_mult": 1.6,
-                    "tier_spawn_control": 1.6
-                },
-                "items": {
-                    "tier_drop_rates": {
-                        "comun": 0.15,
-                        "raro": 0.25,
-                        "epico": 0.4,
-                        "legendario": 0.2
-                    },
-                    "boost_spawn_mult": 0.7,
-                    "tier_item_lock": 4
-                },
-                "bots": {
-                    "agresividad": 1.6,
-                    "estrategia": 1.5
-                },
-                "mapa": {
-                    "tamaño_mult": 1.2,
-                    "obstaculos": 1.4
-                },
-                "combate": {
-                    "daño_jugador": 0.8,
-                    "daño_enemigo": 1.4
-                },
-                "recompensas": {
-                    "puntos_mult": 1.2,
-                    "drop_rate": 0.8
-                }
-            },
-            "ajustes_especiales": {
-                "invulnerabilidad_intermitente": true,
-                "regeneracion_enemigos": true,
-                "oleadas_continuas": true,
-                "retreat_on_hit": false
-            }
+        "bots": {
+          "agresividad": 0.5,
+          "estrategia": 0.7
         },
-        "pesadilla": {
-            "descripcion": "Modo infierno. Enemigos imparables, sin piedad, boosts ultra raros.",
-            "rango_tier": {
-                "minimo": 4,
-                "maximo": 4,
-                "progresion": "critico"
-            },
-            "multiplicadores": {
-                "enemigos": {
-                    "vidas": 2.2,
-                    "ataque": 2.2,
-                    "defensa": 2.0,
-                    "deteccion": 1.8,
-                    "estrategia": 2.0,
-                    "velocidad": 1.5,
-                    "sigilo": 1.8,
-                    "tier_base": 4
-                },
-                "spawns": {
-                    "densidad_enemigos": 2.5,
-                    "numero_enemigos": 2.2,
-                    "rareza_boosts_mult": 2.0,
-                    "tier_spawn_control": 2.0
-                },
-                "items": {
-                    "tier_drop_rates": {
-                        "comun": 0.05,
-                        "raro": 0.15,
-                        "epico": 0.4,
-                        "legendario": 0.4
-                    },
-                    "boost_spawn_mult": 0.5,
-                    "tier_item_lock": 4
-                },
-                "bots": {
-                    "agresividad": 2.0,
-                    "estrategia": 1.8
-                },
-                "mapa": {
-                    "tamaño_mult": 1.3,
-                    "obstaculos": 1.6
-                },
-                "combate": {
-                    "daño_jugador": 0.7,
-                    "daño_enemigo": 1.6
-                },
-                "recompensas": {
-                    "puntos_mult": 1.4,
-                    "drop_rate": 0.7
-                }
-            },
-            "ajustes_especiales": {
-                "invulnerabilidad_permanente": false,
-                "regeneracion_rapida": true,
-                "spawns_instantaneos": true,
-                "sin_pausa": true,
-                "retreat_on_hit": false
-            }
+        "mapa": {
+          "tamaño_mult": 1.0,
+          "obstaculos": 0.7
+        },
+        "combate": {
+          "daño_jugador": 1.2,
+          "daño_enemigo": 0.8
+        },
+        "recompensas": {
+          "puntos_mult": 1.3,
+          "drop_rate": 1.5
         }
+      },
+      "ajustes_especiales": {
+        "invulnerabilidad_enemigos": false,
+        "regeneracion_enemigos": false,
+        "retreat_on_hit": true
+      }
     },
-    "tiers_enemigos": {
-        "tier_1": {
-            "nombre": "Soldado Básico",
-            "rango_nivel": {
-                "minimo": 1,
-                "maximo": 5
-            },
-            "atributos_mult": 1.0,
-            "drop_rate_items": 0.8,
-            "peso_spawn": 0.6,
-            "items_disponibles": [
-                "comun"
-            ]
+    "normal": {
+      "descripcion": "Equilibrado para jugadores intermedios. Stats base con spawns estándar.",
+      "rango_tier": {
+        "minimo": 1,
+        "maximo": 2,
+        "progresion": "gradual"
+      },
+      "multiplicadores": {
+        "enemigos": {
+          "vidas": 1.0,
+          "ataque": 1.0,
+          "defensa": 1.0,
+          "deteccion": 1.0,
+          "estrategia": 1.0,
+          "velocidad": 1.0,
+          "sigilo": 1.0,
+          "tier_base": 1
         },
-        "tier_2": {
-            "nombre": "Soldado Veterano",
-            "rango_nivel": {
-                "minimo": 5,
-                "maximo": 15
-            },
-            "atributos_mult": 1.3,
-            "drop_rate_items": 1.0,
-            "peso_spawn": 0.25,
-            "items_disponibles": [
-                "comun",
-                "raro"
-            ]
+        "spawns": {
+          "densidad_enemigos": 1.0,
+          "numero_enemigos": 1.0,
+          "rareza_boosts_mult": 1.0,
+          "tier_spawn_control": 1.1
         },
-        "tier_3": {
-            "nombre": "Comandante",
-            "rango_nivel": {
-                "minimo": 15,
-                "maximo": 30
-            },
-            "atributos_mult": 1.6,
-            "drop_rate_items": 1.3,
-            "peso_spawn": 0.1,
-            "items_disponibles": [
-                "raro",
-                "epico"
-            ]
+        "items": {
+          "tier_drop_rates": {
+            "comun": 0.45,
+            "raro": 0.35,
+            "epico": 0.15,
+            "legendario": 0.05
+          },
+          "boost_spawn_mult": 1.0,
+          "tier_item_lock": 2
         },
-        "tier_4": {
-            "nombre": "Élite/Boss",
-            "rango_nivel": {
-                "minimo": 30,
-                "maximo": 50
-            },
-            "atributos_mult": 2.0,
-            "drop_rate_items": 1.8,
-            "peso_spawn": 0.05,
-            "items_disponibles": [
-                "epico",
-                "legendario"
-            ]
+        "bots": {
+          "agresividad": 1.0,
+          "estrategia": 1.0
+        },
+        "mapa": {
+          "tamaño_mult": 1.0,
+          "obstaculos": 1.0
+        },
+        "combate": {
+          "daño_jugador": 1.0,
+          "daño_enemigo": 1.0
+        },
+        "recompensas": {
+          "puntos_mult": 1.0,
+          "drop_rate": 1.0
         }
+      },
+      "ajustes_especiales": {
+        "invulnerabilidad_enemigos": false,
+        "regeneracion_enemigos": false,
+        "retreat_on_hit": false
+      }
     },
-    "sistema_drop_items": {
-        "tipos_raros": {
-            "comun": {
-                "valor_base": 10,
-                "rango_tier": [
-                    1,
-                    2
-                ],
-                "probabilidad_base": 0.4
-            },
-            "raro": {
-                "valor_base": 50,
-                "rango_tier": [
-                    2,
-                    3
-                ],
-                "probabilidad_base": 0.25
-            },
-            "epico": {
-                "valor_base": 150,
-                "rango_tier": [
-                    3,
-                    4
-                ],
-                "probabilidad_base": 0.25
-            },
-            "legendario": {
-                "valor_base": 500,
-                "rango_tier": [
-                    4,
-                    4
-                ],
-                "probabilidad_base": 0.1
-            }
+    "dificil": {
+      "descripcion": "Mayor desafío. Enemigos más rápidos y resistentes, boosts más raros.",
+      "rango_tier": {
+        "minimo": 2,
+        "maximo": 3,
+        "progresion": "exponencial"
+      },
+      "multiplicadores": {
+        "enemigos": {
+          "vidas": 1.3,
+          "ataque": 1.4,
+          "defensa": 1.2,
+          "deteccion": 1.2,
+          "estrategia": 1.3,
+          "velocidad": 1.15,
+          "sigilo": 1.2,
+          "tier_base": 2
         },
-        "control_drop": {
-            "respetar_tier_maximo": true,
-            "escala_con_nivel": true,
-            "garantia_legendario_boss": true
+        "spawns": {
+          "densidad_enemigos": 1.4,
+          "numero_enemigos": 1.3,
+          "rareza_boosts_mult": 1.3,
+          "tier_spawn_control": 1.3
+        },
+        "items": {
+          "tier_drop_rates": {
+            "comun": 0.3,
+            "raro": 0.35,
+            "epico": 0.25,
+            "legendario": 0.1
+          },
+          "boost_spawn_mult": 0.9,
+          "tier_item_lock": 3
+        },
+        "bots": {
+          "agresividad": 1.3,
+          "estrategia": 1.2
+        },
+        "mapa": {
+          "tamaño_mult": 1.1,
+          "obstaculos": 1.2
+        },
+        "combate": {
+          "daño_jugador": 0.9,
+          "daño_enemigo": 1.2
+        },
+        "recompensas": {
+          "puntos_mult": 1.1,
+          "drop_rate": 0.9
         }
+      },
+      "ajustes_especiales": {
+        "invulnerabilidad_enemigos": true,
+        "regeneracion_enemigos": true,
+        "retreat_on_hit": false
+      }
     },
-    "formulas_calculo": {
-        "tier_enemigo_actual": "tier_actual = clamp(tier_base + floor(nivel_actual / 10), rango_tier.minimo, rango_tier.maximo)",
-        "drop_item_por_tier": "drop_final = boost_drop_prob * recompensas.drop_rate * items.tier_drop_rates[rareza] * enemigo.drop_rate_items * validar_tier_rarity(enemy_tier, rareza)",
-        "stats_finales": "stat_final = base_stat * multiplicadores.enemigos[stat] * tiers_enemigos[tier_actual].atributos_mult + (nivel_mapa * 0.1) * dificultad_index",
-        "prob_spawn_tier": "prob_tier = (peso_spawn[tier] * tier_spawn_control * (1 + progresion_dificultad)) / suma_pesos",
-        "rareza_boost_final": "rareza_final = rareza_base * spawns.rareza_boosts_mult * items.boost_spawn_mult",
-        "puntos_muerte": "puntos_final = puntos_base * recompensas.puntos_mult * (1 + dificultad_index * 0.2) * (1 + tier_actual * 0.4)",
-        "selector_item_tier": "if(enemy_tier < item_rarity_minimo) { rechazar } else if (enemy_tier >= item_rarity_maximo) { permitir } else { aplicar probabilidad reducida }"
+    "experto": {
+      "descripcion": "Para expertos. Enemigos letales, oleadas intensas, mapa complejo.",
+      "rango_tier": {
+        "minimo": 3,
+        "maximo": 4,
+        "progresion": "exponencial_acelerada"
+      },
+      "multiplicadores": {
+        "enemigos": {
+          "vidas": 1.7,
+          "ataque": 1.8,
+          "defensa": 1.6,
+          "deteccion": 1.5,
+          "estrategia": 1.6,
+          "velocidad": 1.3,
+          "sigilo": 1.5,
+          "tier_base": 3
+        },
+        "spawns": {
+          "densidad_enemigos": 1.8,
+          "numero_enemigos": 1.6,
+          "rareza_boosts_mult": 1.6,
+          "tier_spawn_control": 1.6
+        },
+        "items": {
+          "tier_drop_rates": {
+            "comun": 0.15,
+            "raro": 0.25,
+            "epico": 0.4,
+            "legendario": 0.2
+          },
+          "boost_spawn_mult": 0.7,
+          "tier_item_lock": 4
+        },
+        "bots": {
+          "agresividad": 1.6,
+          "estrategia": 1.5
+        },
+        "mapa": {
+          "tamaño_mult": 1.2,
+          "obstaculos": 1.4
+        },
+        "combate": {
+          "daño_jugador": 0.8,
+          "daño_enemigo": 1.4
+        },
+        "recompensas": {
+          "puntos_mult": 1.2,
+          "drop_rate": 0.8
+        }
+      },
+      "ajustes_especiales": {
+        "invulnerabilidad_intermitente": true,
+        "regeneracion_enemigos": true,
+        "oleadas_continuas": true,
+        "retreat_on_hit": false
+      }
     },
-    "indices_dificultad": {
-        "facil": 0,
-        "normal": 1,
-        "dificil": 2,
-        "experto": 3,
-        "pesadilla": 4
-    },
-    "constantes_globales": {
-        "dificultad_index_max": 4,
-        "tier_enemigo_max": 4,
-        "tier_enemigo_min": 1,
-        "base_tiempo_regen": 10,
-        "defensa_divisor": 10,
-        "sigilo_penalizacion": 10,
-        "burst_bonus": 0.3,
-        "control_tier_estricto": true,
-        "escalado_exponencial": true
+    "pesadilla": {
+      "descripcion": "Modo infierno. Enemigos imparables, sin piedad, boosts ultra raros.",
+      "rango_tier": {
+        "minimo": 4,
+        "maximo": 4,
+        "progresion": "critico"
+      },
+      "multiplicadores": {
+        "enemigos": {
+          "vidas": 2.2,
+          "ataque": 2.2,
+          "defensa": 2.0,
+          "deteccion": 1.8,
+          "estrategia": 2.0,
+          "velocidad": 1.5,
+          "sigilo": 1.8,
+          "tier_base": 4
+        },
+        "spawns": {
+          "densidad_enemigos": 2.5,
+          "numero_enemigos": 2.2,
+          "rareza_boosts_mult": 2.0,
+          "tier_spawn_control": 2.0
+        },
+        "items": {
+          "tier_drop_rates": {
+            "comun": 0.05,
+            "raro": 0.15,
+            "epico": 0.4,
+            "legendario": 0.4
+          },
+          "boost_spawn_mult": 0.5,
+          "tier_item_lock": 4
+        },
+        "bots": {
+          "agresividad": 2.0,
+          "estrategia": 1.8
+        },
+        "mapa": {
+          "tamaño_mult": 1.3,
+          "obstaculos": 1.6
+        },
+        "combate": {
+          "daño_jugador": 0.7,
+          "daño_enemigo": 1.6
+        },
+        "recompensas": {
+          "puntos_mult": 1.4,
+          "drop_rate": 0.7
+        }
+      },
+      "ajustes_especiales": {
+        "invulnerabilidad_permanente": false,
+        "regeneracion_rapida": true,
+        "spawns_instantaneos": true,
+        "sin_pausa": true,
+        "retreat_on_hit": false
+      }
     }
+  },
+  "tiers_enemigos": {
+    "tier_1": {
+      "nombre": "Soldado Básico",
+      "rango_nivel": {
+        "minimo": 1,
+        "maximo": 5
+      },
+      "atributos_mult": 1.0,
+      "drop_rate_items": 0.8,
+      "peso_spawn": 0.6,
+      "items_disponibles": [
+        "comun"
+      ]
+    },
+    "tier_2": {
+      "nombre": "Soldado Veterano",
+      "rango_nivel": {
+        "minimo": 5,
+        "maximo": 15
+      },
+      "atributos_mult": 1.3,
+      "drop_rate_items": 1.0,
+      "peso_spawn": 0.25,
+      "items_disponibles": [
+        "comun",
+        "raro"
+      ]
+    },
+    "tier_3": {
+      "nombre": "Comandante",
+      "rango_nivel": {
+        "minimo": 15,
+        "maximo": 30
+      },
+      "atributos_mult": 1.6,
+      "drop_rate_items": 1.3,
+      "peso_spawn": 0.1,
+      "items_disponibles": [
+        "raro",
+        "epico"
+      ]
+    },
+    "tier_4": {
+      "nombre": "Élite/Boss",
+      "rango_nivel": {
+        "minimo": 30,
+        "maximo": 50
+      },
+      "atributos_mult": 2.0,
+      "drop_rate_items": 1.8,
+      "peso_spawn": 0.05,
+      "items_disponibles": [
+        "epico",
+        "legendario"
+      ]
+    }
+  },
+  "sistema_drop_items": {
+    "tipos_raros": {
+      "comun": {
+        "valor_base": 10,
+        "rango_tier": [
+          1,
+          2
+        ],
+        "probabilidad_base": 0.4
+      },
+      "raro": {
+        "valor_base": 50,
+        "rango_tier": [
+          2,
+          3
+        ],
+        "probabilidad_base": 0.25
+      },
+      "epico": {
+        "valor_base": 150,
+        "rango_tier": [
+          3,
+          4
+        ],
+        "probabilidad_base": 0.25
+      },
+      "legendario": {
+        "valor_base": 500,
+        "rango_tier": [
+          4,
+          4
+        ],
+        "probabilidad_base": 0.1
+      }
+    },
+    "control_drop": {
+      "respetar_tier_maximo": true,
+      "escala_con_nivel": true,
+      "garantia_legendario_boss": true
+    }
+  },
+  "formulas_calculo": {
+    "tier_enemigo_actual": "tier_actual = clamp(tier_base + floor(nivel_actual / 10), rango_tier.minimo, rango_tier.maximo)",
+    "drop_item_por_tier": "drop_final = boost_drop_prob * recompensas.drop_rate * items.tier_drop_rates[rareza] * enemigo.drop_rate_items * validar_tier_rarity(enemy_tier, rareza)",
+    "stats_finales": "stat_final = base_stat * multiplicadores.enemigos[stat] * tiers_enemigos[tier_actual].atributos_mult + (nivel_mapa * 0.1) * dificultad_index",
+    "prob_spawn_tier": "prob_tier = (peso_spawn[tier] * tier_spawn_control * (1 + progresion_dificultad)) / suma_pesos",
+    "rareza_boost_final": "rareza_final = rareza_base * spawns.rareza_boosts_mult * items.boost_spawn_mult",
+    "puntos_muerte": "puntos_final = puntos_base * recompensas.puntos_mult * (1 + dificultad_index * 0.2) * (1 + tier_actual * 0.4)",
+    "selector_item_tier": "if(enemy_tier < item_rarity_minimo) { rechazar } else if (enemy_tier >= item_rarity_maximo) { permitir } else { aplicar probabilidad reducida }"
+  },
+  "indices_dificultad": {
+    "facil": 0,
+    "normal": 1,
+    "dificil": 2,
+    "experto": 3,
+    "pesadilla": 4
+  },
+  "constantes_globales": {
+    "dificultad_index_max": 4,
+    "tier_enemigo_max": 4,
+    "tier_enemigo_min": 1,
+    "base_tiempo_regen": 10,
+    "defensa_divisor": 10,
+    "sigilo_penalizacion": 10,
+    "burst_bonus": 0.3,
+    "control_tier_estricto": true,
+    "escalado_exponencial": true
+  }
 }

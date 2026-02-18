@@ -148,6 +148,8 @@
         pacman: false,
         minimapRadius: 7,
       };
+      let modesCache = [];
+      let diffKeys = [];
 
       function normalizeOdd(value, fallback) {
         let n = Number(value);
@@ -201,11 +203,37 @@
         updateSummary();
       }
 
+      function renderDifficultyOptions() {
+        diffGroup.innerHTML = '';
+        const mode = modesCache.find((entry) => entry.id === state.mode);
+        const allowed = Array.isArray(mode?.dificultades_disponibles) ? mode.dificultades_disponibles : diffKeys;
+        const options = allowed.filter((key) => diffKeys.includes(key));
+        if (!options.length) return;
+        if (!options.includes(state.difficulty)) {
+          state.difficulty = options[0];
+        }
+        options.forEach((key) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'toggle-btn';
+          btn.dataset.value = key;
+          btn.textContent = key.toUpperCase();
+          btn.addEventListener('click', () => {
+            state.difficulty = key;
+            setActive(diffGroup, key);
+            updateSummary();
+          });
+          diffGroup.appendChild(btn);
+        });
+        setActive(diffGroup, state.difficulty);
+      }
+
       async function loadOptions() {
         try {
           const modes = await fetch(MODE_URL).then((res) => res.json());
           modeGroup.innerHTML = '';
-          modes.modos.forEach((mode) => {
+          modesCache = Array.isArray(modes?.modos) ? modes.modos : [];
+          modesCache.forEach((mode) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'toggle-btn';
@@ -214,12 +242,14 @@
             btn.addEventListener('click', () => {
               state.mode = mode.id;
               setActive(modeGroup, mode.id);
+              renderDifficultyOptions();
               updateSummary();
             });
             modeGroup.appendChild(btn);
           });
         } catch {
           modeGroup.innerHTML = '';
+          modesCache = [{ id: 'modo_classic', dificultades_disponibles: ['normal'] }];
           ['modo_classic'].forEach((mode) => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -229,6 +259,7 @@
             btn.addEventListener('click', () => {
               state.mode = mode;
               setActive(modeGroup, mode);
+              renderDifficultyOptions();
               updateSummary();
             });
             modeGroup.appendChild(btn);
@@ -237,35 +268,11 @@
 
         try {
           const diff = await fetch(DIFF_URL).then((res) => res.json());
-          diffGroup.innerHTML = '';
-          Object.keys(diff.niveles).forEach((key) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'toggle-btn';
-            btn.dataset.value = key;
-            btn.textContent = key.toUpperCase();
-            btn.addEventListener('click', () => {
-              state.difficulty = key;
-              setActive(diffGroup, key);
-              updateSummary();
-            });
-            diffGroup.appendChild(btn);
-          });
+          diffKeys = Object.keys(diff.niveles || {});
+          renderDifficultyOptions();
         } catch {
-          diffGroup.innerHTML = '';
-          ['normal'].forEach((key) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'toggle-btn';
-            btn.dataset.value = key;
-            btn.textContent = key.toUpperCase();
-            btn.addEventListener('click', () => {
-              state.difficulty = key;
-              setActive(diffGroup, key);
-              updateSummary();
-            });
-            diffGroup.appendChild(btn);
-          });
+          diffKeys = ['normal'];
+          renderDifficultyOptions();
         }
 
         sizeGroup.innerHTML = '';
@@ -368,7 +375,7 @@
       await loadOptions();
       loadConfig();
       setActive(modeGroup, state.mode);
-      setActive(diffGroup, state.difficulty);
+      renderDifficultyOptions();
       setActive(sizeGroup, 'medium');
       syncState();
     </script>

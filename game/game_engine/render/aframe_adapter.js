@@ -263,6 +263,7 @@ export function buildWorldScene({
   }
 
   const walls = [];
+  const renderLayers = Math.max(1, Math.min(1, Math.round(wallHeight) || 1));
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const model = modelFor(map, width, height, x, y, base);
@@ -291,7 +292,7 @@ export function buildWorldScene({
       const rx = (ox * cos) + (oz * sin);
       const rz = (-ox * sin) + (oz * cos);
 
-      for (let h = 0; h < wallHeight; h++) {
+      for (let h = 0; h < renderLayers; h++) {
         const block = document.createElement('a-entity');
         block.setAttribute('gltf-model', modelId);
         if (shadowsEnabled) {

@@ -544,7 +544,7 @@
             "rango": "global"
         },
         "color": "#00CED1",
-        "asset": "game_data/assets/items/map_enemies_trap.glb"
+        "asset": ""
     },
     {
         "id": "map_enemys",

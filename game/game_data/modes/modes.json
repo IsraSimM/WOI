@@ -4,7 +4,12 @@
       "id": "modo_classic",
       "nombre": "Clásico / Survival",
       "descripcion": "Modo principal estilo arcade: recolecta puntos/boosts, evita o elimina enemigos, llega a la salida antes de perder todas las vidas. Ideal para partidas rápidas y aprender mecánicas.",
-      "dificultades_disponibles": ["facil", "normal", "dificil", "experto"],
+      "dificultades_disponibles": [
+        "facil",
+        "normal",
+        "dificil",
+        "experto"
+      ],
       "personajes_disponibles": [
         "Personaje",
         "Personaje_advanced",
@@ -65,7 +70,12 @@
       "id": "modo_chaos",
       "nombre": "Caos Total",
       "descripcion": "Todo puede pasar: boosts trampa, cambios de mapa repentinos, enemigos muy agresivos y modificadores globales locos. Para quienes quieren adrenalina y risas.",
-      "dificultades_disponibles": ["normal", "dificil", "experto", "pesadilla"],
+      "dificultades_disponibles": [
+        "normal",
+        "dificil",
+        "experto",
+        "pesadilla"
+      ],
       "personajes_disponibles": "todos",
       "enemigos_disponibles": "todos",
       "bots_disponibles": "todos",
@@ -87,7 +97,11 @@
       "id": "modo_challenge",
       "nombre": "Desafío / Hard Run",
       "descripcion": "Partidas cortas e intensas con temporizador estricto. Enfocado en velocidad, decisiones rápidas y uso óptimo de boosts. Ideal para leaderboards.",
-      "dificultades_disponibles": ["dificil", "experto", "pesadilla"],
+      "dificultades_disponibles": [
+        "dificil",
+        "experto",
+        "pesadilla"
+      ],
       "personajes_disponibles": [
         "Personaje_speedster",
         "Personaje_asesino",
@@ -135,7 +149,11 @@
       "id": "modo_defense",
       "nombre": "Defensa de Zona",
       "descripcion": "Protege una zona central (la salida o un punto clave) de oleadas crecientes de enemigos. Enfoque cooperativo o solitario defensivo.",
-      "dificultades_disponibles": ["normal", "dificil", "experto"],
+      "dificultades_disponibles": [
+        "normal",
+        "dificil",
+        "experto"
+      ],
       "personajes_disponibles": [
         "Personaje_tank",
         "Personaje_healer",
@@ -182,7 +200,11 @@
       "id": "modo_ghost_hunt",
       "nombre": "Caza de Fantasmas",
       "descripcion": "Tú eres el cazador: usa power pellets y boosts ofensivos para eliminar la mayor cantidad de enemigos posible en tiempo limitado.",
-      "dificultades_disponibles": ["normal", "dificil", "experto"],
+      "dificultades_disponibles": [
+        "normal",
+        "dificil",
+        "experto"
+      ],
       "personajes_disponibles": [
         "Personaje_asesino",
         "Personaje_advanced",

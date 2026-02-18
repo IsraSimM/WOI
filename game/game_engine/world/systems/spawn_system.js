@@ -22,7 +22,7 @@ export function createSpawnSystem({
   difficulty = {},
 } = {}) {
   const spawnCfg = config.spawn || {};
-  const intervalMs = clampNum(spawnCfg.interval_ms, 850);
+  const baseIntervalMs = clampNum(spawnCfg.interval_ms, 850);
   const maxActiveBase = clampNum(spawnCfg.max_active_base, 12);
   const maxActiveAreaDiv = clampNum(spawnCfg.max_active_area_div, 55);
   const minDist = clampNum(spawnCfg.min_dist_cells, 6) * cellSize;
@@ -32,7 +32,7 @@ export function createSpawnSystem({
   const despawnCheckMs = Math.max(500, Math.round(clampNum(spawnCfg.despawn_check_ms, 2000)));
   const despawnStuckMs = Math.max(2000, Math.round(clampNum(spawnCfg.despawn_stuck_ms, 12000)));
   const despawnInsideWall = spawnCfg.despawn_inside_wall !== false;
-  const spawnBatch = Math.max(1, Math.round(clampNum(spawnCfg.spawn_batch, 2)));
+  const spawnBatchBase = Math.max(1, Math.round(clampNum(spawnCfg.spawn_batch, 2)));
   const spawnAttempts = Math.max(10, Math.round(clampNum(spawnCfg.spawn_attempts, 60)));
   const fallbackAttempts = Math.max(10, Math.round(clampNum(spawnCfg.fallback_attempts, 80)));
   const spawnGraceMs = Math.max(0, Math.round(clampNum(spawnCfg.grace_ms, 2200)));
@@ -51,6 +51,9 @@ export function createSpawnSystem({
   const diffSpawns = difficulty?.multiplicadores?.spawns || {};
   const densityMult = clampNum(diffSpawns.densidad_enemigos, 1);
   const countMult = clampNum(diffSpawns.numero_enemigos, 1);
+  const spawnIntensity = Math.max(0.45, (densityMult * 0.7) + (countMult * 0.3));
+  const intervalMs = Math.max(250, Math.round(baseIntervalMs / spawnIntensity));
+  const spawnBatch = Math.max(1, Math.round(spawnBatchBase * Math.max(0.6, countMult)));
 
   const openCells = collectOpenCells(map, width, height);
 

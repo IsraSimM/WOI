@@ -14,11 +14,16 @@
                 <span class="label">UBICACIÓN ACTUAL</span>
                 <span class="value">SECTOR 7-B // VOID MARGINS</span>
             </div>
+            <div class="location" id="currentConfig">
+                <span class="label">CONFIG ACTUAL</span>
+                <span class="value" id="currentMode">MODO: -</span>
+                <span class="value" id="currentDifficulty">DIFICULTAD: -</span>
+            </div>
             <div class="user-id">
                 <span class="label">IDENTIDAD DE USUARIO</span>
                 <div class="user-row">
                     <span class="value">OPERATIVO_724</span>
-                    <button class="icon-btn" data-route="config.html" aria-label="Configuracion">
+                    <button class="icon-btn" data-route="config.html" aria-label="Configuraci?n">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01A1.65 1.65 0 0 0 9 4.6V4a2 2 0 0 1 4 0v.09c0 .69.4 1.31 1.02 1.59.61.28 1.33.17 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01c.28.62.9 1.02 1.59 1.02H21a2 2 0 0 1 0 4h-.09c-.69 0-1.31.4-1.51 1z"></path>
@@ -99,9 +104,27 @@
             <span>© 2026 TLAHUITOS STUDIOS. TODOS LOS DERECHOS RESERVADOS.</span>
         </div>
 
-        <!-- Background image -->
-         
     </div>
     <script type="module" src="../ui/router.js"></script>
+    <script type="module">
+        const CONFIG_KEY = 'game_config_v1';
+        const modeEl = document.getElementById('currentMode');
+        const diffEl = document.getElementById('currentDifficulty');
+
+        function normalizeLabel(value, fallback) {
+            if (!value) return fallback;
+            return String(value).replace(/_/g, ' ').toUpperCase();
+        }
+
+        try {
+            const raw = localStorage.getItem(CONFIG_KEY);
+            const cfg = raw ? JSON.parse(raw) : {};
+            if (modeEl) modeEl.textContent = `MODO: ${normalizeLabel(cfg.mode, 'MODO_CLASSIC')}`;
+            if (diffEl) diffEl.textContent = `DIFICULTAD: ${normalizeLabel(cfg.difficulty, 'NORMAL')}`;
+        } catch {
+            if (modeEl) modeEl.textContent = 'MODO: MODO_CLASSIC';
+            if (diffEl) diffEl.textContent = 'DIFICULTAD: NORMAL';
+        }
+    </script>
 </body>
 </html>

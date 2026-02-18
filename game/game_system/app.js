@@ -299,6 +299,8 @@ function saveSnapshot({
   playerState,
   cellSize,
   wallHeight,
+  score = 0,
+  killCount = 0,
   saveName,
   saveId = null,
 }) {
@@ -330,11 +332,14 @@ function saveSnapshot({
       playerAttemptsLimit: playerState.attemptsLimit,
       playerHealth: playerState.health,
       playerLives: Math.max(0, playerState.attemptsLimit - playerState.attemptsUsed),
+      playerScore: Math.max(0, Math.round(score || 0)),
+      playerKills: Math.max(0, Math.round(killCount || 0)),
       mapWidth: worldState.width,
       mapHeight: worldState.height,
       wallHeight: Number.isFinite(wallHeight) ? wallHeight : null,
     },
   });
+  if (Number.isFinite(wallHeight)) snapshot.wallHeight = Math.round(wallHeight);
 
   if (saveId) upsertSnapshot(snapshot, saveName, saveId);
   else addSnapshot(snapshot, saveName);
@@ -386,7 +391,14 @@ async function initGame() {
     audio.volume = 0.55;
     return audio;
   });
+  const shotAudioPool = Array.from({ length: 4 }, () => {
+    const audio = new Audio(resolveGameUrl('game_data/assets/audio/sounds/character/disparo.wav'));
+    audio.preload = 'auto';
+    audio.volume = 0.5;
+    return audio;
+  });
   let stepIndex = 0;
+  let shotIndex = 0;
   let lastStepAt = 0;
 
   introAudio.addEventListener('ended', () => {
@@ -417,6 +429,7 @@ async function initGame() {
     introAudio.pause();
     loopAudio.pause();
     stepAudioPool.forEach((audio) => audio.pause());
+    shotAudioPool.forEach((audio) => audio.pause());
   }
 
   function pauseAudio() {
@@ -425,6 +438,7 @@ async function initGame() {
     introAudio.pause();
     loopAudio.pause();
     stepAudioPool.forEach((audio) => audio.pause());
+    shotAudioPool.forEach((audio) => audio.pause());
   }
 
   function resumeAudio() {
@@ -440,6 +454,16 @@ async function initGame() {
   function playFootstep() {
     if (!audioStarted) return;
     const audio = stepAudioPool[stepIndex++ % stepAudioPool.length];
+    audio.currentTime = 0;
+    const playPromise = audio.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {});
+    }
+  }
+
+  function playShot() {
+    if (!audioStarted) return;
+    const audio = shotAudioPool[shotIndex++ % shotAudioPool.length];
     audio.currentTime = 0;
     const playPromise = audio.play();
     if (playPromise && typeof playPromise.catch === 'function') {
@@ -531,6 +555,8 @@ async function initGame() {
     const paramWallHeight = Number(params.get('wallHeight'));
     const paramWorldName = params.get('name');
     const selectedMode = paramMode || config.mode || 'modo_classic';
+    const modeGameplayById = (id) => (gameplayData?.modes?.[id] || {});
+    let activeModeGameplay = modeGameplayById(selectedMode);
     const modeConfig = Array.isArray(modesData?.modos)
       ? modesData.modos.find((mode) => mode.id === selectedMode)
       : null;
@@ -593,6 +619,10 @@ async function initGame() {
     let worldArea = 0;
     let worldId = null;
     let snapshotWallHeight = null;
+    let snapshotScore = null;
+    let snapshotKills = null;
+    const requestedDifficulty = paramDiff || config.difficulty || 'normal';
+    const difficultyForGeneration = difficultsData?.niveles?.[requestedDifficulty] || {};
 
     if (snapshotEntry && loadMode !== 'new' && loadMode !== 'world_01') {
       setLoading(true, 'Cargando snapshot...');
@@ -601,6 +631,9 @@ async function initGame() {
       const settings = snapshotEntry.data.settings || {};
       worldId = settings.worldId || snapshotEntry.data?.meta?.name || snapshotEntry.data?.name || null;
       if (Number.isFinite(settings.wallHeight)) snapshotWallHeight = settings.wallHeight;
+      if (Number.isFinite(snapshotEntry.data?.wallHeight)) snapshotWallHeight = snapshotEntry.data.wallHeight;
+      if (Number.isFinite(settings.playerScore)) snapshotScore = settings.playerScore;
+      if (Number.isFinite(settings.playerKills)) snapshotKills = settings.playerKills;
       if (Number.isFinite(settings.playerAttemptsLimit)) {
         attemptsLimit = Math.max(1, Math.round(settings.playerAttemptsLimit));
       } else if (Number.isFinite(settings.playerLives)) {
@@ -627,8 +660,15 @@ async function initGame() {
       const useWorld01 = loadMode === 'world_01';
       worldId = worldLoadId || null;
       worldArea = width * height;
-      const itemsCount = Math.max(8, Math.round(worldArea / 100));
-      const enemiesCount = Math.max(enemyIds.length * 3, Math.round(itemsCount * 3));
+      const diffSpawn = difficultyForGeneration?.multiplicadores?.spawns || {};
+      const diffItems = difficultyForGeneration?.multiplicadores?.items || {};
+      const modeItemsMult = Number(activeModeGameplay?.initial_items_mult) || 1;
+      const modeEnemiesMult = Number(activeModeGameplay?.initial_enemies_mult) || 1;
+      const spawnNum = Number(diffSpawn.numero_enemigos) || 1;
+      const spawnDensity = Number(diffSpawn.densidad_enemigos) || 1;
+      const itemsMult = Number(diffItems.boost_spawn_mult) || 1;
+      const itemsCount = Math.max(8, Math.round((worldArea / 100) * itemsMult * modeItemsMult));
+      const enemiesCount = Math.max(enemyIds.length * 3, Math.round(itemsCount * 3 * spawnNum * spawnDensity * modeEnemiesMult));
       if (worldArea >= 900) {
         setLoading(true, 'Generando mundo grande...');
       } else {
@@ -660,6 +700,8 @@ async function initGame() {
       worldState.meta = worldState.meta || {};
       if (!worldState.meta.name) worldState.meta.name = worldId;
     }
+
+    activeModeGameplay = modeGameplayById(worldState.mode || selectedMode);
 
     const itemIdSet = new Set(spawnableItemIds);
     if (hasAmmoLight) itemIdSet.add('ammo_light');
@@ -1130,12 +1172,18 @@ async function initGame() {
       }, flashMs);
     }
 
+    const difficultyCfg = difficultsData?.niveles?.[worldState.difficulty] || {};
+
     function spawnEnemyEntity(spawnEntry) {
       const def = entitiesData.enemies?.find((e) => e.id === spawnEntry.id);
-      const statSpeed = Number(def?.stats?.velocidad);
+      const stats = def?.stats || {};
+      const diffEnemy = difficultyCfg?.multiplicadores?.enemigos || {};
+      const statSpeed = Number(stats.velocidad);
       const baseSpeed = Number.isFinite(statSpeed)
         ? statSpeed
         : (spawnEntry.id === 'enemy_speedster' ? 1.6 : 1.1);
+      const speedMult = Number(diffEnemy.velocidad) || 1;
+      const scaledSpeed = baseSpeed * speedMult;
       const behavior = resolveBehavior(spawnEntry.id, spawnEntry.behavior);
       const posX = spawnEntry.x * cellSize;
       const posZ = spawnEntry.y * cellSize;
@@ -1192,20 +1240,24 @@ async function initGame() {
       sceneEl.appendChild(el);
       const yawOffset = Number.isFinite(def?.yawOffset) ? def.yawOffset : (ENEMY_MODEL.yawOffset || 0);
       const hitRadius = Number.isFinite(def?.hitRadius) ? def.hitRadius : (cellSize * 0.32);
-      const baseHp = Number.isFinite(def?.stats?.vidas) ? def.stats.vidas : 1;
-      const attack = Number.isFinite(def?.stats?.ataque) ? def.stats.ataque : 1;
+      const baseHp = Number.isFinite(stats.vidas) ? stats.vidas : 1;
+      const baseAttack = Number.isFinite(stats.ataque) ? stats.ataque : 1;
+      const hpMult = Number(diffEnemy.vidas) || 1;
+      const attackMult = Number(diffEnemy.ataque) || 1;
+      const attack = baseAttack * attackMult;
+      const baseHpScaled = Math.max(1, baseHp * hpMult);
       const enemyObj = {
         id: spawnEntry.id,
         el,
-        speed: baseSpeed,
-        baseSpeed,
+        speed: scaledSpeed,
+        baseSpeed: scaledSpeed,
         behavior,
         turnSpeed: 6,
         yawOffset,
         hitRadius,
         attack,
-        hp: baseHp,
-        maxHp: baseHp,
+        hp: baseHpScaled,
+        maxHp: baseHpScaled,
         spawnedAt: performance.now(),
         anim: {
           lastPos: new THREE.Vector3(posX, baseEntityY, posZ),
@@ -1221,8 +1273,10 @@ async function initGame() {
       spawnEnemyEntity(enemy);
     });
 
-    const difficultyCfg = difficultsData?.niveles?.[worldState.difficulty] || {};
     const retreatOnHit = difficultyCfg?.ajustes_especiales?.retreat_on_hit === true;
+    const spawnConfig = activeModeGameplay?.spawn
+      ? { ...gameplayData, spawn: { ...(gameplayData?.spawn || {}), ...(activeModeGameplay.spawn || {}) } }
+      : gameplayData;
     const spawnSystem = createSpawnSystem({
       map: worldState.map,
       width: worldState.width,
@@ -1235,12 +1289,27 @@ async function initGame() {
       getPlayerPosition: () => playerEl.object3D.position,
       getGoalCell: () => goalCell,
       worldArea,
-      config: gameplayData,
+      config: spawnConfig,
       difficulty: difficultyCfg,
     });
 
-    let killCount = 0;
+    let killCount = Number.isFinite(snapshotKills) ? Math.max(0, Math.round(snapshotKills)) : 0;
+    let score = Number.isFinite(snapshotScore) ? Math.max(0, Math.round(snapshotScore)) : 0;
+    const scoreCfg = gameplayData?.score || {};
+    const scoreKillDefault = Number(scoreCfg.kill_default) || 40;
+    const scoreItemDefault = Number(scoreCfg.item_pickup) || 10;
+    const scoreGoalBonus = Number(scoreCfg.goal_bonus) || 250;
+    const scoreMult = Number(difficultyCfg?.multiplicadores?.recompensas?.puntos_mult) || 1;
     hud.setElims(killCount);
+    if (typeof hud.setScore === 'function') hud.setScore(score);
+
+    function addScore(points, reason = '') {
+      const value = Math.max(0, Math.round(Number(points) || 0));
+      if (!value) return;
+      score += value;
+      if (typeof hud.setScore === 'function') hud.setScore(score);
+      if (reason) hud.setStatus(reason);
+    }
 
     function removeEnemy(enemy, reason = '', opts = {}) {
       if (!enemy) return;
@@ -1252,6 +1321,9 @@ async function initGame() {
       if (!opts.silent) {
         killCount += 1;
         hud.setElims(killCount);
+        const def = enemyDefById.get(enemy.id) || {};
+        const points = Number(def.puntos_muerte) || scoreKillDefault;
+        addScore(points * scoreMult);
       }
       if (reason) hud.setStatus(reason);
     }
@@ -1423,6 +1495,7 @@ async function initGame() {
       attackUntil = now + attackDuration;
       setPlayerAnim('attack', { once: true, force: true });
       performShot(weapon);
+      playShot();
 
       if (weapon.id === 'minigun' && weapon.chargesMax > 0) {
         weapon.chargeRemaining = Math.max(0, weapon.chargeRemaining - 1);
@@ -1596,6 +1669,9 @@ async function initGame() {
       shadowEnabled: engineConfig.shadowsEnabled,
       onPickup: (item) => {
         hud.setStatus(`Item obtenido: ${item.nombre || item.id}`);
+        if (item?.id !== 'ammo_light' && item?.id !== 'ammo_heavy') {
+          addScore(scoreItemDefault * scoreMult);
+        }
       },
     });
 
@@ -2039,10 +2115,12 @@ async function initGame() {
       const remainingItems = itemSystem.getRemaining().length;
       const collectedItems = Math.max(0, initialItems - remainingItems);
       const lines = [
+        { label: 'Puntaje', value: `${score}` },
         { label: 'Tiempo', value: formatDuration(elapsedMs) },
         { label: 'Items', value: `${collectedItems}/${initialItems}` },
-        { label: 'Enemigos', value: `${enemyEntities.length}` },
+        { label: 'Eliminaciones', value: `${killCount}` },
         { label: 'Mapa', value: `${worldState.width}x${worldState.height}` },
+        { label: 'Altura', value: `${wallHeight}` },
         { label: 'Modo', value: worldState.mode || '-' },
         { label: 'Dificultad', value: worldState.difficulty || '-' },
       ];
@@ -2152,6 +2230,7 @@ async function initGame() {
       if (pauseOverlay) pauseOverlay.classList.remove('active');
       if (resultOverlay) resultOverlay.classList.add('active');
       if (outcome === 'won') {
+        addScore(scoreGoalBonus * scoreMult);
         markLevelCompleted(worldState?.meta?.name || worldId);
       }
 
@@ -2377,6 +2456,8 @@ async function initGame() {
             playerState,
             cellSize,
             wallHeight,
+            score,
+            killCount,
             saveName: `Manual ${new Date().toLocaleString()}`,
           });
           window.location.href = 'index.html';
@@ -2391,6 +2472,8 @@ async function initGame() {
               playerState,
               cellSize,
               wallHeight,
+              score,
+              killCount,
               saveName: `Auto ${new Date().toLocaleString()}`,
             });
           }
@@ -2423,6 +2506,8 @@ async function initGame() {
         playerState,
         cellSize,
         wallHeight,
+        score,
+        killCount,
         saveName: `Final ${new Date().toLocaleString()}`,
       });
       window.location.href = 'index.html';
@@ -2596,6 +2681,8 @@ async function initGame() {
           playerState,
           cellSize,
           wallHeight,
+          score,
+          killCount,
           saveName: 'Auto (ultimo)',
           saveId: AUTO_SAVE_ID,
         });
