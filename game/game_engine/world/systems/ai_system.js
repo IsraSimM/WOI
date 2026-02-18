@@ -82,6 +82,8 @@ export function createAISystem({ map, width, height, cellSize, enemies, getPlaye
     lastPlayerPos: null,
     playerVel: { x: 0, z: 0 },
   };
+  const maxX = (width - 1) * cellSize;
+  const maxZ = (height - 1) * cellSize;
 
   function update(dt) {
     const playerPos = getPlayerPosition();
@@ -135,17 +137,40 @@ export function createAISystem({ map, width, height, cellSize, enemies, getPlaye
         goalCell = enemy.ai.wanderTarget || targetCell;
       }
 
-      const nextCell = bfsNext(map, width, height, currentCell, goalCell);
-      const nextWorld = worldFromCell(nextCell, cellSize);
-      const dirX = nextWorld.x - pos.x;
-      const dirZ = nextWorld.z - pos.z;
+      const distToPlayer = Math.hypot(pos.x - playerPos.x, pos.z - playerPos.z);
+      let dirX = 0;
+      let dirZ = 0;
+
+      if (distToPlayer < cellSize * 1.6) {
+        // ataque cercano: persigue directo con un leve desvío para evitar ruta perfecta
+        const jitter = enemy.ai.jitter ?? 0;
+        if (!enemy.ai.jitterT || enemy.ai.jitterT <= 0) {
+          enemy.ai.jitterT = 0.6 + Math.random() * 0.8;
+          enemy.ai.jitter = (Math.random() - 0.5) * 0.6;
+        } else {
+          enemy.ai.jitterT -= dt;
+        }
+        const dx = playerPos.x - pos.x;
+        const dz = playerPos.z - pos.z;
+        const ang = Math.atan2(dz, dx) + enemy.ai.jitter;
+        dirX = Math.cos(ang);
+        dirZ = Math.sin(ang);
+      } else {
+        const nextCell = bfsNext(map, width, height, currentCell, goalCell);
+        const nextWorld = worldFromCell(nextCell, cellSize);
+        dirX = nextWorld.x - pos.x;
+        dirZ = nextWorld.z - pos.z;
+      }
+
       const dist = Math.hypot(dirX, dirZ);
       if (dist > 0.01) {
         const step = Math.min(dist, (enemy.speed || 1.2) * cellSize * dt);
         pos.x += (dirX / dist) * step;
         pos.z += (dirZ / dist) * step;
+        pos.x = Math.max(0, Math.min(maxX, pos.x));
+        pos.z = Math.max(0, Math.min(maxZ, pos.z));
         if (enemy.el?.object3D) {
-          const yaw = Math.atan2(-dirX, dirZ);
+          const yaw = Math.atan2(-dirX, -dirZ);
           const yawOffset = Number(enemy.yawOffset) || 0;
           const current = enemy.el.object3D.rotation.y;
           const target = yaw + yawOffset;
@@ -156,7 +181,15 @@ export function createAISystem({ map, width, height, cellSize, enemies, getPlaye
         }
       }
 
-      const hitDist = Number(enemy.hitRadius) || (cellSize * 0.35);
+      const now = performance.now();
+      const attackRange = cellSize * 1.2;
+      if (distToPlayer < attackRange && enemy.anim) {
+        if (now > enemy.anim.attackUntil - 120) {
+          enemy.anim.attackUntil = now + 420;
+        }
+      }
+
+      const hitDist = Number(enemy.hitRadius) || (cellSize * 0.5);
       if (Math.hypot(pos.x - playerPos.x, pos.z - playerPos.z) < hitDist) {
         if (typeof onPlayerHit === 'function') onPlayerHit(enemy);
       }

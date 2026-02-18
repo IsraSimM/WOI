@@ -11,7 +11,7 @@ import {
   WORLD_01_PLAYERS_URL,
   resolveGameUrl,
 } from '../game_engine/data/paths.js';
-import { loadWorld, worldToCell } from '../game_engine/world/loader.js';
+import { loadWorld, worldToCell, isWall } from '../game_engine/world/loader.js';
 import { createWorldState } from '../game_engine/world/world_state.js';
 import { createWorldSnapshot, parseWorld } from '../game_engine/world/saver.js';
 import { buildWorldScene } from '../game_engine/render/aframe_adapter.js';
@@ -132,6 +132,18 @@ function normalizeOdd(value, fallback) {
   n = Math.max(5, Math.round(n));
   if (n % 2 === 0) n += 1;
   return n;
+}
+
+function ammoProfileForDifficulty(diff) {
+  const key = String(diff || 'normal').toLowerCase();
+  const profiles = {
+    facil: { capacity: 1.15, start: 1.0 },
+    normal: { capacity: 1.0, start: 0.9 },
+    dificil: { capacity: 0.85, start: 0.75 },
+    experto: { capacity: 0.75, start: 0.6 },
+    pesadilla: { capacity: 0.65, start: 0.5 },
+  };
+  return profiles[key] || profiles.normal;
 }
 
 function loadSnapshots() {
@@ -258,7 +270,10 @@ function saveSnapshot({ worldState, itemSystem, enemyEntities, playerEl, playerS
       mode: worldState.mode,
       difficulty: worldState.difficulty,
       playerSpawn: playerCell,
-      playerLives: playerState.lives,
+      playerAttemptsUsed: playerState.attemptsUsed,
+      playerAttemptsLimit: playerState.attemptsLimit,
+      playerHealth: playerState.health,
+      playerLives: Math.max(0, playerState.attemptsLimit - playerState.attemptsUsed),
     },
   });
 
@@ -282,6 +297,8 @@ async function initGame() {
   const cameraEl = playerEl?.querySelector('[camera]');
   const pauseOverlay = document.getElementById('pauseOverlay');
   const startOverlay = document.getElementById('startOverlay');
+  const downOverlay = document.getElementById('downOverlay');
+  const respawnBtn = document.getElementById('respawnBtn');
   const startBtn = document.getElementById('startBtn');
   const startObjective = document.getElementById('startObjective');
   const loadingOverlay = document.getElementById('loadingOverlay');
@@ -294,9 +311,6 @@ async function initGame() {
   const resultSaveExit = document.getElementById('resultSaveExit');
   const resultExit = document.getElementById('resultExit');
   const hudRoot = document.getElementById('hud-root');
-  const previewPanel = document.getElementById('previewPanel');
-  const previewToggle = document.getElementById('previewToggle');
-  const previewCanvas = document.getElementById('thirdPersonCanvas');
   const hud = await mountHud(hudRoot);
   registerPlayerAnimator();
 
@@ -374,59 +388,6 @@ async function initGame() {
     }
   }
 
-    const previewState = {
-      active: true,
-    renderer: null,
-    camera: null,
-    forward: window.THREE ? new THREE.Vector3() : null,
-    target: window.THREE ? new THREE.Vector3() : null,
-    position: window.THREE ? new THREE.Vector3() : null,
-    up: window.THREE ? new THREE.Vector3(0, 1, 0) : null,
-  };
-
-  function initPreview(sceneEl, cameraEl) {
-    if (!previewCanvas || !window.THREE) return;
-    const rect = previewCanvas.getBoundingClientRect();
-    const baseWidth = rect.width || previewCanvas.width || 240;
-    const baseHeight = rect.height || previewCanvas.height || 150;
-    const renderer = new THREE.WebGLRenderer({
-      canvas: previewCanvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: 'low-power',
-    });
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
-    renderer.setSize(baseWidth, baseHeight, false);
-    if (renderer.outputColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-    const cam = new THREE.PerspectiveCamera(60, baseWidth / baseHeight, 0.1, 1000);
-    previewState.renderer = renderer;
-    previewState.camera = cam;
-
-    const resize = () => {
-      if (!previewState.renderer || !previewState.camera) return;
-      const size = previewCanvas.getBoundingClientRect();
-      const width = size.width || previewCanvas.width || baseWidth;
-      const height = size.height || previewCanvas.height || baseHeight;
-      previewState.renderer.setSize(width, height, false);
-      previewState.camera.aspect = width / height || 1;
-      previewState.camera.updateProjectionMatrix();
-    };
-    window.addEventListener('resize', resize);
-
-    if (previewPanel) previewPanel.classList.add('active');
-
-    if (previewToggle) {
-      previewToggle.addEventListener('click', () => {
-        previewState.active = !previewState.active;
-        if (previewPanel) previewPanel.classList.toggle('active', previewState.active);
-        resize();
-      });
-    }
-
-    return { sceneEl, cameraEl };
-  }
-
   function setLoading(active, text) {
     if (!loadingOverlay) return;
     loadingOverlay.classList.toggle('active', active);
@@ -465,17 +426,32 @@ async function initGame() {
     const paramPacman = params.get('pacman') === '1' || params.get('pacman') === 'true';
     const paramWallHeight = Number(params.get('wallHeight'));
     const paramWorldName = params.get('name');
+    const playerDefs = Array.isArray(entitiesData?.players) ? entitiesData.players : [];
+    const playerDef = playerDefs.find((p) => p.id === config.playerId) || playerDefs[0] || {};
+    const playerStats = playerDef.stats || {};
+    const playerDetection = Number(playerStats.deteccion) || 120;
+    const computedDetectionCells = Math.max(3, Math.min(12, Math.round(playerDetection / 20)));
+    const playerDetectionCells = playerDef?.id === 'Personaje' ? 7 : computedDetectionCells;
+    const playerStrategy = Number(playerStats.estrategia) || 1;
+    const inventorySize = Math.max(3, Math.min(8, 3 + Math.round(playerStrategy)));
+
     const paramMinimapRadius = Number(params.get('minimapRadius'));
     const minimapRadius = Math.max(
       3,
-      Number.isFinite(paramMinimapRadius) ? paramMinimapRadius : engineConfig.minimapRadius,
+      Number.isFinite(paramMinimapRadius) ? paramMinimapRadius : playerDetectionCells,
     );
 
-    const itemIds = Array.isArray(itemsData)
-      ? Array.from(new Set(itemsData.filter((item) => item && item.asset).map((item) => item.id)))
+    const cameraFirstPos = { x: 0, y: 1.7, z: 0 };
+
+    const spawnableItemIds = Array.isArray(itemsData)
+      ? Array.from(new Set(itemsData
+        .filter((item) => item && item.asset)
+        .map((item) => item.id)))
       : [];
+    const hasAmmoItem = Array.isArray(itemsData) && itemsData.some((item) => item?.id === 'ammo_pack');
     const enemyDefs = Array.isArray(entitiesData?.enemies) ? entitiesData.enemies : [];
     const enemyIds = Array.from(new Set(enemyDefs.filter((enemy) => enemy && enemy.asset).map((enemy) => enemy.id)));
+    const enemyDefById = new Map(enemyDefs.map((enemy) => [enemy.id, enemy]));
 
     let snapshotEntry = null;
     if (loadMode === 'save' && saveId) snapshotEntry = loadSnapshotById(saveId);
@@ -483,15 +459,29 @@ async function initGame() {
     const shouldAutoStart = Boolean(snapshotEntry);
 
     let worldState;
-    let playerLives = Number(config.lives) || 3;
+    let attemptsLimit = Number(config.lives) || 3;
+    let attemptsUsed = 0;
+    let playerHealth = 100;
+    const healthMax = 100;
     let worldArea = 0;
 
     if (snapshotEntry && loadMode !== 'new' && loadMode !== 'world_01') {
       setLoading(true, 'Cargando snapshot...');
       worldState = buildWorldStateFromSnapshot(snapshotEntry.data);
       worldArea = worldState.width * worldState.height;
-      if (Number.isFinite(snapshotEntry.data.settings?.playerLives)) {
-        playerLives = snapshotEntry.data.settings.playerLives;
+      const settings = snapshotEntry.data.settings || {};
+      if (Number.isFinite(settings.playerAttemptsLimit)) {
+        attemptsLimit = Math.max(1, Math.round(settings.playerAttemptsLimit));
+      } else if (Number.isFinite(settings.playerLives)) {
+        attemptsLimit = Math.max(1, Math.round(settings.playerLives));
+      }
+      if (Number.isFinite(settings.playerAttemptsUsed)) {
+        attemptsUsed = Math.max(0, Math.round(settings.playerAttemptsUsed));
+      } else if (Number.isFinite(settings.playerLives)) {
+        attemptsUsed = Math.max(0, attemptsLimit - Math.round(settings.playerLives));
+      }
+      if (Number.isFinite(settings.playerHealth)) {
+        playerHealth = settings.playerHealth;
       }
     } else {
       const width = normalizeOdd(
@@ -504,6 +494,8 @@ async function initGame() {
       );
       const useWorld01 = loadMode === 'world_01';
       worldArea = width * height;
+      const itemsCount = Math.max(8, Math.round(worldArea / 100));
+      const enemiesCount = Math.max(enemyIds.length * 3, Math.round(itemsCount * 3));
       if (worldArea >= 900) {
         setLoading(true, 'Generando mundo grande...');
       } else {
@@ -518,10 +510,10 @@ async function initGame() {
         seed: paramSeed || config.seed || null,
         pacmanize: paramPacman,
         openBorders: false,
-        itemIds,
+        itemIds: spawnableItemIds,
         enemyIds,
-        itemsCount: 6,
-        enemiesCount: enemyIds.length,
+        itemsCount,
+        enemiesCount,
       });
       if (paramMode || config.mode) worldState.mode = paramMode || config.mode;
       if (paramDiff || config.difficulty) worldState.difficulty = paramDiff || config.difficulty;
@@ -531,9 +523,51 @@ async function initGame() {
       }
     }
 
-    const itemIdSet = new Set(itemIds);
+    const itemIdSet = new Set(spawnableItemIds);
+    if (hasAmmoItem) itemIdSet.add('ammo_pack');
     if (Array.isArray(worldState?.items)) {
       worldState.items = worldState.items.filter((entry) => entry && itemIdSet.has(entry.id));
+    }
+
+    if (Array.isArray(worldState?.items) && Array.isArray(itemsData) && itemsData.find((i) => i.id === 'ammo_pack')) {
+      const occupied = new Set(worldState.items.map((entry) => `${entry.x},${entry.y}`));
+      const borderCells = [];
+      const avoid = new Set();
+      if (worldState.meta?.start) avoid.add(`${worldState.meta.start.x},${worldState.meta.start.y}`);
+      if (worldState.meta?.end) avoid.add(`${worldState.meta.end.x},${worldState.meta.end.y}`);
+
+      const ring = 1;
+      for (let y = 1; y < worldState.height - 1; y++) {
+        for (let x = 1; x < worldState.width - 1; x++) {
+          const nearBorder =
+            x <= ring || y <= ring || x >= worldState.width - 1 - ring || y >= worldState.height - 1 - ring;
+          if (!nearBorder) continue;
+          if (isWall(worldState.map, worldState.width, worldState.height, x, y)) continue;
+          const key = `${x},${y}`;
+          if (occupied.has(key) || avoid.has(key)) continue;
+          borderCells.push({ x, y });
+        }
+      }
+
+      const targetCount = Math.max(8, Math.round((worldState.width + worldState.height) * 0.45));
+      for (let i = borderCells.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = borderCells[i];
+        borderCells[i] = borderCells[j];
+        borderCells[j] = tmp;
+      }
+
+      const ammoEntries = [];
+      for (const cell of borderCells) {
+        if (ammoEntries.length >= targetCount) break;
+        const key = `${cell.x},${cell.y}`;
+        if (occupied.has(key)) continue;
+        occupied.add(key);
+        ammoEntries.push({ id: 'ammo_pack', x: cell.x, y: cell.y });
+      }
+      if (ammoEntries.length) {
+        worldState.items = worldState.items.concat(ammoEntries);
+      }
     }
 
     const cellSize = CONFIG.defaults.cellSize;
@@ -630,6 +664,10 @@ async function initGame() {
       dashKey: '',
     });
 
+    if (cameraEl) {
+      cameraEl.setAttribute('position', `${cameraFirstPos.x} ${cameraFirstPos.y} ${cameraFirstPos.z}`);
+    }
+
     const spawn = worldState.playerSpawn || { x: 1, y: 1 };
     playerEl.setAttribute('position', `${spawn.x * cellSize} 0 ${spawn.y * cellSize}`);
     const lastPlayerPos = new THREE.Vector3().copy(playerEl.object3D.position);
@@ -642,11 +680,195 @@ async function initGame() {
     let combatSystem = null;
 
     const playerState = {
-      lives: playerLives,
+      healthMax,
+      health: Math.max(0, Math.min(healthMax, Number(playerHealth) || healthMax)),
+      attemptsLimit: Math.max(1, Math.round(attemptsLimit)),
+      attemptsUsed: Math.max(0, Math.round(attemptsUsed)),
       speedMult: 1,
       shield: 0,
       invisible: false,
     };
+
+    function clampHealth(value) {
+      return Math.max(0, Math.min(playerState.healthMax, value));
+    }
+
+    let downedAt = 0;
+    let downedCameraActive = false;
+
+    function resetRunState() {
+      activeEffects.length = 0;
+      playerState.speedMult = 1;
+      playerState.shield = 0;
+      playerState.invisible = false;
+      finalPhase = false;
+      frenzyActive = false;
+      hud.setFinalTimer(0, false);
+      enemyEntities.forEach((enemy) => {
+        enemy.speed = enemy.baseSpeed;
+      });
+      inventory.fill(null);
+      inventory[0] = {
+        id: 'arma_basica',
+        nombre: 'ARMA BASICA',
+        locked: true,
+        cooldownMs: 0,
+        usesRemaining: null,
+        lastUsedAt: -Infinity,
+      };
+      selectedSlot = 0;
+      weapons.forEach((weapon) => {
+        const ammoMax = weapon.ammoMax;
+        const reserveMax = weapon.reserveMax ?? weapon.reserve;
+        const ammoStart = Math.min(ammoMax, Math.max(1, Math.round(ammoMax * startMult)));
+        const reserveStart = Math.max(0, Math.round(reserveMax * startMult));
+        weapon.ammo = ammoStart;
+        weapon.reserveAmmo = reserveStart;
+        weapon.reloading = false;
+        weapon.reloadUntil = 0;
+        weapon.lastShotAt = -Infinity;
+      });
+      weaponIndex = 0;
+      updateWeaponHud();
+      if (itemSystem?.reset) itemSystem.reset();
+      refreshHud();
+    }
+
+    function enterDownedState() {
+      if (gameState !== 'playing') return;
+      if (playerState.attemptsUsed >= playerState.attemptsLimit) {
+        finishGame('lost');
+        return;
+      }
+      gameState = 'downed';
+      downedAt = performance.now();
+      downedCameraActive = true;
+      hud.setStatus('Has caido');
+      setPlayerAnim('death', { once: true, force: true });
+      if (downOverlay) downOverlay.classList.add('active');
+      if (respawnBtn) respawnBtn.disabled = true;
+      setTimeout(() => {
+        if (respawnBtn) respawnBtn.disabled = false;
+      }, 900);
+
+      if (cameraEl) {
+        cameraEl.setAttribute('look-controls', 'enabled: false');
+        if (cameraEl.object3D) {
+          cameraEl.object3D.position.set(
+            playerEl.object3D.position.x + downedCamOffset.x,
+            playerEl.object3D.position.y + downedCamOffset.y,
+            playerEl.object3D.position.z + downedCamOffset.z,
+          );
+        } else {
+          cameraEl.setAttribute('position', '0 6.5 0');
+        }
+      }
+      playerEl.setAttribute('room-player', 'speed', 0);
+      document.exitPointerLock?.();
+
+      enemyEntities.forEach((enemy) => {
+        if (!enemy?.el) return;
+        const pos = enemy.el.object3D.position;
+        const dist = Math.hypot(pos.x - playerEl.object3D.position.x, pos.z - playerEl.object3D.position.z);
+        if (dist <= cellSize * 2.2) {
+          enemy.anim.attackUntil = downedAt + 1200;
+          setEnemyAnim(enemy, 'attack', { once: false, force: true });
+        }
+      });
+      if (typeof hud.setEnemyFocus === 'function') {
+        hud.setEnemyFocus(null);
+      }
+      refreshHud();
+    }
+
+    function respawnPlayer() {
+      if (gameState !== 'downed') return;
+      playerState.attemptsUsed += 1;
+      playerState.health = playerState.healthMax;
+      resetRunState();
+      playerEl.setAttribute('position', `${spawn.x * cellSize} 0 ${spawn.y * cellSize}`);
+      grantInvulnerability(5000);
+      gameState = 'playing';
+      downedCameraActive = false;
+      if (downOverlay) downOverlay.classList.remove('active');
+      if (cameraEl) {
+        cameraEl.setAttribute('position', `${cameraFirstPos.x} ${cameraFirstPos.y} ${cameraFirstPos.z}`);
+        cameraEl.setAttribute('look-controls', 'enabled: true');
+      }
+      hud.setStatus('Reaparecido');
+      refreshHud();
+    }
+
+    function applyPlayerDamage(amount) {
+      const dmg = Math.max(1, Number(amount) || 0);
+      playerState.health = clampHealth(playerState.health - dmg);
+      if (playerState.health <= 0) {
+        enterDownedState();
+      } else {
+        refreshHud();
+      }
+    }
+
+    const ammoProfile = ammoProfileForDifficulty(worldState.difficulty);
+    const capacityMult = ammoProfile.capacity;
+    const startMult = ammoProfile.start;
+
+    const weaponModes = [
+      {
+        id: 'minigun',
+        name: 'MINIGUN',
+        damage: 0.6,
+        range: cellSize * 6,
+        fireMs: 120,
+        bulletSpeed: cellSize * 18,
+        color: '#2bd8ff',
+        radius: 0.08,
+        ammoMax: 120,
+        reserve: 480,
+        reloadMs: 900,
+      },
+      {
+        id: 'sniper',
+        name: 'SNIPER',
+        damage: 2.4,
+        range: cellSize * 14,
+        fireMs: 900,
+        bulletSpeed: cellSize * 26,
+        color: '#f2e9ff',
+        radius: 0.1,
+        ammoMax: 8,
+        reserve: 32,
+        reloadMs: 1400,
+      },
+    ];
+    const weapons = weaponModes.map((mode) => {
+      const ammoMax = Math.max(3, Math.round(mode.ammoMax * capacityMult));
+      const reserveMax = Math.max(0, Math.round(mode.reserve * capacityMult));
+      const ammoStart = Math.min(ammoMax, Math.max(1, Math.round(ammoMax * startMult)));
+      const reserveStart = Math.max(0, Math.round(reserveMax * startMult));
+      return {
+        ...mode,
+        ammoMax,
+        reserveMax,
+        ammo: ammoStart,
+        reserveAmmo: reserveStart,
+        reloading: false,
+        reloadUntil: 0,
+        lastShotAt: -Infinity,
+      };
+    });
+    let weaponIndex = 0;
+
+    function currentWeapon() {
+      return weapons[weaponIndex];
+    }
+
+    function updateWeaponHud() {
+      const weapon = currentWeapon();
+      if (!weapon) return;
+      hud.setWeapon(weapon.name);
+      hud.setAmmo(weapon.ammo, weapon.reserveAmmo);
+    }
 
     const startCell = worldState.meta?.start || spawn;
     const goalCell = resolveGoalCell(worldState.meta, worldState.map, worldState.width, worldState.height);
@@ -683,19 +905,63 @@ async function initGame() {
           if (!mat || !mat.color) return;
           if (!mat.userData) mat.userData = {};
           mat.userData.__cloned = true;
-          if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
-          mat.color.copy(mat.userData.baseColor).lerp(mask, strength);
+          if (!mat.userData.originalColor) mat.userData.originalColor = mat.color.clone();
+          mat.color.copy(mat.userData.originalColor).lerp(mask, strength);
           if ('emissive' in mat) {
-            if (!mat.userData.baseEmissive) mat.userData.baseEmissive = (mat.emissive ? mat.emissive.clone() : new THREE.Color(0x000000));
-            mat.emissive.copy(mat.userData.baseEmissive).lerp(mask, strength * 0.45);
+            if (!mat.userData.originalEmissive) mat.userData.originalEmissive = (mat.emissive ? mat.emissive.clone() : new THREE.Color(0x000000));
+            mat.emissive.copy(mat.userData.originalEmissive).lerp(mask, strength * 0.45);
             if (Number.isFinite(options.emissiveIntensity)) mat.emissiveIntensity = options.emissiveIntensity;
           }
           if (Number.isFinite(options.roughness)) mat.roughness = options.roughness;
           if (Number.isFinite(options.metalness)) mat.metalness = options.metalness;
+          if (options.storeMaskedColor) {
+            mat.userData.maskedColor = mat.color.clone();
+            if ('emissive' in mat) mat.userData.maskedEmissive = mat.emissive ? mat.emissive.clone() : null;
+          }
           mat.needsUpdate = true;
         });
         node.material = Array.isArray(node.material) ? cloned : cloned[0];
       });
+    }
+
+    function flashEnemy(enemy, flashMs = 80) {
+      const mesh = enemy?.el?.getObject3D?.('mesh');
+      if (!mesh || !window.THREE) return;
+      const flashColor = new THREE.Color('#ff2d2d');
+      mesh.traverse((node) => {
+        if (!node.isMesh || !node.material) return;
+        const mats = Array.isArray(node.material) ? node.material : [node.material];
+        mats.forEach((mat) => {
+          if (!mat || !mat.color) return;
+          if (!mat.userData) mat.userData = {};
+          if (!mat.userData.originalColor) mat.userData.originalColor = mat.color.clone();
+          if ('emissive' in mat && !mat.userData.originalEmissive) {
+            mat.userData.originalEmissive = mat.emissive ? mat.emissive.clone() : new THREE.Color(0x000000);
+          }
+          mat.color.copy(flashColor);
+          if ('emissive' in mat) {
+            mat.emissive.copy(flashColor);
+            mat.emissiveIntensity = 0.9;
+          }
+          mat.needsUpdate = true;
+        });
+      });
+      setTimeout(() => {
+        mesh.traverse((node) => {
+          if (!node.isMesh || !node.material) return;
+          const mats = Array.isArray(node.material) ? node.material : [node.material];
+          mats.forEach((mat) => {
+            if (!mat || !mat.color || !mat.userData) return;
+            if (mat.userData.maskedColor) mat.color.copy(mat.userData.maskedColor);
+            else if (mat.userData.originalColor) mat.color.copy(mat.userData.originalColor);
+            if ('emissive' in mat) {
+              if (mat.userData.maskedEmissive) mat.emissive.copy(mat.userData.maskedEmissive);
+              else if (mat.userData.originalEmissive) mat.emissive.copy(mat.userData.originalEmissive);
+            }
+            mat.needsUpdate = true;
+          });
+        });
+      }, flashMs);
     }
 
     function spawnEnemyEntity(spawnEntry) {
@@ -730,6 +996,7 @@ async function initGame() {
             emissiveIntensity: 0.45,
             roughness: 0.35,
             metalness: 0.2,
+            storeMaskedColor: true,
           });
           const box = new THREE.Box3().setFromObject(mesh);
           const center = box.getCenter(new THREE.Vector3());
@@ -750,6 +1017,8 @@ async function initGame() {
       sceneEl.appendChild(el);
       const yawOffset = Number.isFinite(def?.yawOffset) ? def.yawOffset : (ENEMY_MODEL.yawOffset || 0);
       const hitRadius = Number.isFinite(def?.hitRadius) ? def.hitRadius : (cellSize * 0.32);
+      const baseHp = Number.isFinite(def?.stats?.vidas) ? def.stats.vidas : 1;
+      const attack = Number.isFinite(def?.stats?.ataque) ? def.stats.ataque : 1;
       const enemyObj = {
         id: spawnEntry.id,
         el,
@@ -759,6 +1028,9 @@ async function initGame() {
         turnSpeed: 6,
         yawOffset,
         hitRadius,
+        attack,
+        hp: baseHp,
+        maxHp: baseHp,
         anim: {
           lastPos: new THREE.Vector3(posX, baseEntityY, posZ),
           current: null,
@@ -772,6 +1044,68 @@ async function initGame() {
     worldState.enemies.forEach((enemy) => {
       spawnEnemyEntity(enemy);
     });
+
+    const spawnConfig = {
+      intervalMs: 900,
+      maxActive: Math.max(10, Math.round(worldArea / 55)),
+      minDist: cellSize * 4,
+      maxDist: cellSize * 10,
+      despawnDist: cellSize * 18,
+      spawnBatch: 2,
+    };
+    let lastSpawnAt = 0;
+    let lastDespawnAt = 0;
+
+    function pickSpawnCellAroundPlayer() {
+      const playerPos = playerEl.object3D.position;
+      for (let i = 0; i < 40; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = spawnConfig.minDist + Math.random() * (spawnConfig.maxDist - spawnConfig.minDist);
+        const wx = playerPos.x + Math.cos(angle) * dist;
+        const wz = playerPos.z + Math.sin(angle) * dist;
+        const cell = worldToCell({ x: wx, z: wz }, cellSize);
+        if (cell.x < 0 || cell.y < 0 || cell.x >= worldState.width || cell.y >= worldState.height) continue;
+        if (isWall(worldState.map, worldState.width, worldState.height, cell.x, cell.y)) continue;
+        const dx = cell.x - worldToCell(playerPos, cellSize).x;
+        const dy = cell.y - worldToCell(playerPos, cellSize).y;
+        const distCells = Math.hypot(dx, dy) * cellSize;
+        if (distCells < spawnConfig.minDist) continue;
+        return cell;
+      }
+      return null;
+    }
+
+    function spawnNearbyEnemies(now) {
+      if (enemyEntities.length >= spawnConfig.maxActive) return;
+      if (now - lastSpawnAt < spawnConfig.intervalMs) return;
+      lastSpawnAt = now;
+      const toSpawn = Math.min(spawnConfig.spawnBatch, spawnConfig.maxActive - enemyEntities.length);
+      for (let i = 0; i < toSpawn; i++) {
+        const cell = pickSpawnCellAroundPlayer();
+        if (!cell) break;
+        const id = enemyIds[Math.floor(Math.random() * enemyIds.length)];
+        spawnEnemyEntity({ id, x: cell.x, y: cell.y });
+      }
+    }
+
+    function despawnFarEnemies(now) {
+      if (now - lastDespawnAt < 1200) return;
+      lastDespawnAt = now;
+      const playerPos = playerEl.object3D.position;
+      const survivors = [];
+      enemyEntities.forEach((enemy) => {
+        const pos = enemy.el?.object3D?.position;
+        if (!pos) return;
+        const dist = Math.hypot(pos.x - playerPos.x, pos.z - playerPos.z);
+        if (dist > spawnConfig.despawnDist) {
+          enemy.el.parentNode?.removeChild(enemy.el);
+        } else {
+          survivors.push(enemy);
+        }
+      });
+      enemyEntities.length = 0;
+      survivors.forEach((e) => enemyEntities.push(e));
+    }
 
     let killCount = 0;
     hud.setElims(killCount);
@@ -788,11 +1122,17 @@ async function initGame() {
 
     const activeEffects = [];
     function addEffect(name, durationMs) {
-      const expiresAt = performance.now() + durationMs;
-      activeEffects.push({ name, expiresAt });
+      const now = performance.now();
+      const expiresAt = now + durationMs;
+      activeEffects.push({
+        name,
+        expiresAt,
+        durationMs: Math.max(0, Number(durationMs) || 0),
+        startedAt: now,
+      });
     }
 
-    const inventory = new Array(4).fill(null);
+    const inventory = new Array(inventorySize).fill(null);
     inventory[0] = {
       id: 'arma_basica',
       nombre: 'ARMA BASICA',
@@ -803,21 +1143,61 @@ async function initGame() {
     };
     let selectedSlot = 0;
 
-    function syncInventoryHud() {
-      const labels = inventory.map((item) => (item ? item.nombre || item.id : null));
-      hud.setItems(labels);
+    function buildInventoryHud(now = performance.now()) {
+      return inventory.map((item) => {
+        if (!item) return null;
+        let cooldownRatio = 0;
+        let cooldownText = '';
+        if (Number(item.cooldownMs) > 0 && Number.isFinite(item.lastUsedAt) && item.lastUsedAt > 0) {
+          const remaining = Math.max(0, item.cooldownMs - (now - item.lastUsedAt));
+          if (remaining > 0) {
+            cooldownRatio = remaining / item.cooldownMs;
+            cooldownText = `${(remaining / 1000).toFixed(1)}s`;
+          }
+        }
+        return {
+          label: item.nombre || item.id,
+          cooldownRatio,
+          cooldownText,
+        };
+      });
+    }
+
+    function syncInventoryHud(now = performance.now()) {
+      hud.setItems(buildInventoryHud(now), selectedSlot);
+    }
+
+    function buildEffectsHud(now = performance.now()) {
+      return activeEffects
+        .filter((e) => !e.name.startsWith('item:'))
+        .map((effect) => {
+          const remaining = Math.max(0, effect.expiresAt - now);
+          const duration = Math.max(1, effect.durationMs || 1);
+          const ratio = Math.max(0, Math.min(1, remaining / duration));
+          return {
+            name: effect.name,
+            ratio,
+            remainingText: remaining > 0 ? `${(remaining / 1000).toFixed(1)}s` : 'ACTIVO',
+          };
+        });
     }
 
     function refreshHud() {
+      const now = performance.now();
       hud.setMode(worldState.mode);
       hud.setDifficulty(worldState.difficulty);
-      hud.setLives(playerState.lives);
+      if (typeof hud.setAttempts === 'function') {
+        hud.setAttempts(playerState.attemptsUsed, playerState.attemptsLimit);
+      }
+      if (typeof hud.setHealth === 'function') {
+        hud.setHealth(playerState.health, playerState.healthMax);
+      }
       if (typeof hud.setSpeed === 'function') {
         const speedFactor = playerState.speedMult * (frenzyActive ? FRENZY_SPEED_MULT : 1);
         hud.setSpeed(speedFactor);
       }
-      syncInventoryHud();
-      hud.setEffects(activeEffects.filter((e) => !e.name.startsWith('item:')).map((e) => e.name));
+      syncInventoryHud(now);
+      hud.setEffects(buildEffectsHud(now));
     }
 
     function setAnimatorsPaused(pausedState) {
@@ -862,16 +1242,64 @@ async function initGame() {
       if (enemy.anim) enemy.anim.current = name;
     }
 
-    function triggerAttack() {
+    function shootAttack() {
       if (gameState !== 'playing') return;
+      const weapon = currentWeapon();
+      if (!weapon) return;
       const now = performance.now();
-      const cooldown = attackCooldownMs * (frenzyActive ? FRENZY_COOLDOWN_MULT : 1);
-      if (now - lastAttackAt < cooldown) return;
-      lastAttackAt = now;
-      const attackDuration = Math.max(200, cooldown);
+      const fireMs = weapon.fireMs * (frenzyActive ? FRENZY_COOLDOWN_MULT : 1);
+      if (now - weapon.lastShotAt < fireMs) return;
+      if (weapon.reloading) return;
+      if (weapon.ammo <= 0) {
+        if (weapon.reserveAmmo > 0) startReload(weapon);
+        else hud.setStatus('Sin municion');
+        return;
+      }
+      weapon.lastShotAt = now;
+      weapon.ammo -= 1;
+      updateWeaponHud();
+      if (weapon.ammo <= 0 && weapon.reserveAmmo > 0) startReload(weapon);
+      const attackDuration = Math.max(120, fireMs);
       attackUntil = now + attackDuration;
       setPlayerAnim('attack', { once: true, force: true });
-      combatSystem?.meleeAttack?.();
+      performShot(weapon);
+    }
+
+    function performShot(weapon) {
+      const camRef = cameraEl || playerEl.querySelector('[camera]');
+      const camObj = camRef?.object3D;
+      if (!camObj || !window.THREE) return;
+      camObj.getWorldPosition(bulletOrigin);
+      camObj.getWorldDirection(bulletDir);
+      if (bulletDir.lengthSq() === 0) return;
+      bulletDir.normalize().multiplyScalar(-1);
+      rayDirXZ.set(bulletDir.x, 0, bulletDir.z);
+      if (rayDirXZ.lengthSq() === 0) return;
+      rayDirXZ.normalize();
+
+      const range = Math.max(0.5, weapon.range || cellSize * 6);
+      const wallHit = findWallHit(bulletOrigin, bulletDir, range);
+      const enemyHit = findEnemyHit(bulletOrigin, rayDirXZ, range);
+
+      let hitDistance = range;
+      let hitPosition = rayPos.copy(bulletOrigin).addScaledVector(bulletDir, range);
+      if (wallHit && wallHit.distance < hitDistance) {
+        hitDistance = wallHit.distance;
+        hitPosition = wallHit.position;
+      }
+      if (enemyHit && enemyHit.distance < hitDistance) {
+        hitDistance = enemyHit.distance;
+        hitPosition = enemyHit.position;
+      }
+
+      spawnTracer(bulletOrigin, bulletDir, hitDistance, weapon);
+
+      if (enemyHit && enemyHit.distance <= hitDistance + 0.001) {
+        spawnImpact(enemyHit.enemy.el.object3D.position, '#ff2d2d');
+        applyDamage(enemyHit.enemy, weapon.damage, weapon);
+      } else if (wallHit) {
+        spawnImpact(hitPosition);
+      }
     }
 
     function updatePlayerAnim(dt) {
@@ -900,6 +1328,23 @@ async function initGame() {
 
     function applyItemEffect(item) {
       const effects = item.efectos || {};
+      if (item.id === 'ammo_pack') {
+        const weapon = currentWeapon();
+        if (weapon) {
+          const totalMax = (weapon.ammoMax || 0) + (weapon.reserveMax || 0);
+          const currentTotal = (weapon.ammo || 0) + (weapon.reserveAmmo || 0);
+          const missing = Math.max(0, totalMax - currentTotal);
+          const give = Math.max(1, Math.ceil(missing * 0.1));
+          const ammoMissing = Math.max(0, (weapon.ammoMax || 0) - (weapon.ammo || 0));
+          const toAmmo = Math.min(give, ammoMissing);
+          weapon.ammo = Math.min(weapon.ammoMax, weapon.ammo + toAmmo);
+          const remaining = Math.max(0, give - toAmmo);
+          const reserveCap = Number.isFinite(weapon.reserveMax) ? weapon.reserveMax : Infinity;
+          weapon.reserveAmmo = Math.min(reserveCap, weapon.reserveAmmo + remaining);
+          updateWeaponHud();
+        }
+        addEffect('Municion', 1500);
+      }
       if (item.id === 'speed_boost') {
         playerState.speedMult = effects.velocidad_multiplicador || 1.4;
         addEffect('Velocidad', effects.duracion_ms || 6000);
@@ -912,8 +1357,8 @@ async function initGame() {
       }
       if (item.id === 'extra_life') {
         const extra = effects.vidas || 1;
-        playerState.lives += extra;
-        addEffect('Vida+', effects.duracion_ms || 2500);
+        playerState.attemptsLimit = Math.max(1, playerState.attemptsLimit + Math.round(extra));
+        addEffect('Intento+', effects.duracion_ms || 2500);
       }
       if (item.id === 'slow') {
         const slowMult = effects.velocidad_multiplicador || 0.6;
@@ -975,6 +1420,11 @@ async function initGame() {
     syncInventoryHud();
 
     function addToInventory(def) {
+      if (def?.id === 'ammo_pack') {
+        applyItemEffect(def);
+        hud.setStatus('Municion recogida');
+        return true;
+      }
       const slot = inventory.findIndex((item, idx) => idx > 0 && !item);
       if (slot === -1) {
         hud.setStatus('Inventario lleno');
@@ -991,12 +1441,137 @@ async function initGame() {
         lastUsedAt: -Infinity,
         esInstantaneo: def.es_instantaneo !== false,
       };
-      selectedSlot = slot;
       syncInventoryHud();
       hud.setStatus(`Slot ${slot + 1}: ${inventory[slot].nombre}`);
       return true;
     }
 
+    function startReload(weapon) {
+      if (!weapon || weapon.reloading || weapon.reserveAmmo <= 0) return;
+      weapon.reloading = true;
+      weapon.reloadUntil = performance.now() + weapon.reloadMs;
+      hud.setStatus(`Recargando ${weapon.name}`);
+    }
+
+    function applyDamage(enemy, damage, weapon = null) {
+      if (!enemy) return;
+      let finalDamage = Math.max(1, Number(damage) || 1);
+
+      if (weapon?.id === 'sniper') {
+        const diffKey = String(worldState.difficulty || 'normal').toLowerCase();
+        const profile = {
+          facil: { crit: 0.65, shots: 1 },
+          normal: { crit: 0.5, shots: 1 },
+          dificil: { crit: 0.35, shots: 2 },
+          experto: { crit: 0.25, shots: 2 },
+          pesadilla: { crit: 0.2, shots: 2 },
+        }[diffKey] || { crit: 0.4, shots: 2 };
+
+        const isTank = enemy.id === 'enemy_tank';
+        const crit = !isTank && Math.random() < profile.crit;
+        if (isTank) {
+          finalDamage = Math.max(1, enemy.maxHp / 2);
+        } else if (crit || profile.shots <= 1) {
+          finalDamage = Math.max(1, enemy.maxHp);
+          hud.setStatus('CRITICO!');
+        } else {
+          finalDamage = Math.max(1, enemy.maxHp / Math.max(1, profile.shots));
+        }
+      }
+
+      enemy.hp = Number(enemy.hp) - finalDamage;
+      flashEnemy(enemy, 90);
+      if (enemy.hp <= 0) {
+        removeEnemy(enemy, 'Enemigo eliminado');
+      }
+    }
+
+    function spawnImpact(position, color = '#ff6b6b') {
+      if (!sceneEl || !position) return;
+      const impact = document.createElement('a-entity');
+      impact.setAttribute('geometry', 'primitive: sphere; radius: 0.16');
+      impact.setAttribute('material', `color: ${color}; emissive: ${color}; emissiveIntensity: 0.9; metalness: 0.1; roughness: 0.2`);
+      impact.setAttribute('position', `${position.x} ${position.y} ${position.z}`);
+      sceneEl.appendChild(impact);
+      setTimeout(() => {
+        impact.parentNode?.removeChild(impact);
+      }, 120);
+    }
+
+    const bulletDir = new THREE.Vector3();
+    const bulletOrigin = new THREE.Vector3();
+    const rayPos = new THREE.Vector3();
+    const rayTmp = new THREE.Vector3();
+    const rayDirXZ = new THREE.Vector3();
+    const traceUp = new THREE.Vector3(0, 1, 0);
+    const traceQuat = new THREE.Quaternion();
+    const traceEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+    const enemyVec = new THREE.Vector3();
+
+    function spawnTracer(origin, dir, length, weapon) {
+      if (!sceneEl || !weapon) return;
+      const tracer = document.createElement('a-entity');
+      const radius = Math.max(0.02, (weapon.radius || 0.08) * 0.5);
+      const height = Math.max(0.2, length);
+      tracer.setAttribute('geometry', `primitive: cylinder; radius: ${radius}; height: ${height}`);
+      tracer.setAttribute(
+        'material',
+        `color: ${weapon.color}; emissive: ${weapon.color}; emissiveIntensity: 0.9; opacity: 0.85; transparent: true`,
+      );
+      const mid = rayPos.copy(origin).addScaledVector(dir, height * 0.5);
+      tracer.setAttribute('position', `${mid.x} ${mid.y} ${mid.z}`);
+      traceQuat.setFromUnitVectors(traceUp, dir);
+      traceEuler.setFromQuaternion(traceQuat, 'YXZ');
+      const deg = THREE.MathUtils.radToDeg;
+      tracer.setAttribute('rotation', `${deg(traceEuler.x)} ${deg(traceEuler.y)} ${deg(traceEuler.z)}`);
+      sceneEl.appendChild(tracer);
+      setTimeout(() => {
+        tracer.parentNode?.removeChild(tracer);
+      }, 80);
+    }
+
+    function findWallHit(origin, dir, range) {
+      if (!collisionSystem?.collidesAt) return null;
+      const step = Math.max(0.4, cellSize * 0.2);
+      const steps = Math.ceil(range / step);
+      for (let i = 0; i <= steps; i += 1) {
+        const dist = i * step;
+        if (dist > range) break;
+        rayTmp.copy(origin).addScaledVector(dir, dist);
+        if (collisionSystem.collidesAt(rayTmp.x, rayTmp.y, rayTmp.z, 0.12, 0.4)) {
+          return { distance: dist, position: rayTmp.clone() };
+        }
+      }
+      return null;
+    }
+
+    function findEnemyHit(origin, dir, range) {
+      let best = null;
+      let bestDist = Infinity;
+      for (const enemy of enemyEntities) {
+        if (!enemy?.el) continue;
+        const epos = enemy.el.object3D.position;
+        enemyVec.set(epos.x - origin.x, 0, epos.z - origin.z);
+        const t = enemyVec.dot(dir);
+        if (t <= 0 || t > range) continue;
+        rayTmp.copy(origin).addScaledVector(dir, t);
+        const dx = epos.x - rayTmp.x;
+        const dz = epos.z - rayTmp.z;
+        const dist = Math.hypot(dx, dz);
+        const hitRadius = enemy.hitRadius || cellSize * 0.3;
+        if (dist <= hitRadius && t < bestDist) {
+          bestDist = t;
+          best = {
+            enemy,
+            distance: t,
+            position: new THREE.Vector3(rayTmp.x, epos.y, rayTmp.z),
+          };
+        }
+      }
+      return best;
+    }
+
+    updateWeaponHud();
     function consumeSlot(slotIdx) {
       if (slotIdx <= 0 || slotIdx >= inventory.length) return;
       inventory[slotIdx] = null;
@@ -1036,20 +1611,59 @@ async function initGame() {
     let lastCullUpdate = 0;
     const staticWalls = Array.isArray(walls) ? walls : [];
 
-    initPreview(sceneEl, cameraEl);
-
     const camDir = new THREE.Vector3();
     const camQuat = new THREE.Quaternion();
     const camEuler = new THREE.Euler(0, 0, 0, 'YXZ');
     const focusDir = new THREE.Vector3();
     const focusVec = new THREE.Vector3();
+    const enemyFocusDir = new THREE.Vector3();
+    const enemyFocusVec = new THREE.Vector3();
+    const downedCamOffset = new THREE.Vector3(0, 6.5, 0);
     let focusedItemId = null;
+    let focusedEnemyId = null;
+
+    function hashId(id) {
+      let h = 0;
+      const str = String(id || '');
+      for (let i = 0; i < str.length; i++) {
+        h = ((h << 5) - h) + str.charCodeAt(i);
+        h |= 0;
+      }
+      return Math.abs(h);
+    }
 
     function updateMinimap() {
       if (typeof hud.updateMinimap !== 'function') return;
       const playerCell = worldToCell(playerEl.object3D.position, cellSize);
-      const enemyCells = enemyEntities.map((enemy) => worldToCell(enemy.el.object3D.position, cellSize));
-      const itemCells = itemSystem.getRemaining().map((item) => ({ x: item.x, y: item.y }));
+      const now = performance.now();
+
+      const itemCells = itemSystem.getRemaining().filter((item) => {
+        const dx = item.x - playerCell.x;
+        const dy = item.y - playerCell.y;
+        return Math.hypot(dx, dy) <= playerDetectionCells;
+      }).map((item) => ({ x: item.x, y: item.y }));
+
+      const enemyCells = [];
+      enemyEntities.forEach((enemy) => {
+        if (!enemy?.el) return;
+        const cell = worldToCell(enemy.el.object3D.position, cellSize);
+        const def = enemyDefById.get(enemy.id);
+        const stats = def?.stats || {};
+        const detection = Number(stats.deteccion) || 100;
+        const detectCells = Math.max(3, Math.min(14, Math.round(detection / 20)));
+        const dx = cell.x - playerCell.x;
+        const dy = cell.y - playerCell.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > detectCells) return;
+        const sigilo = Number(stats.sigilo) || 0;
+        if (sigilo > 1) {
+          const interval = 450 + sigilo * 350;
+          const window = interval * 0.35;
+          const offset = hashId(enemy.id) % interval;
+          if (((now + offset) % interval) > window) return;
+        }
+        enemyCells.push(cell);
+      });
       let rotation = 0;
       const camRef = cameraEl || playerEl.querySelector('[camera]');
       const camObj = camRef?.object3D;
@@ -1078,12 +1692,13 @@ async function initGame() {
       const camRef = cameraEl || playerEl.querySelector('[camera]');
       if (!camRef?.object3D?.getWorldDirection) return;
       camRef.object3D.getWorldDirection(focusDir);
+      focusDir.multiplyScalar(-1);
       focusDir.y = 0;
       if (focusDir.lengthSq() === 0) return;
       focusDir.normalize();
 
       const playerPos = playerEl.object3D.position;
-      const maxDist = cellSize * 1.1;
+      const maxDist = cellSize * 1.4;
       const minDot = Math.cos(Math.PI * 0.35);
       let best = null;
       let bestScore = -Infinity;
@@ -1113,6 +1728,66 @@ async function initGame() {
       } else if (focusedItemId) {
         focusedItemId = null;
         hud.setItemFocus('-', 'Apunta a un item para ver detalles.');
+      }
+    }
+
+    function updateEnemyFocus() {
+      if (typeof hud.setEnemyFocus !== 'function') return;
+      if (gameState !== 'playing') {
+        if (focusedEnemyId) {
+          focusedEnemyId = null;
+          hud.setEnemyFocus(null);
+        }
+        return;
+      }
+      const camRef = cameraEl || playerEl.querySelector('[camera]');
+      if (!camRef?.object3D?.getWorldDirection) return;
+      camRef.object3D.getWorldDirection(enemyFocusDir);
+      enemyFocusDir.multiplyScalar(-1);
+      enemyFocusDir.y = 0;
+      if (enemyFocusDir.lengthSq() === 0) return;
+      enemyFocusDir.normalize();
+
+      const playerPos = playerEl.object3D.position;
+      const maxDist = cellSize * 7;
+      const minDot = Math.cos(Math.PI * 0.3);
+      let best = null;
+      let bestScore = -Infinity;
+
+      for (const enemy of enemyEntities) {
+        if (!enemy?.el) continue;
+        const pos = enemy.el.object3D.position;
+        enemyFocusVec.set(pos.x - playerPos.x, 0, pos.z - playerPos.z);
+        const dist = enemyFocusVec.length();
+        if (dist <= 0.0001 || dist > maxDist) continue;
+        enemyFocusVec.divideScalar(dist);
+        const dot = enemyFocusVec.dot(enemyFocusDir);
+        if (dot < minDot) continue;
+        const score = dot * 2 - dist / maxDist;
+        if (score > bestScore) {
+          bestScore = score;
+          best = enemy;
+        }
+      }
+
+      if (best) {
+        if (focusedEnemyId !== best.id) focusedEnemyId = best.id;
+        const def = enemyDefById.get(best.id) || {};
+        const stats = def.stats || {};
+        const attack = Number(stats.ataque ?? best.attack) || 1;
+        const speed = Number(stats.velocidad ?? best.baseSpeed ?? best.speed) || 1;
+        const sigilo = Number(stats.sigilo) || 0;
+        const statsText = `ATQ ${attack.toFixed(1)}  SPD ${speed.toFixed(2)}  SIG ${sigilo.toFixed(1)}`;
+        hud.setEnemyFocus({
+          id: best.id,
+          name: def.nombre || best.id,
+          hp: best.hp,
+          maxHp: best.maxHp,
+          stats: statsText,
+        });
+      } else if (focusedEnemyId) {
+        focusedEnemyId = null;
+        hud.setEnemyFocus(null);
       }
     }
 
@@ -1154,6 +1829,7 @@ async function initGame() {
     let elapsedMs = 0;
     let lastHudUpdate = 0;
     let lastMinimapUpdate = 0;
+    let lastEnemyFocusUpdate = 0;
     let invulnerableUntil = 0;
     let lastAutoSaveAt = 0;
     let finalPhase = false;
@@ -1162,10 +1838,16 @@ async function initGame() {
     let frenzyActive = false;
 
     function setEffect(name, durationMs) {
-      const expiresAt = performance.now() + durationMs;
+      const now = performance.now();
+      const expiresAt = now + durationMs;
       const idx = activeEffects.findIndex((e) => e.name === name);
       if (idx >= 0) activeEffects.splice(idx, 1);
-      activeEffects.push({ name, expiresAt });
+      activeEffects.push({
+        name,
+        expiresAt,
+        durationMs: Math.max(0, Number(durationMs) || 0),
+        startedAt: now,
+      });
     }
 
     function grantInvulnerability(durationMs = engineConfig.invulnMs) {
@@ -1229,7 +1911,7 @@ async function initGame() {
       const title = outcome === 'won' ? 'Victoria' : 'Derrota';
       const msg = outcome === 'won'
         ? `Objetivo completado - Tiempo: ${formatDuration(elapsedMs)}`
-        : `Se acabaron las vidas - Tiempo: ${formatDuration(elapsedMs)}`;
+        : `Se acabaron los intentos - Tiempo: ${formatDuration(elapsedMs)}`;
 
       if (resultTitle) resultTitle.textContent = title;
       if (resultMessage) resultMessage.textContent = msg;
@@ -1272,14 +1954,13 @@ async function initGame() {
           refreshHud();
           return;
         }
-        playerState.lives -= 1;
-        refreshHud();
+        const attack = Number(enemy?.attack) || 1;
+        const defense = Number(playerStats?.defensa) || 0;
+        const baseDamage = attack * 12;
+        const mitigated = baseDamage / (1 + defense * 0.4);
+        const damage = Math.max(4, mitigated);
         hud.setStatus('Te golpearon');
-        playerEl.setAttribute('position', `${spawn.x * cellSize} 0 ${spawn.y * cellSize}`);
-        grantInvulnerability(5000);
-        if (playerState.lives <= 0) {
-          finishGame('lost');
-        }
+        applyPlayerDamage(damage);
       },
     });
 
@@ -1315,7 +1996,12 @@ async function initGame() {
         return;
       }
       if (e.code === 'Escape') togglePause();
-      if (e.code === 'KeyF') triggerAttack();
+      if (e.code === 'KeyQ') {
+        weaponIndex = (weaponIndex + 1) % weapons.length;
+        updateWeaponHud();
+        hud.setStatus(`Arma: ${currentWeapon().name}`);
+      }
+      if (e.code === 'KeyF') shootAttack();
       if (gameState === 'playing' && e.code === 'KeyE') {
         const nearest = itemSystem.findNearest(playerEl.object3D.position, cellSize * 0.55);
         if (nearest) {
@@ -1334,20 +2020,43 @@ async function initGame() {
           } else {
             useSlot(idx);
           }
+          syncInventoryHud();
         }
       }
     });
+
+    window.addEventListener('wheel', (e) => {
+      if (gameState !== 'playing') return;
+      const dir = e.deltaY > 0 ? 1 : -1;
+      let next = selectedSlot;
+      for (let i = 0; i < inventory.length; i++) {
+        next = (next + dir + inventory.length) % inventory.length;
+        if (next === 0 || inventory[next]) break;
+      }
+      selectedSlot = next;
+      syncInventoryHud();
+      if (selectedSlot === 0) hud.setStatus('Arma basica');
+    }, { passive: true });
 
     window.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
       if (gameState !== 'playing') return;
       const locked = document.pointerLockElement || document.mozPointerLockElement;
-      if (!locked) return;
-      const target = e.target;
-      if (target && target.closest && target.closest('.preview-panel, .pause-overlay, .start-overlay, .result-overlay')) {
+      if (!locked) {
+        if (sceneEl?.canvas?.requestPointerLock) {
+          sceneEl.canvas.requestPointerLock();
+        }
         return;
       }
-      triggerAttack();
+      const target = e.target;
+      if (target && target.closest && target.closest('.pause-overlay, .start-overlay, .result-overlay')) {
+        return;
+      }
+      if (selectedSlot > 0 && inventory[selectedSlot]) {
+        useSlot(selectedSlot);
+      } else {
+        shootAttack();
+      }
     });
 
     window.addEventListener('pointerdown', () => {
@@ -1379,6 +2088,7 @@ async function initGame() {
     });
 
     if (startBtn) startBtn.addEventListener('click', beginGame);
+    if (respawnBtn) respawnBtn.addEventListener('click', respawnPlayer);
     if (shouldAutoStart) {
       beginGame();
     } else if (startOverlay) {
@@ -1405,36 +2115,37 @@ async function initGame() {
 
     const baseSpeed = 4;
     startLoop((dt) => {
-      if (!paused && gameState === 'playing' && previewState.active && previewState.renderer && previewState.camera) {
-        const camRef = cameraEl || sceneEl.querySelector('[camera]');
-        const camObj = camRef?.object3D;
-        if (camObj) {
-          camObj.getWorldPosition(previewState.target);
-          camObj.getWorldDirection(previewState.forward);
-          const distance = 4.2;
-          const height = 2.0;
-          previewState.position.copy(previewState.target);
-          previewState.position.addScaledVector(previewState.forward, -distance);
-          previewState.position.addScaledVector(previewState.up, height);
-          previewState.camera.position.copy(previewState.position);
-          previewState.camera.lookAt(
+      if (paused) return;
+      if (gameState === 'downed') {
+        if (downedCameraActive && cameraEl?.object3D) {
+          cameraEl.object3D.position.set(
+            playerEl.object3D.position.x + downedCamOffset.x,
+            playerEl.object3D.position.y + downedCamOffset.y,
+            playerEl.object3D.position.z + downedCamOffset.z,
+          );
+          cameraEl.object3D.lookAt(
             playerEl.object3D.position.x,
-            playerEl.object3D.position.y + 1.2,
+            playerEl.object3D.position.y + 0.4,
             playerEl.object3D.position.z,
           );
-          previewState.renderer.render(sceneEl.object3D, previewState.camera);
         }
+        return;
       }
-
-      if (paused || gameState !== 'playing') return;
+      if (gameState !== 'playing') return;
       elapsedMs += dt * 1000;
       if (elapsedMs - lastHudUpdate > 250) {
         lastHudUpdate = elapsedMs;
         hud.setTime(elapsedMs);
+        syncInventoryHud();
+        hud.setEffects(buildEffectsHud());
       }
       if (elapsedMs - lastMinimapUpdate > 120) {
         lastMinimapUpdate = elapsedMs;
         updateMinimap();
+      }
+      if (elapsedMs - lastEnemyFocusUpdate > 140) {
+        lastEnemyFocusUpdate = elapsedMs;
+        updateEnemyFocus();
       }
       if (cullingEnabled && elapsedMs - lastCullUpdate > cullIntervalMs) {
         lastCullUpdate = elapsedMs;
@@ -1445,6 +2156,19 @@ async function initGame() {
         culling.update(staticWalls.concat(dynamic));
       }
       const now = performance.now();
+      const weapon = currentWeapon();
+      if (weapon?.reloading && now >= weapon.reloadUntil) {
+        const needed = weapon.ammoMax;
+        const take = Math.min(needed, weapon.reserveAmmo);
+        weapon.ammo = take;
+        weapon.reserveAmmo -= take;
+        weapon.reloading = false;
+        updateWeaponHud();
+        hud.setStatus('Recarga completa');
+      }
+      spawnNearbyEnemies(now);
+      despawnFarEnemies(now);
+
       const remaining = [];
       for (const eff of activeEffects) {
         if (eff.expiresAt > now) remaining.push(eff);

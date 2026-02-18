@@ -9,6 +9,7 @@
   </head>
   <body>
     <div id="hud-root"></div>
+    <div id="crosshair"></div>
     <div class="loading-overlay active" id="loadingOverlay">
       <div class="loading-panel">
         <div class="loading-title">Cargando</div>
@@ -22,6 +23,15 @@
         <div class="overlay-subtitle" id="startObjective">Preparado</div>
         <div class="overlay-actions">
           <button class="overlay-btn primary" id="startBtn">Comenzar</button>
+        </div>
+      </div>
+    </div>
+    <div class="down-overlay" id="downOverlay">
+      <div class="overlay-panel">
+        <div class="overlay-title">Has caido</div>
+        <div class="overlay-subtitle">Reapareceras en el inicio.</div>
+        <div class="overlay-actions">
+          <button class="overlay-btn primary" id="respawnBtn">Reaparecer</button>
         </div>
       </div>
     </div>
@@ -39,12 +49,6 @@
     </div>
     <div class="pause-overlay" id="pauseOverlay">
       <iframe class="pause-frame" src="pause.html"></iframe>
-    </div>
-    <div class="preview-panel active" id="previewPanel">
-      <button class="preview-toggle" id="previewToggle" type="button">Vista 3ra</button>
-      <div class="preview-wrap">
-        <canvas id="thirdPersonCanvas" width="240" height="150"></canvas>
-      </div>
     </div>
     <a-scene id="scene" embedded>
       <a-entity id="player" room-player step-bob position="0 0 0">

@@ -71,6 +71,22 @@
         "asset": "game_data/assets/items/double_points.glb"
     },
     {
+        "id": "ammo_pack",
+        "nombre": "MuniciÃ³n",
+        "descripcion": "Recarga municiÃ³n para el arma actual.",
+        "tipo_efecto": "municion",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 0,
+        "rareza": 1,
+        "efectos": {
+            "balas": 40
+        },
+        "color": "#F2E06E",
+        "asset": ""
+    },
+    {
         "id": "freeze",
         "nombre": "CongelaciÃ³n",
         "descripcion": "Detiene completamente a todos los enemigos cercanos o en pantalla.",

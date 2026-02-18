@@ -44,6 +44,7 @@
               <button class="control-btn" id="favoriteBtn">Favorito</button>
               <button class="control-btn" id="discoveredBtn">Descubierto</button>
               <button class="control-btn active" id="autoRotateBtn">Auto rotar</button>
+              <button class="control-btn active" id="idleAnimBtn">Idle</button>
             </div>
             <div class="preview-media">
               <img id="previewImage" alt="preview" />
@@ -76,6 +77,10 @@
     </div>
 
     <script type="module">
+      import { registerPlayerAnimator } from '../../game_engine/render/player_animator.js';
+
+      registerPlayerAnimator();
+
       const ITEMS_URL = '../../game_data/items/latest.json';
       const ENTITIES_URL = '../../game_data/entities/entities_v0.2.json';
 
@@ -94,6 +99,7 @@
       const favoriteBtn = document.getElementById('favoriteBtn');
       const discoveredBtn = document.getElementById('discoveredBtn');
       const autoRotateBtn = document.getElementById('autoRotateBtn');
+      const idleAnimBtn = document.getElementById('idleAnimBtn');
       const rotationRange = document.getElementById('rotationRange');
       const zoomRange = document.getElementById('zoomRange');
 
@@ -104,6 +110,8 @@
       let activeId = null;
       let filterMode = 'all';
       let autoRotate = true;
+      let idleAnim = true;
+      let currentEntry = null;
 
       const FAVORITES_KEY = 'diary_favorites_v1';
       const DISCOVERED_KEY = 'diary_discovered_v1';
@@ -142,6 +150,10 @@
 
       function isEnemyEntry(entry) {
         return entry?.type === 'enemigo';
+      }
+
+      function isPlayerEntry(entry) {
+        return entry?.type === 'jugador';
       }
 
       function normalizeTrapMaterial(mesh) {
@@ -256,6 +268,7 @@
       }
 
       function renderPreview(entry) {
+        currentEntry = entry;
         previewTitle.textContent = entry.name;
         previewType.textContent = entry.type.toUpperCase();
         previewDesc.textContent = entry.desc;
@@ -271,6 +284,12 @@
         discoveredBtn.classList.toggle('active', discovered.has(entry.id));
 
         if (entry.asset && isModel(entry.asset)) {
+          const useIdle = isEnemyEntry(entry) || isPlayerEntry(entry);
+          if (useIdle) {
+            previewModel.setAttribute('player-animator', 'idle: idle; walk: walk; run: run; attack: attack; death: death; jump: jump;');
+          } else {
+            previewModel.removeAttribute('player-animator');
+          }
           previewImage.style.opacity = '0';
           previewImage.style.visibility = 'hidden';
           previewScene.style.opacity = '1';
@@ -289,7 +308,7 @@
           if (typeof previewScene?.play === 'function') {
             previewScene.play();
           }
-          const applyTrap = () => {
+          const applyVisuals = () => {
             const mesh = previewModel.getObject3D('mesh');
             if (!mesh) return;
             if (isTrapEntry(entry)) {
@@ -310,10 +329,34 @@
               });
             }
           };
+
+          const applyIdle = () => {
+            if (!useIdle) {
+              idleAnimBtn?.setAttribute('disabled', 'true');
+              idleAnimBtn?.classList.remove('active');
+              return;
+            }
+            idleAnimBtn?.removeAttribute('disabled');
+            idleAnimBtn?.classList.toggle('active', idleAnim);
+            const animator = previewModel.components?.['player-animator'];
+            if (!animator) return;
+            if (idleAnim) {
+              animator.setPaused(false);
+              animator.setState('idle', { force: true });
+            } else {
+              animator.setPaused(true);
+            }
+          };
+
+          const onLoaded = () => {
+            applyVisuals();
+            applyIdle();
+          };
+
           if (previewModel.getObject3D('mesh')) {
-            applyTrap();
+            onLoaded();
           } else {
-            previewModel.addEventListener('model-loaded', applyTrap, { once: true });
+            previewModel.addEventListener('model-loaded', onLoaded, { once: true });
           }
           if (autoRotate) {
             previewRig?.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear');
@@ -326,11 +369,31 @@
           previewImage.style.opacity = '1';
           previewImage.style.visibility = 'visible';
           previewImage.src = resolveAsset(entry.asset);
+          previewModel.removeAttribute('player-animator');
+          idleAnimBtn?.setAttribute('disabled', 'true');
+          idleAnimBtn?.classList.remove('active');
         } else {
           previewScene.style.opacity = '0';
           previewScene.style.visibility = 'hidden';
           previewImage.style.opacity = '0';
           previewImage.style.visibility = 'hidden';
+          previewModel.removeAttribute('player-animator');
+          idleAnimBtn?.setAttribute('disabled', 'true');
+          idleAnimBtn?.classList.remove('active');
+        }
+      }
+
+      function updateIdleStateOnly() {
+        if (!currentEntry) return;
+        if (!isEnemyEntry(currentEntry) && !isPlayerEntry(currentEntry)) return;
+        idleAnimBtn?.classList.toggle('active', idleAnim);
+        const animator = previewModel.components?.['player-animator'];
+        if (!animator) return;
+        if (idleAnim) {
+          animator.setPaused(false);
+          animator.setState('idle', { force: true });
+        } else {
+          animator.setPaused(true);
         }
       }
 
@@ -376,6 +439,11 @@
         autoRotateBtn.classList.toggle('active', autoRotate);
         const entry = entries[activeType].find((e) => e.id === activeId);
         if (entry) renderPreview(entry);
+      });
+
+      idleAnimBtn.addEventListener('click', () => {
+        idleAnim = !idleAnim;
+        updateIdleStateOnly();
       });
 
       rotationRange.addEventListener('input', () => {

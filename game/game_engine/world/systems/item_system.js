@@ -11,6 +11,7 @@ function cellToWorld(cell, cellSize) {
 export function createItemSystem({ sceneEl, itemsData, worldState, cellSize, onPickup, shadowEnabled = false }) {
   const itemsById = new Map();
   itemsData.forEach((item) => itemsById.set(item.id, item));
+  const initialEntries = (worldState.items || []).map((entry) => ({ ...entry }));
 
   const TRAP_MASK_COLOR = '#ff4d6d';
   const TRAP_MASK_STRENGTH = 0.35;
@@ -73,7 +74,7 @@ export function createItemSystem({ sceneEl, itemsData, worldState, cellSize, onP
     });
   }
 
-  const spawned = worldState.items.map((entry) => {
+  function spawnEntry(entry) {
     const def = itemsById.get(entry.id);
     if (!def) return null;
     const rootEl = document.createElement('a-entity');
@@ -83,7 +84,7 @@ export function createItemSystem({ sceneEl, itemsData, worldState, cellSize, onP
     }
     const pos = cellToWorld(entry, cellSize);
     const yOffset = Number(def.yOffset) || 0;
-    const baseY = cellSize * 0.2;
+    const baseY = cellSize * 0.25;
     rootEl.setAttribute('position', `${pos.x} ${baseY + yOffset} ${pos.z}`);
 
     const bobEl = document.createElement('a-entity');
@@ -107,11 +108,6 @@ export function createItemSystem({ sceneEl, itemsData, worldState, cellSize, onP
           normalizeTrapMaterial(mesh);
           applyColorMask(mesh, TRAP_MASK_COLOR, TRAP_MASK_STRENGTH);
         }
-        const box = new THREE.Box3().setFromObject(mesh);
-        const center = box.getCenter(new THREE.Vector3());
-        mesh.position.x += -center.x;
-        mesh.position.z += -center.z;
-        mesh.position.y += -box.min.y;
       }, { once: true });
     } else {
       modelEl.setAttribute('geometry', 'primitive: sphere; radius: 0.2');
@@ -120,7 +116,9 @@ export function createItemSystem({ sceneEl, itemsData, worldState, cellSize, onP
     bobEl.appendChild(modelEl);
     sceneEl.appendChild(rootEl);
     return { def, el: rootEl, picked: false, cell: entry };
-  }).filter(Boolean);
+  }
+
+  const spawned = (worldState.items || []).map(spawnEntry).filter(Boolean);
 
   function update() {
     // No auto-pickup; handled by user input.
@@ -159,5 +157,16 @@ export function createItemSystem({ sceneEl, itemsData, worldState, cellSize, onP
       .map((item) => ({ id: item.def.id, x: item.cell.x, y: item.cell.y }));
   }
 
-  return { items: spawned, update, getRemaining, findNearest, pickup };
+  function reset() {
+    spawned.forEach((item) => {
+      if (!item?.el) return;
+      item.el.parentNode?.removeChild(item.el);
+    });
+    spawned.length = 0;
+    worldState.items = initialEntries.map((entry) => ({ ...entry }));
+    const fresh = (worldState.items || []).map(spawnEntry).filter(Boolean);
+    fresh.forEach((item) => spawned.push(item));
+  }
+
+  return { items: spawned, update, getRemaining, findNearest, pickup, reset };
 }

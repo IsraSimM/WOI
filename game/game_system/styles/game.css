@@ -2,6 +2,38 @@ html, body { height: 100%; margin: 0; }
 body { background: #0b0f15; overflow: hidden; }
 a-scene { position: absolute; inset: 0; }
 #hud-root { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+#crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  margin-top: -9px;
+  z-index: 6;
+  pointer-events: none;
+}
+#crosshair::before,
+#crosshair::after {
+  content: "";
+  position: absolute;
+  background: rgba(43, 216, 255, 0.85);
+  box-shadow: 0 0 6px rgba(43, 216, 255, 0.6);
+}
+#crosshair::before {
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  transform: translateX(-1px);
+}
+#crosshair::after {
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  transform: translateY(-1px);
+}
 .pause-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(6,10,16,0.6); opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 6; }
 .pause-overlay.active { opacity: 1; pointer-events: auto; }
 .pause-frame { width: min(420px, 90vw); height: min(360px, 90vh); border: none; border-radius: 0; background: transparent; }
@@ -63,7 +95,7 @@ a-scene { position: absolute; inset: 0; }
   50% { transform: translateX(40%); }
   100% { transform: translateX(140%); }
 }
-.start-overlay, .result-overlay {
+.start-overlay, .result-overlay, .down-overlay {
   position: absolute;
   inset: 0;
   display: flex;
@@ -75,7 +107,7 @@ a-scene { position: absolute; inset: 0; }
   transition: opacity 0.2s ease;
   z-index: 7;
 }
-.start-overlay.active, .result-overlay.active {
+.start-overlay.active, .result-overlay.active, .down-overlay.active {
   opacity: 1;
   pointer-events: auto;
 }

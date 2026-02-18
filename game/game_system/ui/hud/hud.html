@@ -70,6 +70,27 @@
       color: var(--hud-warn);
     }
 
+    .stat-dots {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-top: 6px;
+    }
+
+    .stat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 0;
+      border: 1px solid rgba(56, 132, 164, 0.5);
+      background: rgba(8, 12, 18, 0.7);
+    }
+
+    .stat-dot.active {
+      background: var(--hud-accent);
+      border-color: var(--hud-accent);
+      box-shadow: 0 0 8px rgba(43, 216, 255, 0.45);
+    }
+
     .stat-divider {
       width: 1px;
       height: 36px;
@@ -104,6 +125,12 @@
       position: absolute;
       right: 18px;
       bottom: 26px;
+    }
+
+    .hud-enemy {
+      position: absolute;
+      right: 18px;
+      bottom: 150px;
     }
 
     .hud-status {
@@ -383,6 +410,12 @@
       letter-spacing: 1px;
     }
 
+    .inventory-slot.selected {
+      border-color: var(--hud-accent);
+      box-shadow: 0 0 0 1px rgba(43, 216, 255, 0.35);
+      background: rgba(10, 22, 30, 0.8);
+    }
+
     .inventory-slot .slot-key {
       font-size: 10px;
       color: var(--hud-muted);
@@ -413,6 +446,101 @@
       font-size: 11px;
       color: var(--hud-muted);
     }
+
+    .enemy-panel {
+      width: min(280px, 80vw);
+      padding: 12px 14px;
+      display: grid;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .enemy-title {
+      font-size: 11px;
+      color: var(--hud-accent);
+    }
+
+    .enemy-name {
+      font-size: 14px;
+      color: var(--hud-text);
+    }
+
+    .enemy-hp-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--hud-muted);
+    }
+
+    .enemy-hp-bar {
+      height: 8px;
+      border-radius: var(--hud-radius);
+      background: rgba(12, 18, 24, 0.8);
+      border: 1px solid rgba(56, 132, 164, 0.25);
+      overflow: hidden;
+    }
+
+    .enemy-hp-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #ff5a66, #ff9a6a);
+    }
+
+    .enemy-stats {
+      font-size: 11px;
+      color: var(--hud-muted);
+      line-height: 1.4;
+      min-height: 28px;
+    }
+
+    .inventory-slot {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slot-cooldown {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 4px;
+      background: rgba(8, 16, 24, 0.6);
+    }
+
+    .slot-cooldown-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #2bd8ff, #9be7ff);
+      transition: width 0.1s linear;
+    }
+
+    .slot-cooldown-text {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      font-size: 10px;
+      color: var(--hud-muted);
+    }
+
+    .effect-card {
+      display: grid;
+      gap: 6px;
+    }
+
+    .effect-bar {
+      height: 6px;
+      border-radius: 0;
+      background: rgba(43, 216, 255, 0.12);
+      overflow: hidden;
+    }
+
+    .effect-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #2bd8ff, #a2f5ff);
+      transition: width 0.15s linear;
+    }
   </style>
 
   <div class="hud-top">
@@ -430,6 +558,7 @@
       <div class="stat">
         <div class="stat-label">INTENTOS</div>
         <div class="stat-value" id="hudLives">03</div>
+        <div class="stat-dots" id="hudLivesDots"></div>
       </div>
       <div class="stat-divider"></div>
       <div class="stat">
@@ -517,6 +646,21 @@
       <div class="mission-main" id="hudObjective">-</div>
       <div class="mission-meta"><span>Modo</span><span id="hudMode">-</span></div>
       <div class="mission-meta"><span>Dificultad</span><span id="hudDifficulty">-</span></div>
+    </div>
+  </div>
+
+  <div class="hud-enemy">
+    <div class="hud-panel enemy-panel" id="hudEnemyPanel">
+      <div class="enemy-title">OBJETIVO</div>
+      <div class="enemy-name" id="hudEnemyName">-</div>
+      <div class="enemy-hp-row">
+        <span>VIDA</span>
+        <span id="hudEnemyHpText">--/--</span>
+      </div>
+      <div class="enemy-hp-bar">
+        <div class="enemy-hp-fill" id="hudEnemyHpFill"></div>
+      </div>
+      <div class="enemy-stats" id="hudEnemyStats">Sin objetivo</div>
     </div>
   </div>
 

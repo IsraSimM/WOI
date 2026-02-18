@@ -10,6 +10,7 @@ export async function mountHud(rootEl) {
   const modeEl = rootEl.querySelector('#hudMode');
   const diffEl = rootEl.querySelector('#hudDifficulty');
   const livesEl = rootEl.querySelector('#hudLives');
+  const livesDotsEl = rootEl.querySelector('#hudLivesDots');
   const speedEl = rootEl.querySelector('#hudSpeed');
   const lifePercentEl = rootEl.querySelector('#hudLifePercent');
   const lifeFillEl = rootEl.querySelector('#hudLifeFill');
@@ -29,8 +30,13 @@ export async function mountHud(rootEl) {
   const finalTimeEl = rootEl.querySelector('#hudFinalTime');
   const minimapEl = rootEl.querySelector('#hudMinimap');
   const minimapCtx = minimapEl?.getContext ? minimapEl.getContext('2d') : null;
+  const enemyPanelEl = rootEl.querySelector('#hudEnemyPanel');
+  const enemyNameEl = rootEl.querySelector('#hudEnemyName');
+  const enemyHpTextEl = rootEl.querySelector('#hudEnemyHpText');
+  const enemyHpFillEl = rootEl.querySelector('#hudEnemyHpFill');
+  const enemyStatsEl = rootEl.querySelector('#hudEnemyStats');
 
-  const SLOT_COUNT = 4;
+  let slotCount = 4;
   const minimapState = {
     ready: false,
     map: null,
@@ -58,15 +64,19 @@ export async function mountHud(rootEl) {
 
   function formatItemLabel(item) {
     if (!item) return 'VACIO';
+    if (typeof item === 'string') return String(item).replace(/_/g, ' ').toUpperCase();
+    if (typeof item === 'object' && item.label) return String(item.label).replace(/_/g, ' ').toUpperCase();
     return String(item).replace(/_/g, ' ').toUpperCase();
   }
 
-  function renderSlots(items) {
+  function renderSlots(items, selectedIndex = 0) {
     if (!itemsEl) return;
     itemsEl.innerHTML = '';
-    for (let i = 0; i < SLOT_COUNT; i++) {
+    const count = Math.max(1, slotCount);
+    for (let i = 0; i < count; i++) {
+      const slotData = items?.[i] || null;
       const slot = document.createElement('div');
-      slot.className = 'inventory-slot';
+      slot.className = 'inventory-slot' + (i === selectedIndex ? ' selected' : '');
 
       const key = document.createElement('div');
       key.className = 'slot-key';
@@ -74,10 +84,29 @@ export async function mountHud(rootEl) {
 
       const label = document.createElement('div');
       label.className = 'slot-label';
-      label.textContent = formatItemLabel(items?.[i]);
+      label.textContent = formatItemLabel(slotData);
 
       slot.appendChild(key);
       slot.appendChild(label);
+
+      if (slotData && typeof slotData === 'object') {
+        const cooldownRatio = Number(slotData.cooldownRatio) || 0;
+        if (cooldownRatio > 0) {
+          const bar = document.createElement('div');
+          bar.className = 'slot-cooldown';
+          const fill = document.createElement('div');
+          fill.className = 'slot-cooldown-fill';
+          fill.style.width = `${Math.max(0, Math.min(100, cooldownRatio * 100))}%`;
+          bar.appendChild(fill);
+          slot.appendChild(bar);
+          if (slotData.cooldownText) {
+            const text = document.createElement('div');
+            text.className = 'slot-cooldown-text';
+            text.textContent = slotData.cooldownText;
+            slot.appendChild(text);
+          }
+        }
+      }
       itemsEl.appendChild(slot);
     }
   }
@@ -93,18 +122,29 @@ export async function mountHud(rootEl) {
       return;
     }
     effects.forEach((effect) => {
+      const name = typeof effect === 'string' ? effect : effect?.name || effect?.label || effect?.id || 'EFECTO';
+      const ratio = Number(effect?.ratio);
       const card = document.createElement('div');
       card.className = 'effect-card';
 
       const label = document.createElement('div');
-      label.textContent = String(effect).toUpperCase();
+      label.textContent = String(name).toUpperCase();
 
       const value = document.createElement('div');
       value.className = 'effect-value';
-      value.textContent = 'ACTIVO';
+      value.textContent = effect?.remainingText || 'ACTIVO';
 
       card.appendChild(label);
       card.appendChild(value);
+      if (Number.isFinite(ratio) && ratio >= 0) {
+        const bar = document.createElement('div');
+        bar.className = 'effect-bar';
+        const fill = document.createElement('div');
+        fill.className = 'effect-fill';
+        fill.style.width = `${Math.max(0, Math.min(100, ratio * 100))}%`;
+        bar.appendChild(fill);
+        card.appendChild(bar);
+      }
       effectsEl.appendChild(card);
     });
   }
@@ -228,14 +268,33 @@ export async function mountHud(rootEl) {
   return {
     setMode: (mode) => setText(modeEl, mode || '-'),
     setDifficulty: (diff) => setText(diffEl, diff || '-'),
-    setLives: (lives) => {
-      const val = Number.isFinite(lives) ? lives : '-';
-      setText(livesEl, String(val));
-      if (lifePercentEl && lifeFillEl) {
-        const percent = Number.isFinite(lives) && lives > 0 ? 100 : 0;
-        lifePercentEl.textContent = `${percent}%`;
-        lifeFillEl.style.width = `${percent}%`;
+    setAttempts: (attemptsUsed, attemptsLimit) => {
+      const used = Number.isFinite(attemptsUsed) ? Math.max(0, Math.round(attemptsUsed)) : 0;
+      const limit = Number.isFinite(attemptsLimit) ? Math.max(1, Math.round(attemptsLimit)) : null;
+      setText(livesEl, limit ? `${used}/${limit}` : String(used));
+      if (livesDotsEl) {
+        livesDotsEl.innerHTML = '';
+        const total = limit || 6;
+        const count = Math.min(total, used);
+        for (let i = 0; i < total; i++) {
+          const dot = document.createElement('div');
+          dot.className = 'stat-dot' + (i < count ? ' active' : '');
+          livesDotsEl.appendChild(dot);
+        }
       }
+    },
+    setHealth: (value, max = 100) => {
+      if (!lifePercentEl || !lifeFillEl) return;
+      const current = Number(value);
+      const maxVal = Number(max);
+      if (!Number.isFinite(current) || !Number.isFinite(maxVal) || maxVal <= 0) {
+        lifePercentEl.textContent = '--%';
+        lifeFillEl.style.width = '0%';
+        return;
+      }
+      const percent = Math.max(0, Math.min(100, (current / maxVal) * 100));
+      lifePercentEl.textContent = `${Math.round(percent)}%`;
+      lifeFillEl.style.width = `${percent}%`;
     },
     setSpeed: (value) => {
       if (!speedEl) return;
@@ -255,8 +314,11 @@ export async function mountHud(rootEl) {
       }
       timeEl.textContent = formatTime(time);
     },
-    setItems: (items) => {
-      renderSlots(items || []);
+    setItems: (items, selectedIndex = 0) => {
+      if (Array.isArray(items) && items.length) {
+        slotCount = items.length;
+      }
+      renderSlots(items || [], selectedIndex);
     },
     setEffects: (effects) => {
       renderEffects(effects || []);
@@ -301,6 +363,26 @@ export async function mountHud(rootEl) {
       const minutes = Math.floor(total / 60);
       const seconds = total % 60;
       finalTimeEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    },
+    setEnemyFocus: (data) => {
+      if (!enemyPanelEl) return;
+      if (!data) {
+        if (enemyNameEl) enemyNameEl.textContent = '-';
+        if (enemyHpTextEl) enemyHpTextEl.textContent = '--/--';
+        if (enemyHpFillEl) enemyHpFillEl.style.width = '0%';
+        if (enemyStatsEl) enemyStatsEl.textContent = 'Sin objetivo';
+        return;
+      }
+      const name = data.name || data.id || '-';
+      const hp = Number.isFinite(data.hp) ? data.hp : 0;
+      const maxHp = Number.isFinite(data.maxHp) ? data.maxHp : 0;
+      if (enemyNameEl) enemyNameEl.textContent = String(name).toUpperCase();
+      if (enemyHpTextEl) enemyHpTextEl.textContent = `${Math.max(0, Math.round(hp))}/${Math.max(0, Math.round(maxHp))}`;
+      if (enemyHpFillEl) {
+        const ratio = maxHp > 0 ? Math.max(0, Math.min(1, hp / maxHp)) : 0;
+        enemyHpFillEl.style.width = `${ratio * 100}%`;
+      }
+      if (enemyStatsEl) enemyStatsEl.textContent = data.stats || '';
     },
     initMinimap: ({ map, width, height, start, end, radiusCells }) => {
       setupMinimapState({ map, width, height, radiusCells });
