@@ -147,9 +147,10 @@ function modelFor(map, width, height, x, y, base) {
 }
 
 function autoAlignEntity(el, { x, z, bottom }) {
-  el.addEventListener('model-loaded', () => {
+  const alignNow = () => {
     const mesh = el.getObject3D('mesh');
     if (!mesh || !window.THREE) return;
+    el.object3D.updateMatrixWorld(true);
     mesh.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(mesh);
     const center = box.getCenter(new THREE.Vector3());
@@ -160,6 +161,15 @@ function autoAlignEntity(el, { x, z, bottom }) {
     el.object3D.position.y += dy;
     el.object3D.position.z += dz;
     el.object3D.updateMatrixWorld(true);
+  };
+
+  if (el.getObject3D('mesh')) {
+    requestAnimationFrame(alignNow);
+    return;
+  }
+
+  el.addEventListener('model-loaded', () => {
+    requestAnimationFrame(alignNow);
   }, { once: true });
 }
 
