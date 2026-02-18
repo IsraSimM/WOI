@@ -1,0 +1,489 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Diario</title>
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <style>
+      .diary-layout {
+        display: grid;
+        grid-template-columns: minmax(260px, 1fr) minmax(300px, 1.2fr);
+        gap: 20px;
+        align-items: start;
+      }
+      .diary-panel {
+        border: var(--ui-border);
+        background: var(--ui-bg);
+        padding: 16px;
+      }
+      .diary-controls {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .tab-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .tab-btn {
+        padding: 10px 14px;
+        border: var(--ui-border);
+        background: rgba(10, 18, 24, 0.6);
+        color: var(--ui-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        cursor: pointer;
+      }
+      .tab-btn.active {
+        color: var(--ui-text);
+        border-color: var(--ui-focus);
+        box-shadow: 0 0 0 1px rgba(74, 158, 255, 0.2);
+      }
+      .entry-list {
+        display: grid;
+        gap: 10px;
+        max-height: 55vh;
+        overflow: auto;
+        padding-right: 6px;
+      }
+      .entry-btn {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        border: var(--ui-border);
+        background: rgba(12, 20, 28, 0.6);
+        color: var(--ui-text);
+        cursor: pointer;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 12px;
+      }
+      .entry-btn.active {
+        background: rgba(0, 217, 255, 0.15);
+        border-color: #00d9ff;
+      }
+      .entry-tag {
+        color: var(--ui-muted);
+      }
+      .summary {
+        font-size: 11px;
+        color: var(--ui-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .filter-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .preview-title {
+        font-size: 18px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      .preview-type {
+        font-size: 11px;
+        color: var(--ui-muted);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+      .preview-body {
+        display: grid;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .preview-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .control-btn {
+        padding: 8px 12px;
+        border: var(--ui-border);
+        background: rgba(12, 20, 28, 0.6);
+        color: var(--ui-text);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .control-btn.active {
+        border-color: var(--ui-focus);
+        color: #00d9ff;
+      }
+      .control-row {
+        display: grid;
+        gap: 6px;
+      }
+      .control-row label {
+        font-size: 10px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--ui-muted);
+      }
+      .preview-media {
+        border: var(--ui-border);
+        background: rgba(8, 12, 18, 0.8);
+        height: 260px;
+        position: relative;
+      }
+      #previewImage {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: none;
+      }
+      #previewScene {
+        width: 100%;
+        height: 100%;
+        display: none;
+      }
+      .preview-meta {
+        font-size: 12px;
+        color: var(--ui-muted);
+        line-height: 1.5;
+      }
+      .preview-meta strong {
+        color: var(--ui-text);
+      }
+      @media (max-width: 900px) {
+        .diary-layout {
+          grid-template-columns: 1fr;
+        }
+        .entry-list {
+          max-height: 40vh;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="title-section">
+        <h1 class="title">
+          <span class="title-world">DIARIO</span>
+          <span class="title-it">OPERATIVO</span>
+        </h1>
+      </div>
+
+      <div class="diary-layout">
+        <div class="diary-panel">
+          <div class="diary-controls">
+            <input id="searchInput" type="text" placeholder="Buscar..." />
+            <div class="tab-row">
+              <button class="tab-btn active" data-type="items">Items</button>
+              <button class="tab-btn" data-type="enemies">Enemigos</button>
+              <button class="tab-btn" data-type="players">Jugadores</button>
+            </div>
+            <div class="filter-row">
+              <button class="tab-btn active" data-filter="all">Todos</button>
+              <button class="tab-btn" data-filter="favorites">Favoritos</button>
+              <button class="tab-btn" data-filter="discovered">Descubiertos</button>
+            </div>
+            <div class="summary" id="summaryText">0 entradas</div>
+          </div>
+          <div class="entry-list" id="entryList"></div>
+        </div>
+
+        <div class="diary-panel">
+          <div class="preview-title" id="previewTitle">Selecciona un registro</div>
+          <div class="preview-type" id="previewType">-</div>
+          <div class="preview-body">
+            <div class="preview-actions">
+              <button class="control-btn" id="favoriteBtn">Favorito</button>
+              <button class="control-btn" id="discoveredBtn">Descubierto</button>
+              <button class="control-btn active" id="autoRotateBtn">Auto rotar</button>
+            </div>
+            <div class="preview-media">
+              <img id="previewImage" alt="preview" />
+              <a-scene id="previewScene" embedded renderer="antialias: true; alpha: true">
+                <a-entity light="type: ambient; intensity: 0.6; color: #9db3c7"></a-entity>
+                <a-entity light="type: directional; intensity: 0.7; color: #ffffff" position="3 5 2"></a-entity>
+              <a-entity id="previewModel" position="0 -0.6 0"></a-entity>
+              <a-entity id="previewRig" rotation="0 45 0">
+                <a-camera id="previewCamera" position="0 0 3" look-controls="enabled: false"></a-camera>
+              </a-entity>
+            </a-scene>
+            </div>
+            <div class="control-row">
+              <label for="rotationRange">Rotacion</label>
+              <input id="rotationRange" type="range" min="0" max="360" value="45" />
+            </div>
+            <div class="control-row">
+              <label for="zoomRange">Zoom</label>
+              <input id="zoomRange" type="range" min="1" max="5" value="3" />
+            </div>
+            <div class="preview-meta" id="previewDesc">---</div>
+            <div class="preview-meta"><strong>Asset:</strong> <span id="previewAsset">---</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu" style="margin-top: 24px;">
+        <button class="menu-btn" data-route="index.html">Volver</button>
+      </div>
+    </div>
+
+    <script type="module">
+      const ITEMS_URL = '../../game_data/items/latest.json';
+      const ENTITIES_URL = '../../game_data/entities/entities_v0.2.json';
+
+      const searchInput = document.getElementById('searchInput');
+      const entryList = document.getElementById('entryList');
+      const summaryText = document.getElementById('summaryText');
+      const previewTitle = document.getElementById('previewTitle');
+      const previewType = document.getElementById('previewType');
+      const previewDesc = document.getElementById('previewDesc');
+      const previewAsset = document.getElementById('previewAsset');
+      const previewImage = document.getElementById('previewImage');
+      const previewScene = document.getElementById('previewScene');
+      const previewModel = document.getElementById('previewModel');
+      const previewRig = document.getElementById('previewRig');
+      const previewCamera = document.getElementById('previewCamera');
+      const favoriteBtn = document.getElementById('favoriteBtn');
+      const discoveredBtn = document.getElementById('discoveredBtn');
+      const autoRotateBtn = document.getElementById('autoRotateBtn');
+      const rotationRange = document.getElementById('rotationRange');
+      const zoomRange = document.getElementById('zoomRange');
+      const previewCenter = { x: 0, y: -0.6, z: 0 };
+
+      const tabs = Array.from(document.querySelectorAll('.tab-btn[data-type]'));
+      const filterButtons = Array.from(document.querySelectorAll('.tab-btn[data-filter]'));
+      let entries = { items: [], enemies: [], players: [] };
+      let activeType = 'items';
+      let activeId = null;
+      let filterMode = 'all';
+      let autoRotate = true;
+
+      const FAVORITES_KEY = 'diary_favorites_v1';
+      const DISCOVERED_KEY = 'diary_discovered_v1';
+
+      function loadSet(key) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return new Set();
+          const data = JSON.parse(raw);
+          return new Set(Array.isArray(data) ? data : []);
+        } catch {
+          return new Set();
+        }
+      }
+
+      function saveSet(key, set) {
+        localStorage.setItem(key, JSON.stringify(Array.from(set)));
+      }
+
+      const favorites = loadSet(FAVORITES_KEY);
+      const discovered = loadSet(DISCOVERED_KEY);
+
+      const GAME_ROOT = new URL('../../', import.meta.url);
+      function resolveAsset(path) {
+        return new URL(path, GAME_ROOT).href;
+      }
+
+      function isModel(asset) {
+        return asset && asset.toLowerCase().endsWith('.glb');
+      }
+
+      function buildEntry(def, type) {
+        const asset = typeof def.asset === 'string' ? def.asset.trim() : '';
+        return {
+          id: def.id,
+          name: def.nombre || def.name || def.id,
+          desc: def.descripcion || def.description || 'Sin descripcion',
+          asset,
+          color: def.color || '#2bd8ff',
+          scale: def.scale ?? 0.6,
+          type,
+        };
+      }
+
+      function hasAsset(entry) {
+        return Boolean(entry?.asset && entry.asset.trim());
+      }
+
+      function renderList() {
+        const query = searchInput.value.trim().toLowerCase();
+        const list = entries[activeType] || [];
+        const filtered = list.filter((entry) => {
+          if (!query) return true;
+          return entry.name.toLowerCase().includes(query) || entry.id.toLowerCase().includes(query);
+        }).filter((entry) => {
+          if (filterMode === 'favorites') return favorites.has(entry.id);
+          if (filterMode === 'discovered') return discovered.has(entry.id);
+          return true;
+        });
+
+        summaryText.textContent = `${filtered.length} entradas`;
+        entryList.innerHTML = '';
+
+        filtered.forEach((entry) => {
+          const btn = document.createElement('button');
+          btn.className = 'entry-btn' + (entry.id === activeId ? ' active' : '');
+          const favIcon = favorites.has(entry.id) ? '★' : '';
+          const discIcon = discovered.has(entry.id) ? '●' : '';
+          btn.innerHTML = `<span>${entry.name}</span><span class="entry-tag">${favIcon}${discIcon} ${entry.id}</span>`;
+          btn.addEventListener('click', () => {
+            activeId = entry.id;
+            renderList();
+            renderPreview(entry);
+          });
+          entryList.appendChild(btn);
+        });
+
+        if (!activeId && filtered[0]) {
+          activeId = filtered[0].id;
+          renderPreview(filtered[0]);
+          renderList();
+        }
+      }
+
+      function renderPreview(entry) {
+        previewTitle.textContent = entry.name;
+        previewType.textContent = entry.type.toUpperCase();
+        previewDesc.textContent = entry.desc;
+        previewAsset.textContent = entry.asset || '-';
+
+        if (!discovered.has(entry.id)) {
+          discovered.add(entry.id);
+          saveSet(DISCOVERED_KEY, discovered);
+          renderList();
+        }
+
+        favoriteBtn.classList.toggle('active', favorites.has(entry.id));
+        discoveredBtn.classList.toggle('active', discovered.has(entry.id));
+
+        if (entry.asset && isModel(entry.asset)) {
+          previewImage.style.display = 'none';
+          previewScene.style.display = 'block';
+          const assetUrl = resolveAsset(entry.asset);
+          previewModel.setAttribute('gltf-model', assetUrl);
+          const scale = entry.scale || 0.6;
+          previewModel.setAttribute('scale', `${scale} ${scale} ${scale}`);
+          const yaw = Number(rotationRange.value) || 45;
+          if (previewRig) previewRig.setAttribute('rotation', `0 ${yaw} 0`);
+          const zoom = Number(zoomRange.value) || 3;
+          if (previewCamera) previewCamera.setAttribute('position', `0 0 ${zoom}`);
+          previewModel.addEventListener('model-loaded', () => {
+            const mesh = previewModel.getObject3D('mesh');
+            if (!mesh || !window.THREE) return;
+            mesh.updateMatrixWorld(true);
+            mesh.position.set(0, 0, 0);
+            const box = new THREE.Box3().setFromObject(mesh);
+            const center = box.getCenter(new THREE.Vector3());
+            const baseY = -0.6;
+            previewCenter.x = 0;
+            previewCenter.y = baseY;
+            previewCenter.z = 0;
+            mesh.position.x += -center.x;
+            mesh.position.y += -box.min.y;
+            mesh.position.z += -center.z;
+            previewModel.object3D.position.set(previewCenter.x, previewCenter.y, previewCenter.z);
+            previewModel.object3D.updateMatrixWorld(true);
+          }, { once: true });
+          if (autoRotate) {
+            previewRig?.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear');
+          } else {
+            previewRig?.removeAttribute('animation');
+          }
+        } else if (entry.asset) {
+          previewScene.style.display = 'none';
+          previewImage.style.display = 'block';
+          previewImage.src = resolveAsset(entry.asset);
+        } else {
+          previewScene.style.display = 'none';
+          previewImage.style.display = 'none';
+        }
+      }
+
+      function setActiveTab(type) {
+        activeType = type;
+        activeId = null;
+        tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.type === type));
+        renderList();
+      }
+
+      function setFilter(mode) {
+        filterMode = mode;
+        filterButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.filter === mode));
+        renderList();
+      }
+
+      favoriteBtn.addEventListener('click', () => {
+        if (!activeId) return;
+        if (favorites.has(activeId)) {
+          favorites.delete(activeId);
+        } else {
+          favorites.add(activeId);
+        }
+        saveSet(FAVORITES_KEY, favorites);
+        renderList();
+        favoriteBtn.classList.toggle('active', favorites.has(activeId));
+      });
+
+      discoveredBtn.addEventListener('click', () => {
+        if (!activeId) return;
+        if (discovered.has(activeId)) {
+          discovered.delete(activeId);
+        } else {
+          discovered.add(activeId);
+        }
+        saveSet(DISCOVERED_KEY, discovered);
+        renderList();
+        discoveredBtn.classList.toggle('active', discovered.has(activeId));
+      });
+
+      autoRotateBtn.addEventListener('click', () => {
+        autoRotate = !autoRotate;
+        autoRotateBtn.classList.toggle('active', autoRotate);
+        const entry = entries[activeType].find((e) => e.id === activeId);
+        if (entry) renderPreview(entry);
+      });
+
+      rotationRange.addEventListener('input', () => {
+        autoRotate = false;
+        autoRotateBtn.classList.remove('active');
+        const yaw = Number(rotationRange.value) || 45;
+        if (previewRig) previewRig.setAttribute('rotation', `0 ${yaw} 0`);
+      });
+
+      zoomRange.addEventListener('input', () => {
+        const zoom = Number(zoomRange.value) || 3;
+        if (previewCamera) previewCamera.setAttribute('position', `0 0 ${zoom}`);
+      });
+
+      async function loadData() {
+        const [items, entities] = await Promise.all([
+          fetch(ITEMS_URL).then((r) => r.json()).catch(() => []),
+          fetch(ENTITIES_URL).then((r) => r.json()).catch(() => ({})),
+        ]);
+
+        entries.items = Array.isArray(items)
+          ? items.map((i) => buildEntry(i, 'item')).filter((e) => hasAsset(e))
+          : [];
+        entries.enemies = Array.isArray(entities.enemies)
+          ? entities.enemies.map((e) => buildEntry(e, 'enemigo')).filter((e) => hasAsset(e))
+          : [];
+        entries.players = Array.isArray(entities.players)
+          ? entities.players.map((p) => buildEntry(p, 'jugador')).filter((e) => hasAsset(e))
+          : [];
+
+        renderList();
+      }
+
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => setActiveTab(tab.dataset.type));
+      });
+      filterButtons.forEach((btn) => {
+        btn.addEventListener('click', () => setFilter(btn.dataset.filter));
+      });
+      searchInput.addEventListener('input', renderList);
+
+      loadData();
+    </script>
+    <script type="module" src="../ui/router.js"></script>
+  </body>
+</html>

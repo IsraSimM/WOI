@@ -1,0 +1,6 @@
+﻿{
+  "spawn": { "x": 1, "y": 1 },
+  "lives": 3,
+  "difficulty": "normal",
+  "mode": "modo_classic"
+}

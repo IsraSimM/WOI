@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pausa</title>
+    <style>
+      :root {
+        --bg: #0b0f15;
+        --panel: rgba(12, 20, 28, 0.96);
+        --text: #e8edf3;
+        --muted: #8aa1b4;
+        --accent: #2bd8ff;
+        --line: rgba(84, 122, 145, 0.35);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html, body {
+        height: 100%;
+        margin: 0;
+        font-family: "Rajdhani", "Space Grotesk", sans-serif;
+        background: transparent;
+        color: var(--text);
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+      }
+
+      .panel {
+        width: min(380px, 92vw);
+        padding: 22px 24px;
+        border-radius: 0;
+        border: 1px solid var(--line);
+        background: var(--panel);
+        box-shadow: inset 0 0 0 1px rgba(43, 216, 255, 0.08);
+        text-align: center;
+      }
+
+      .title {
+        font-size: 22px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      .subtitle {
+        margin-top: 6px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .actions {
+        margin-top: 18px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .config {
+        margin-top: 18px;
+        text-align: left;
+        display: none;
+        gap: 12px;
+      }
+
+      .config.active {
+        display: grid;
+      }
+
+      .config-group {
+        display: grid;
+        gap: 6px;
+      }
+
+      .config label {
+        font-size: 11px;
+        letter-spacing: 1px;
+        color: var(--muted);
+      }
+
+      .config .value {
+        float: right;
+        color: var(--accent);
+      }
+
+      .config input[type="range"] {
+        width: 100%;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 8px;
+        background: rgba(20, 32, 40, 0.8);
+        border: 1px solid var(--line);
+        border-radius: 0;
+        outline: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        background: var(--accent);
+        border: 1px solid var(--line);
+        border-radius: 0;
+      }
+
+      input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        background: var(--accent);
+        border: 1px solid var(--line);
+        border-radius: 0;
+      }
+
+      input[type="range"]::-moz-range-track {
+        height: 8px;
+        background: rgba(20, 32, 40, 0.8);
+        border: 1px solid var(--line);
+        border-radius: 0;
+      }
+
+      .toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      button {
+        height: 44px;
+        border-radius: 0;
+        border: 1px solid var(--line);
+        background: rgba(12, 20, 28, 0.8);
+        color: var(--text);
+        font-size: 14px;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+      }
+
+      button:hover {
+        border-color: rgba(43, 216, 255, 0.6);
+        background: rgba(43, 216, 255, 0.12);
+        transform: translateY(-1px);
+      }
+
+      button.accent {
+        border-color: rgba(43, 216, 255, 0.6);
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <div class="title">Pausa</div>
+      <div class="subtitle">Menu de pausa</div>
+      <div class="actions">
+        <button class="accent" type="button" data-action="resume">Reanudar</button>
+        <button type="button" data-action="save_exit">Guardar y salir</button>
+        <button type="button" data-action="exit">Salir</button>
+        <button type="button" data-action="config" id="configToggle">Configuracion</button>
+      </div>
+      <div class="config" id="configPanel">
+        <div class="config-group">
+          <label for="cfgSensitivity">SENSIBILIDAD <span class="value" id="cfgSensitivityVal">1.00x</span></label>
+          <input id="cfgSensitivity" type="range" min="0.5" max="2.5" step="0.05" value="1" />
+        </div>
+        <div class="config-group">
+          <label for="cfgBrightness">BRILLO <span class="value" id="cfgBrightnessVal">1.00x</span></label>
+          <input id="cfgBrightness" type="range" min="0.6" max="1.8" step="0.05" value="1" />
+        </div>
+        <div class="config-group toggle">
+          <span>AJUSTAR ITEMS EN SLOTS</span>
+          <input id="cfgAutoCompact" type="checkbox" />
+        </div>
+      </div>
+    </div>
+    <script>
+      const buttons = document.querySelectorAll('[data-action]');
+      const configPanel = document.getElementById('configPanel');
+      const configToggle = document.getElementById('configToggle');
+      const sensitivityInput = document.getElementById('cfgSensitivity');
+      const sensitivityVal = document.getElementById('cfgSensitivityVal');
+      const brightnessInput = document.getElementById('cfgBrightness');
+      const brightnessVal = document.getElementById('cfgBrightnessVal');
+      const autoCompactInput = document.getElementById('cfgAutoCompact');
+
+      function updateLabels() {
+        if (sensitivityVal && sensitivityInput) {
+          sensitivityVal.textContent = `${Number(sensitivityInput.value).toFixed(2)}x`;
+        }
+        if (brightnessVal && brightnessInput) {
+          brightnessVal.textContent = `${Number(brightnessInput.value).toFixed(2)}x`;
+        }
+      }
+
+      function sendConfigUpdate() {
+        const config = {
+          sensitivityMult: Number(sensitivityInput?.value) || 1,
+          brightness: Number(brightnessInput?.value) || 1,
+          autoCompactSlots: Boolean(autoCompactInput?.checked),
+        };
+        window.parent.postMessage({
+          type: 'config-update',
+          config,
+        }, '*');
+      }
+
+      function toggleConfig() {
+        if (!configPanel) return;
+        configPanel.classList.toggle('active');
+      }
+
+      buttons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const action = button.dataset.action;
+          if (action === 'config') {
+            toggleConfig();
+            return;
+          }
+          window.parent.postMessage({
+            type: 'pause-action',
+            action,
+          }, '*');
+        });
+      });
+
+      [sensitivityInput, brightnessInput, autoCompactInput].forEach((input) => {
+        if (!input) return;
+        input.addEventListener('input', () => {
+          updateLabels();
+          sendConfigUpdate();
+        });
+      });
+
+      window.addEventListener('message', (event) => {
+        if (!event?.data || typeof event.data !== 'object') return;
+        if (event.data.type !== 'config-sync') return;
+        const cfg = event.data.config || {};
+        if (sensitivityInput && Number.isFinite(cfg.sensitivityMult)) {
+          sensitivityInput.value = String(cfg.sensitivityMult);
+        }
+        if (brightnessInput && Number.isFinite(cfg.brightness)) {
+          brightnessInput.value = String(cfg.brightness);
+        }
+        if (autoCompactInput && typeof cfg.autoCompactSlots === 'boolean') {
+          autoCompactInput.checked = cfg.autoCompactSlots;
+        }
+        updateLabels();
+      });
+
+      updateLabels();
+      window.parent.postMessage({ type: 'config-request' }, '*');
+    </script>
+  </body>
+</html>

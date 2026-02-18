@@ -1,0 +1,58 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/item.schema.json",
+  "title": "Items",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "nombre",
+      "descripcion",
+      "tipo_efecto",
+      "aplicacion",
+      "es_instantaneo",
+      "usos",
+      "cooldown_ms",
+      "rareza",
+      "efectos",
+      "color",
+      "asset"
+    ],
+    "properties": {
+      "id": { "type": "string", "minLength": 1 },
+      "nombre": { "type": "string" },
+      "descripcion": { "type": "string" },
+      "tipo_efecto": { "type": "string" },
+      "aplicacion": { "type": "string" },
+      "es_instantaneo": { "type": "boolean" },
+      "usos": { "type": "number" },
+      "cooldown_ms": { "type": "number" },
+      "rareza": { "type": "number" },
+      "efectos": { "type": "object" },
+      "color": { "type": "string" },
+      "asset": { "type": "string" },
+      "scale": { "type": "number" },
+      "yOffset": { "type": "number" }
+    },
+    "additionalProperties": true
+  },
+  "examples": [
+    [
+      {
+        "id": "power_pellet",
+        "nombre": "Pastilla de Poder",
+        "descripcion": "Convierte al jugador en cazador temporal",
+        "tipo_efecto": "transformacion_ofensiva",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 1,
+        "cooldown_ms": 12000,
+        "rareza": 4,
+        "efectos": { "duracion_ms": 8000 },
+        "color": "#FFB8D1",
+        "asset": "game_data/assets/items/power_pill.glb"
+      }
+    ]
+  ]
+}
