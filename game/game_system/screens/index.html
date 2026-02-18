@@ -14,11 +14,7 @@
                 <span class="label">UBICACIÓN ACTUAL</span>
                 <span class="value">SECTOR 7-B // VOID MARGINS</span>
             </div>
-            <div class="location" id="currentConfig">
-                <span class="label">CONFIG ACTUAL</span>
-                <span class="value" id="currentMode">MODO: -</span>
-                <span class="value" id="currentDifficulty">DIFICULTAD: -</span>
-            </div>
+            
             <div class="user-id">
                 <span class="label">IDENTIDAD DE USUARIO</span>
                 <div class="user-row">
@@ -43,6 +39,16 @@
 
         <!-- Menu Buttons -->
         <div class="menu">
+            <button class="menu-btn" data-route="game.html?load=latest">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+                    <path d="M1 14l5.37 4.37A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                <span>CARGAR &Uacute;LTIMA PARTIDA</span>
+            </button>
+
             <button class="menu-btn primary" data-route="create.html">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
@@ -106,25 +112,6 @@
 
     </div>
     <script type="module" src="../ui/router.js"></script>
-    <script type="module">
-        const CONFIG_KEY = 'game_config_v1';
-        const modeEl = document.getElementById('currentMode');
-        const diffEl = document.getElementById('currentDifficulty');
-
-        function normalizeLabel(value, fallback) {
-            if (!value) return fallback;
-            return String(value).replace(/_/g, ' ').toUpperCase();
-        }
-
-        try {
-            const raw = localStorage.getItem(CONFIG_KEY);
-            const cfg = raw ? JSON.parse(raw) : {};
-            if (modeEl) modeEl.textContent = `MODO: ${normalizeLabel(cfg.mode, 'MODO_CLASSIC')}`;
-            if (diffEl) diffEl.textContent = `DIFICULTAD: ${normalizeLabel(cfg.difficulty, 'NORMAL')}`;
-        } catch {
-            if (modeEl) modeEl.textContent = 'MODO: MODO_CLASSIC';
-            if (diffEl) diffEl.textContent = 'DIFICULTAD: NORMAL';
-        }
-    </script>
+    
 </body>
 </html>
