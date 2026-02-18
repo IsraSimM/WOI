@@ -326,6 +326,35 @@
       text-align: center;
     }
 
+    .item-focus-panel {
+      padding: 12px 16px;
+      text-align: left;
+      min-width: 280px;
+    }
+
+    .item-focus-title {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--hud-muted);
+    }
+
+    .item-focus-name {
+      font-size: 14px;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--hud-text);
+    }
+
+    .item-focus-desc {
+      font-size: 12px;
+      color: var(--hud-muted);
+      margin-top: 6px;
+      line-height: 1.4;
+      min-height: 34px;
+    }
+
     .inventory-title {
       font-size: 11px;
       letter-spacing: 3px;
@@ -474,6 +503,11 @@
     <div class="hud-panel inventory-panel">
       <div class="inventory-title">INVENTARIO TACTICO</div>
       <div class="inventory-slots" id="hudItems"></div>
+    </div>
+    <div class="hud-panel item-focus-panel">
+      <div class="item-focus-title">OBJETO CERCANO</div>
+      <div class="item-focus-name" id="hudItemName">-</div>
+      <div class="item-focus-desc" id="hudItemDesc">Apunta a un item para ver detalles.</div>
     </div>
   </div>
 

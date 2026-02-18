@@ -1,0 +1,64 @@
+.panel {
+  background: rgba(12, 20, 28, 0.8);
+  border: 1px solid rgba(84, 122, 145, 0.35);
+  border-radius: var(--ui-radius);
+  padding: 16px;
+  margin-bottom: 18px;
+  max-width: 760px;
+}
+.panel h2 {
+  font-size: 18px;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+.panel p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 10px;
+}
+.panel .meta {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 12px;
+}
+.panel-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.menu { width: auto; }
+.save-card {
+  background: rgba(8, 12, 18, 0.75);
+  border: 1px solid rgba(84, 122, 145, 0.25);
+  border-radius: var(--ui-radius);
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.save-title {
+  font-size: 14px;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.save-meta {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 8px;
+}
+.save-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+@media (max-width: 720px) {
+  .panel {
+    padding: 14px;
+  }
+  .panel-actions,
+  .save-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .menu {
+    width: 100%;
+  }
+}

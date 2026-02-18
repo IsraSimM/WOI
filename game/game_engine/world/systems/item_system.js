@@ -12,40 +12,114 @@ export function createItemSystem({ sceneEl, itemsData, worldState, cellSize, onP
   const itemsById = new Map();
   itemsData.forEach((item) => itemsById.set(item.id, item));
 
+  const TRAP_MASK_COLOR = '#ff4d6d';
+  const TRAP_MASK_STRENGTH = 0.35;
+
+  function isTrapItem(def) {
+    const id = String(def?.id || '');
+    if (id.startsWith('trap_') || id.endsWith('_trap')) return true;
+    return def?.tipo_efecto === 'trampa';
+  }
+
+  function applyColorMask(mesh, colorHex, strength = 0.3) {
+    if (!mesh || !window.THREE) return;
+    const mask = new THREE.Color(colorHex || '#ff4d6d');
+    mesh.traverse((node) => {
+      if (!node.isMesh || !node.material) return;
+      const mats = Array.isArray(node.material) ? node.material : [node.material];
+      mats.forEach((mat) => {
+        if (!mat || !mat.color) return;
+        if (!mat.userData) mat.userData = {};
+        if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
+        mat.color.copy(mat.userData.baseColor).lerp(mask, strength);
+        if ('emissive' in mat) {
+          if (!mat.userData.baseEmissive) mat.userData.baseEmissive = (mat.emissive ? mat.emissive.clone() : new THREE.Color(0x000000));
+          mat.emissive.copy(mat.userData.baseEmissive).lerp(mask, strength * 0.35);
+        }
+        mat.needsUpdate = true;
+      });
+    });
+  }
+
+  function normalizeTrapMaterial(mesh) {
+    if (!mesh || !window.THREE) return;
+    mesh.traverse((node) => {
+      if (!node.isMesh || !node.material) return;
+      const mats = Array.isArray(node.material) ? node.material : [node.material];
+      const next = mats.map((mat) => {
+        if (!mat || mat.isMeshStandardMaterial) return mat;
+        if (!mat.isMeshBasicMaterial && !mat.isMeshLambertMaterial && !mat.isMeshPhongMaterial) return mat;
+        const std = new THREE.MeshStandardMaterial({
+          map: mat.map || null,
+          color: mat.color ? mat.color.clone() : new THREE.Color(0xffffff),
+          transparent: Boolean(mat.transparent),
+          opacity: Number.isFinite(mat.opacity) ? mat.opacity : 1,
+          alphaTest: Number.isFinite(mat.alphaTest) ? mat.alphaTest : 0,
+          side: mat.side,
+          metalness: 0.1,
+          roughness: 0.8,
+        });
+        if (mat.emissive) std.emissive = mat.emissive.clone();
+        if (mat.emissiveMap) std.emissiveMap = mat.emissiveMap;
+        if (mat.normalMap) std.normalMap = mat.normalMap;
+        if (mat.roughnessMap) std.roughnessMap = mat.roughnessMap;
+        if (mat.metalnessMap) std.metalnessMap = mat.metalnessMap;
+        if (mat.aoMap) std.aoMap = mat.aoMap;
+        if (mat.alphaMap) std.alphaMap = mat.alphaMap;
+        std.needsUpdate = true;
+        return std;
+      });
+      node.material = Array.isArray(node.material) ? next : next[0];
+    });
+  }
+
   const spawned = worldState.items.map((entry) => {
     const def = itemsById.get(entry.id);
     if (!def) return null;
-    const el = document.createElement('a-entity');
-    el.classList.add('pickup-item');
+    const rootEl = document.createElement('a-entity');
+    rootEl.classList.add('pickup-item');
     if (shadowEnabled) {
-      el.setAttribute('shadow', 'cast: true; receive: false');
+      rootEl.setAttribute('shadow', 'cast: true; receive: false');
     }
     const pos = cellToWorld(entry, cellSize);
     const yOffset = Number(def.yOffset) || 0;
     const baseY = cellSize * 0.2;
-    el.setAttribute('position', `${pos.x} ${baseY + yOffset} ${pos.z}`);
+    rootEl.setAttribute('position', `${pos.x} ${baseY + yOffset} ${pos.z}`);
+
+    const bobEl = document.createElement('a-entity');
+    const bobHeight = Math.max(0.08, cellSize * 0.08);
+    const bobDur = 1600 + Math.floor(Math.random() * 900);
+    bobEl.setAttribute(
+      'animation__float',
+      `property: position; dir: alternate; dur: ${bobDur}; easing: easeInOutSine; loop: true; to: 0 ${bobHeight} 0`,
+    );
+    rootEl.appendChild(bobEl);
+
+    const modelEl = document.createElement('a-entity');
     if (def.asset) {
-      el.setAttribute('gltf-model', resolveGameUrl(def.asset));
+      modelEl.setAttribute('gltf-model', resolveGameUrl(def.asset));
       const scale = def.scale ?? 0.6;
-      el.setAttribute('scale', `${scale} ${scale} ${scale}`);
-      el.addEventListener('model-loaded', () => {
-        const mesh = el.getObject3D('mesh');
+      modelEl.setAttribute('scale', `${scale} ${scale} ${scale}`);
+      modelEl.addEventListener('model-loaded', () => {
+        const mesh = modelEl.getObject3D('mesh');
         if (!mesh || !window.THREE) return;
+        if (isTrapItem(def)) {
+          normalizeTrapMaterial(mesh);
+          applyColorMask(mesh, TRAP_MASK_COLOR, TRAP_MASK_STRENGTH);
+        }
         const box = new THREE.Box3().setFromObject(mesh);
         const center = box.getCenter(new THREE.Vector3());
-        const targetX = pos.x;
-        const targetZ = pos.z;
-        const targetBottom = baseY + yOffset;
-        el.object3D.position.x += targetX - center.x;
-        el.object3D.position.z += targetZ - center.z;
-        el.object3D.position.y += targetBottom - box.min.y;
+        mesh.position.x += -center.x;
+        mesh.position.z += -center.z;
+        mesh.position.y += -box.min.y;
       }, { once: true });
     } else {
-      el.setAttribute('geometry', 'primitive: sphere; radius: 0.2');
-      el.setAttribute('material', `color: ${def.color || '#ffb8d1'}`);
+      modelEl.setAttribute('geometry', 'primitive: sphere; radius: 0.2');
+      modelEl.setAttribute('material', `color: ${def.color || '#ffb8d1'}`);
     }
-    sceneEl.appendChild(el);
-    return { def, el, picked: false, cell: entry };
+    bobEl.appendChild(modelEl);
+    sceneEl.appendChild(rootEl);
+    return { def, el: rootEl, picked: false, cell: entry };
   }).filter(Boolean);
 
   function update() {

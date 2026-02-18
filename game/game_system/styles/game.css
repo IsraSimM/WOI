@@ -1,0 +1,184 @@
+html, body { height: 100%; margin: 0; }
+body { background: #0b0f15; overflow: hidden; }
+a-scene { position: absolute; inset: 0; }
+#hud-root { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.pause-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(6,10,16,0.6); opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 6; }
+.pause-overlay.active { opacity: 1; pointer-events: auto; }
+.pause-frame { width: min(420px, 90vw); height: min(360px, 90vh); border: none; border-radius: 0; background: transparent; }
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 10, 16, 0.85);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 8;
+}
+.loading-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.loading-panel {
+  width: min(420px, 88vw);
+  padding: 20px 22px;
+  border-radius: 0;
+  border: 1px solid rgba(84, 122, 145, 0.35);
+  background: rgba(12, 20, 28, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(43, 216, 255, 0.08);
+  text-align: center;
+  color: #e8edf3;
+  font-family: "Rajdhani", "Space Grotesk", sans-serif;
+}
+.loading-title {
+  font-size: 14px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #2bd8ff;
+}
+.loading-sub {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #8aa1b4;
+}
+.loading-bar {
+  height: 6px;
+  margin-top: 14px;
+  border-radius: 0;
+  background: rgba(43, 216, 255, 0.12);
+  overflow: hidden;
+}
+.loading-bar::after {
+  content: "";
+  display: block;
+  height: 100%;
+  width: 45%;
+  background: linear-gradient(90deg, rgba(43, 216, 255, 0.2), rgba(43, 216, 255, 0.9));
+  animation: loadingPulse 1.2s ease-in-out infinite;
+}
+@keyframes loadingPulse {
+  0% { transform: translateX(-40%); }
+  50% { transform: translateX(40%); }
+  100% { transform: translateX(140%); }
+}
+.start-overlay, .result-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 10, 16, 0.75);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 7;
+}
+.start-overlay.active, .result-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.overlay-panel {
+  width: min(460px, 92vw);
+  padding: 22px 24px;
+  border-radius: 0;
+  border: 1px solid rgba(84, 122, 145, 0.35);
+  background: rgba(12, 20, 28, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(43, 216, 255, 0.08);
+  text-align: center;
+  color: #e8edf3;
+  font-family: "Rajdhani", "Space Grotesk", sans-serif;
+}
+.overlay-title {
+  font-size: 22px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #2bd8ff;
+}
+.overlay-subtitle {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #8aa1b4;
+}
+.overlay-stats {
+  margin-top: 14px;
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  font-size: 12px;
+  color: #d7e2ec;
+}
+.overlay-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.overlay-row span:first-child {
+  color: #8aa1b4;
+}
+.overlay-actions {
+  margin-top: 16px;
+  display: grid;
+  gap: 10px;
+}
+.overlay-btn {
+  height: 44px;
+  border-radius: 0;
+  border: 1px solid rgba(84, 122, 145, 0.35);
+  background: rgba(12, 20, 28, 0.8);
+  color: #e8edf3;
+  font-size: 14px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.overlay-btn:hover {
+  border-color: rgba(43, 216, 255, 0.6);
+  background: rgba(43, 216, 255, 0.12);
+  transform: translateY(-1px);
+}
+.overlay-btn.primary {
+  border-color: rgba(43, 216, 255, 0.6);
+  color: #2bd8ff;
+}
+.preview-panel {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  display: grid;
+  gap: 8px;
+  z-index: 9;
+  pointer-events: auto;
+  font-family: "Rajdhani", "Space Grotesk", sans-serif;
+}
+.preview-toggle {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 0;
+  border: 1px solid rgba(84, 122, 145, 0.35);
+  background: rgba(12, 20, 28, 0.9);
+  color: #2bd8ff;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.preview-wrap {
+  width: 240px;
+  height: 150px;
+  border-radius: 0;
+  border: 1px solid rgba(84, 122, 145, 0.35);
+  background: rgba(8, 12, 18, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(43, 216, 255, 0.08);
+  display: none;
+  overflow: hidden;
+}
+.preview-panel.active .preview-wrap {
+  display: block;
+}
+#thirdPersonCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

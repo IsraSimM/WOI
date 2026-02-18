@@ -471,8 +471,11 @@ async function initGame() {
       Number.isFinite(paramMinimapRadius) ? paramMinimapRadius : engineConfig.minimapRadius,
     );
 
-    const itemIds = ['power_pellet', 'speed_boost', 'freeze', 'shield'];
-    const enemyIds = ['enemy_basic', 'enemy_advanced', 'enemy_speedster'];
+    const itemIds = Array.isArray(itemsData)
+      ? Array.from(new Set(itemsData.filter((item) => item && item.asset).map((item) => item.id)))
+      : [];
+    const enemyDefs = Array.isArray(entitiesData?.enemies) ? entitiesData.enemies : [];
+    const enemyIds = Array.from(new Set(enemyDefs.filter((enemy) => enemy && enemy.asset).map((enemy) => enemy.id)));
 
     let snapshotEntry = null;
     if (loadMode === 'save' && saveId) snapshotEntry = loadSnapshotById(saveId);
@@ -526,6 +529,11 @@ async function initGame() {
         worldState.meta = worldState.meta || {};
         worldState.meta.name = paramWorldName;
       }
+    }
+
+    const itemIdSet = new Set(itemIds);
+    if (Array.isArray(worldState?.items)) {
+      worldState.items = worldState.items.filter((entry) => entry && itemIdSet.has(entry.id));
     }
 
     const cellSize = CONFIG.defaults.cellSize;
@@ -661,6 +669,35 @@ async function initGame() {
 
     const enemyEntities = [];
 
+    function applyColorMask(mesh, colorHex, strength = 0.3, options = {}) {
+      if (!mesh || !window.THREE || !colorHex) return;
+      const mask = new THREE.Color(colorHex);
+      mesh.traverse((node) => {
+        if (!node.isMesh || !node.material) return;
+        const mats = Array.isArray(node.material) ? node.material : [node.material];
+        const cloned = mats.map((mat) => {
+          if (!mat) return mat;
+          return mat.userData?.__cloned ? mat : mat.clone();
+        });
+        cloned.forEach((mat) => {
+          if (!mat || !mat.color) return;
+          if (!mat.userData) mat.userData = {};
+          mat.userData.__cloned = true;
+          if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
+          mat.color.copy(mat.userData.baseColor).lerp(mask, strength);
+          if ('emissive' in mat) {
+            if (!mat.userData.baseEmissive) mat.userData.baseEmissive = (mat.emissive ? mat.emissive.clone() : new THREE.Color(0x000000));
+            mat.emissive.copy(mat.userData.baseEmissive).lerp(mask, strength * 0.45);
+            if (Number.isFinite(options.emissiveIntensity)) mat.emissiveIntensity = options.emissiveIntensity;
+          }
+          if (Number.isFinite(options.roughness)) mat.roughness = options.roughness;
+          if (Number.isFinite(options.metalness)) mat.metalness = options.metalness;
+          mat.needsUpdate = true;
+        });
+        node.material = Array.isArray(node.material) ? cloned : cloned[0];
+      });
+    }
+
     function spawnEnemyEntity(spawnEntry) {
       const def = entitiesData.enemies?.find((e) => e.id === spawnEntry.id);
       const baseSpeed = spawnEntry.id === 'enemy_speedster' ? 1.6 : 1.1;
@@ -670,11 +707,9 @@ async function initGame() {
 
       let el;
       const baseEntityY = 0;
-      if (def?.asset || ENEMY_MODEL.asset) {
+      if (ENEMY_MODEL.asset) {
         el = document.createElement('a-entity');
-        const enemyAsset = def?.asset || ENEMY_MODEL.asset;
-        const enemyModel = enemyAsset === ENEMY_MODEL.asset ? '#mdl-enemy' : resolveGameUrl(enemyAsset);
-        el.setAttribute('gltf-model', enemyModel);
+        el.setAttribute('gltf-model', '#mdl-enemy');
         el.setAttribute('player-animator', 'idle: idle; walk: walk; run: run; attack: attack; death: death; jump: jump;');
         if (engineConfig.shadowsEnabled) {
           el.setAttribute('shadow', 'cast: true; receive: false');
@@ -691,6 +726,11 @@ async function initGame() {
         el.addEventListener('model-loaded', () => {
           const mesh = el.getObject3D('mesh');
           if (!mesh || !window.THREE) return;
+          if (def?.color) applyColorMask(mesh, def.color, 0.85, {
+            emissiveIntensity: 0.45,
+            roughness: 0.35,
+            metalness: 0.2,
+          });
           const box = new THREE.Box3().setFromObject(mesh);
           const center = box.getCenter(new THREE.Vector3());
           const targetBottom = baseEntityY + yOffset;
@@ -1001,6 +1041,9 @@ async function initGame() {
     const camDir = new THREE.Vector3();
     const camQuat = new THREE.Quaternion();
     const camEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+    const focusDir = new THREE.Vector3();
+    const focusVec = new THREE.Vector3();
+    let focusedItemId = null;
 
     function updateMinimap() {
       if (typeof hud.updateMinimap !== 'function') return;
@@ -1028,6 +1071,49 @@ async function initGame() {
         goal: goalCell,
         rotation,
       });
+    }
+
+    function updateItemFocus() {
+      if (typeof hud.setItemFocus !== 'function') return;
+      const camRef = cameraEl || playerEl.querySelector('[camera]');
+      if (!camRef?.object3D?.getWorldDirection) return;
+      camRef.object3D.getWorldDirection(focusDir);
+      focusDir.y = 0;
+      if (focusDir.lengthSq() === 0) return;
+      focusDir.normalize();
+
+      const playerPos = playerEl.object3D.position;
+      const maxDist = cellSize * 1.1;
+      const minDot = Math.cos(Math.PI * 0.35);
+      let best = null;
+      let bestScore = -Infinity;
+
+      for (const item of itemSystem.items) {
+        if (!item || item.picked) continue;
+        const pos = item.el?.object3D?.position;
+        if (!pos) continue;
+        focusVec.set(pos.x - playerPos.x, 0, pos.z - playerPos.z);
+        const dist = focusVec.length();
+        if (dist <= 0.0001 || dist > maxDist) continue;
+        focusVec.divideScalar(dist);
+        const dot = focusVec.dot(focusDir);
+        if (dot < minDot) continue;
+        const score = dot * 2 - dist / maxDist;
+        if (score > bestScore) {
+          bestScore = score;
+          best = item;
+        }
+      }
+
+      if (best) {
+        if (focusedItemId !== best.def.id) {
+          focusedItemId = best.def.id;
+          hud.setItemFocus(best.def.nombre || best.def.id, best.def.descripcion || 'Sin descripcion');
+        }
+      } else if (focusedItemId) {
+        focusedItemId = null;
+        hud.setItemFocus('-', 'Apunta a un item para ver detalles.');
+      }
     }
 
     function renderResultStats() {
@@ -1380,6 +1466,7 @@ async function initGame() {
       const dashCooldown = engineConfig.dashCooldown * (frenzyActive ? FRENZY_COOLDOWN_MULT : 1);
       playerEl.setAttribute('room-player', 'dashCooldown', dashCooldown);
       itemSystem.update(playerEl.object3D.position);
+      updateItemFocus();
       aiSystem.update(dt);
       updatePlayerAnim(dt);
 

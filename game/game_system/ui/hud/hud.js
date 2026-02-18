@@ -16,6 +16,8 @@ export async function mountHud(rootEl) {
   const objectiveEl = rootEl.querySelector('#hudObjective');
   const timeEl = rootEl.querySelector('#hudTime');
   const itemsEl = rootEl.querySelector('#hudItems');
+  const itemNameEl = rootEl.querySelector('#hudItemName');
+  const itemDescEl = rootEl.querySelector('#hudItemDesc');
   const effectsEl = rootEl.querySelector('#hudEffects');
   const statusEl = rootEl.querySelector('#hudStatus');
   const ammoCurrentEl = rootEl.querySelector('#hudAmmoCurrent');
@@ -260,6 +262,10 @@ export async function mountHud(rootEl) {
       renderEffects(effects || []);
     },
     setStatus: (text) => setText(statusEl, text || ''),
+    setItemFocus: (name, desc) => {
+      if (itemNameEl) itemNameEl.textContent = name || '-';
+      if (itemDescEl) itemDescEl.textContent = desc || 'Apunta a un item para ver detalles.';
+    },
     setScore: (value) => {
       if (!scoreEl) return;
       const num = Number(value);
