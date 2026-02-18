@@ -492,6 +492,14 @@ async function initGame() {
 
     setLoading(true, 'Preparando sistema...');
 
+    const canvasEl = sceneEl?.canvas;
+    if (canvasEl) {
+      canvasEl.addEventListener('webglcontextlost', (event) => {
+        event.preventDefault();
+        saveAndExit('webgl');
+      }, { once: true });
+    }
+
     const [rawItemsData, rawEntitiesData, rawModesData, rawDifficultsData, rawGameplayData] = await Promise.all([
       fetchJson(ITEMS_URL),
       fetchJson(ENTITIES_URL),
@@ -785,9 +793,9 @@ async function initGame() {
     ]);
 
     if (engineConfig.shadowsEnabled) {
-      sceneEl.setAttribute('renderer', 'antialias: true; colorManagement: true; shadowMapEnabled: true');
+      sceneEl.setAttribute('renderer', 'antialias: true; colorManagement: true; shadowMap.enabled: true');
     } else {
-      sceneEl.setAttribute('renderer', 'antialias: true; colorManagement: true; shadowMapEnabled: false');
+      sceneEl.setAttribute('renderer', 'antialias: true; colorManagement: true; shadowMap.enabled: false');
     }
 
     if (engineConfig.fogEnabled) {
@@ -994,6 +1002,7 @@ async function initGame() {
 
     function applyPlayerDamage(amount) {
       const dmg = Math.max(1, Number(amount) || 0);
+      flashDamage(Math.min(1, dmg / 24));
       playerState.health = clampHealth(playerState.health - dmg);
       if (playerState.health <= 0) {
         enterDownedState();
@@ -2447,6 +2456,51 @@ async function initGame() {
       }
     }
 
+    const damageOverlay = document.getElementById('damageOverlay');
+    function flashDamage(intensity = 1) {
+      if (!damageOverlay) return;
+      const alpha = Math.max(0.25, Math.min(0.85, 0.25 + (Number(intensity) || 0) * 0.6));
+      damageOverlay.style.setProperty('--hit-alpha', alpha.toFixed(2));
+      damageOverlay.classList.remove('flash');
+      void damageOverlay.offsetWidth;
+      damageOverlay.classList.add('flash');
+    }
+
+    let disconnectHandled = false;
+    let disconnectTimer = null;
+    function saveAndExit(reason = 'desconexion') {
+      if (disconnectHandled) return;
+      disconnectHandled = true;
+      if (disconnectTimer) {
+        clearTimeout(disconnectTimer);
+        disconnectTimer = null;
+      }
+      try { stopAudio(); } catch { /* ignore */ }
+      try { sceneEl?.pause?.(); } catch { /* ignore */ }
+      if (worldState && itemSystem && enemyEntities && playerEl && playerState) {
+        saveSnapshot({
+          worldState,
+          itemSystem,
+          enemyEntities,
+          playerEl,
+          playerState,
+          cellSize,
+          wallHeight,
+          score,
+          killCount,
+          saveName: `Auto (${reason}) ${new Date().toLocaleString()}`,
+          saveId: AUTO_SAVE_ID,
+        });
+      }
+      window.location.href = 'index.html';
+    }
+
+    function scheduleDisconnect(reason, delayMs = 1800) {
+      if (disconnectHandled) return;
+      if (disconnectTimer) clearTimeout(disconnectTimer);
+      disconnectTimer = setTimeout(() => saveAndExit(reason), delayMs);
+    }
+
     function tryInteract() {
       if (gameState !== 'playing') return;
       const nearest = itemSystem.findNearest(playerEl.object3D.position, cellSize * 0.55);
@@ -2712,6 +2766,29 @@ async function initGame() {
     window.addEventListener('touchstart', () => {
       if (gameState === 'playing') startAudio();
     }, { once: true, passive: true });
+
+    window.addEventListener('offline', () => {
+      scheduleDisconnect('offline', 1200);
+    });
+
+    window.addEventListener('online', () => {
+      if (disconnectTimer) {
+        clearTimeout(disconnectTimer);
+        disconnectTimer = null;
+      }
+    });
+
+    window.addEventListener('pagehide', () => {
+      saveAndExit('pagehide');
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) scheduleDisconnect('hidden', 2000);
+      else if (disconnectTimer) {
+        clearTimeout(disconnectTimer);
+        disconnectTimer = null;
+      }
+    });
 
     window.addEventListener('message', (event) => {
       const data = event.data;

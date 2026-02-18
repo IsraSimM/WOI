@@ -72,6 +72,7 @@ export function registerPlayerAnimator() {
 
     _resolveAction(name) {
       if (!name) return null;
+      if (!this.actions) return null;
       const key = String(name).toLowerCase();
       if (this.actions[key]) return this.actions[key];
       const aliases = {
@@ -89,6 +90,7 @@ export function registerPlayerAnimator() {
     },
 
     getClipDuration(name) {
+      if (!this.ready || !this.actions) return null;
       const action = this._resolveAction(name);
       if (!action) return null;
       const clip = action.getClip?.();
