@@ -2529,10 +2529,16 @@ async function initGame() {
     const btnInteract = document.getElementById('btnInteract');
     const btnJump = document.getElementById('btnJump');
 
-    if (mobileControls) {
-      mobileControls.classList.toggle('active', isTouchDevice);
-      if (isTouchDevice) document.body.classList.add('touch-ui');
-    }
+    const updateTouchUI = () => {
+      const compact = Math.min(window.innerWidth || 0, window.innerHeight || 0) <= 900;
+      const showTouchUI = isTouchDevice && compact;
+      if (mobileControls) mobileControls.classList.toggle('active', showTouchUI);
+      document.body.classList.toggle('touch-ui', showTouchUI);
+    };
+
+    updateTouchUI();
+    window.addEventListener('resize', updateTouchUI);
+    window.addEventListener('orientationchange', updateTouchUI);
 
     const getPlayerComp = () => playerEl?.components?.['room-player'];
 

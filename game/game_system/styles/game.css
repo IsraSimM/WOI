@@ -325,6 +325,10 @@ canvas { touch-action: none; }
 }
 
 @media (max-width: 720px) {
+  .mobile-right {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
   .joystick {
     width: 112px;
     height: 112px;
@@ -336,8 +340,14 @@ canvas { touch-action: none; }
     margin-top: -23px;
   }
   .mobile-btn {
-    min-width: 96px;
+    min-width: 88px;
     height: 40px;
     font-size: 11px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mobile-controls {
+    display: none !important;
   }
 }
