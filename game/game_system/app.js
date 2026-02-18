@@ -1266,6 +1266,13 @@ async function initGame() {
           attackUntil: 0,
         },
       };
+      if (spawnEntry.id === 'enemy_ranged') {
+        enemyObj.rangedRange = cellSize * 6;
+        enemyObj.rangedMinRange = cellSize * 2.5;
+        enemyObj.rangedCooldownMs = 3000;
+        enemyObj.rangedHitChance = 0.4;
+        enemyObj.projectileColor = '#44dddd';
+      }
       enemyEntities.push(enemyObj);
       return enemyObj;
     }
@@ -1798,6 +1805,7 @@ async function initGame() {
     const traceQuat = new THREE.Quaternion();
     const traceEuler = new THREE.Euler(0, 0, 0, 'YXZ');
     const enemyVec = new THREE.Vector3();
+    const enemyAimVec = new THREE.Vector3();
     const enemyShotOrigin = new THREE.Vector3();
     const enemyShotTarget = new THREE.Vector3();
     const enemyShotDir = new THREE.Vector3();
@@ -2334,23 +2342,71 @@ async function initGame() {
       applyPlayerDamage(damage);
     }
 
+    function faceEnemyToPlayer(enemy) {
+      const enemyPos = enemy?.el?.object3D?.position;
+      const playerPos = playerEl?.object3D?.position;
+      if (!enemyPos || !playerPos) return;
+      const dx = playerPos.x - enemyPos.x;
+      const dz = playerPos.z - enemyPos.z;
+      if (Math.abs(dx) < 0.001 && Math.abs(dz) < 0.001) return;
+      const yaw = Math.atan2(dx, dz) + (enemy?.yawOffset || 0);
+      enemy.el.object3D.rotation.set(0, yaw, 0);
+    }
+
     function fireEnemyProjectile(enemy) {
       if (!enemy?.el || !collisionSystem?.collidesAt) return;
-      const origin = enemy.el.object3D.position;
-      enemyShotOrigin.copy(origin);
-      enemyShotOrigin.y += 1.2;
-      enemyShotTarget.copy(playerEl.object3D.position);
-      enemyShotTarget.y += 1.2;
-      enemyShotDir.copy(enemyShotTarget).sub(enemyShotOrigin);
-      const dist = enemyShotDir.length();
-      if (dist <= 0.1) return;
-      enemyShotDir.normalize();
+      const isShootEnemy = enemy.id === 'enemy_ranged';
+      const now = performance.now();
+      let timeToFireMs = 0;
+      if (isShootEnemy) {
+        faceEnemyToPlayer(enemy);
+        const animator = enemy.el.components?.['player-animator'];
+        const clipDuration = animator?.getClipDuration?.('attack');
+        if (Number.isFinite(clipDuration) && clipDuration > 0) {
+          timeToFireMs = (clipDuration * 6 / 20) * 1000;
+          enemy.anim.attackUntil = now + clipDuration * 1000;
+          setEnemyAnim(enemy, 'attack', { once: true, force: true });
+        }
+      }
 
-      const wallHit = findWallHit(enemyShotOrigin, enemyShotDir, dist);
-      const hitDist = wallHit ? wallHit.distance : dist;
-      spawnEnemyTracer(enemyShotOrigin, enemyShotDir, hitDist, enemy.projectileColor);
-      if (wallHit) return;
-      handlePlayerHit(enemy, { skipRetreat: true });
+      const hitChance = isShootEnemy ? (enemy.rangedHitChance ?? 0.4) : 1;
+      const willHit = Math.random() <= hitChance;
+
+      const executeShot = () => {
+        const origin = enemy.el.object3D.position;
+        enemyShotOrigin.copy(origin);
+        enemyShotOrigin.y += 1.2;
+        enemyShotTarget.copy(playerEl.object3D.position);
+        enemyShotTarget.y += 1.2;
+        enemyShotDir.copy(enemyShotTarget).sub(enemyShotOrigin);
+        let dist = enemyShotDir.length();
+        if (dist <= 0.1) return;
+        enemyShotDir.normalize();
+
+        if (!willHit) {
+          const missOffset = 0.8 + Math.random() * 1.4;
+          enemyAimVec.set(enemyShotDir.z, 0, -enemyShotDir.x).normalize();
+          enemyShotTarget.addScaledVector(enemyAimVec, missOffset);
+          enemyShotDir.copy(enemyShotTarget).sub(enemyShotOrigin);
+          dist = enemyShotDir.length();
+          if (dist <= 0.1) return;
+          enemyShotDir.normalize();
+        }
+
+        const wallHit = findWallHit(enemyShotOrigin, enemyShotDir, dist);
+        const hitDist = wallHit ? wallHit.distance : dist;
+        spawnEnemyTracer(enemyShotOrigin, enemyShotDir, hitDist, enemy.projectileColor);
+        if (wallHit) return;
+        if (willHit) {
+          handlePlayerHit(enemy, { skipRetreat: true });
+        }
+      };
+
+      if (timeToFireMs > 0) {
+        setTimeout(executeShot, timeToFireMs);
+      } else {
+        executeShot();
+      }
     }
 
     const aiSystem = createAISystem({
