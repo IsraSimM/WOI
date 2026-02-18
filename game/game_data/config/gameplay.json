@@ -1,0 +1,100 @@
+{
+  "minimap": {
+    "radius_cells": 10
+  },
+  "spawn": {
+    "interval_ms": 850,
+    "max_active_base": 12,
+    "max_active_area_div": 55,
+    "min_dist_cells": 6,
+    "max_dist_cells": 14,
+    "near_enemy_dist_cells": 2.5,
+    "despawn_dist_cells": 40,
+    "despawn_check_ms": 2500,
+    "despawn_stuck_ms": 30000,
+    "despawn_inside_wall": true,
+    "spawn_batch": 2,
+    "spawn_attempts": 60,
+    "fallback_attempts": 80,
+    "grace_ms": 2500,
+    "relocate_attempts": 24,
+    "relocate_radius_cells": 4,
+    "goal_pressure": {
+      "radius_cells": 4,
+      "factor": 1.8,
+      "extra_batch": 1
+    },
+    "final_phase": {
+      "factor": 2.6,
+      "extra_batch": 2
+    }
+  },
+  "final_phase": {
+    "duration_ms": 20000,
+    "spawn_interval_ms": 3000,
+    "frenzy_speed_mult": 1.35,
+    "frenzy_cooldown_mult": 0.6
+  },
+  "score": {
+    "kill_default": 40,
+    "item_pickup": 10,
+    "goal_bonus": 250
+  },
+  "modes": {
+    "modo_classic": {
+      "initial_items_mult": 1.0,
+      "initial_enemies_mult": 1.0,
+      "spawn": {
+        "interval_ms": 900,
+        "max_active_base": 12,
+        "min_dist_cells": 6,
+        "max_dist_cells": 14,
+        "spawn_batch": 2
+      }
+    },
+    "modo_chaos": {
+      "initial_items_mult": 1.1,
+      "initial_enemies_mult": 1.4,
+      "spawn": {
+        "interval_ms": 600,
+        "max_active_base": 22,
+        "min_dist_cells": 5,
+        "max_dist_cells": 16,
+        "spawn_batch": 3
+      }
+    },
+    "modo_challenge": {
+      "initial_items_mult": 0.9,
+      "initial_enemies_mult": 1.2,
+      "spawn": {
+        "interval_ms": 720,
+        "max_active_base": 16,
+        "min_dist_cells": 7,
+        "max_dist_cells": 15,
+        "spawn_batch": 2
+      }
+    },
+    "modo_defense": {
+      "initial_items_mult": 1.0,
+      "initial_enemies_mult": 1.6,
+      "spawn": {
+        "interval_ms": 740,
+        "max_active_base": 24,
+        "min_dist_cells": 5,
+        "max_dist_cells": 13,
+        "spawn_batch": 3
+      }
+    },
+    "modo_ghost_hunt": {
+      "initial_items_mult": 1.2,
+      "initial_enemies_mult": 1.3,
+      "spawn": {
+        "interval_ms": 700,
+        "max_active_base": 18,
+        "min_dist_cells": 6,
+        "max_dist_cells": 15,
+        "spawn_batch": 2
+      }
+    }
+  }
+}

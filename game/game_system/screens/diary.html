@@ -1,0 +1,509 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Diario</title>
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <link rel="stylesheet" href="../styles/diary.css" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="title-section">
+        <h1 class="title">
+          <span class="title-world">DIARIO</span>
+          <span class="title-it">OPERATIVO</span>
+        </h1>
+      </div>
+
+      <div class="diary-layout">
+        <div class="diary-panel">
+          <div class="diary-controls">
+            <input id="searchInput" type="text" placeholder="Buscar..." />
+            <div class="tab-row">
+              <button class="tab-btn active" data-type="items">Items</button>
+              <button class="tab-btn" data-type="enemies">Enemigos</button>
+              <button class="tab-btn" data-type="players">Jugadores</button>
+            </div>
+            <div class="filter-row">
+              <button class="tab-btn active" data-filter="all">Todos</button>
+              <button class="tab-btn" data-filter="favorites">Favoritos</button>
+              <button class="tab-btn" data-filter="discovered">Descubiertos</button>
+            </div>
+            <div class="summary" id="summaryText">0 entradas</div>
+          </div>
+          <div class="entry-list" id="entryList"></div>
+        </div>
+
+        <div class="diary-panel">
+          <div class="preview-title" id="previewTitle">Selecciona un registro</div>
+          <div class="preview-type" id="previewType">-</div>
+          <div class="preview-body">
+            <div class="preview-actions">
+              <button class="control-btn" id="favoriteBtn">Favorito</button>
+              <button class="control-btn" id="discoveredBtn">Descubierto</button>
+              <button class="control-btn active" id="autoRotateBtn">Auto rotar</button>
+              <button class="control-btn active" id="idleAnimBtn">Idle</button>
+            </div>
+            <div class="preview-media">
+              <img id="previewImage" alt="preview" />
+              <a-scene id="previewScene" embedded renderer="antialias: true; alpha: true">
+                <a-entity light="type: ambient; intensity: 0.6; color: #9db3c7"></a-entity>
+                <a-entity light="type: directional; intensity: 0.7; color: #ffffff" position="3 5 2"></a-entity>
+              <a-entity id="previewModel" position="0 0 0"></a-entity>
+              <a-entity id="previewRig" rotation="0 45 0">
+                <a-camera id="previewCamera" position="0 0 3" look-controls="enabled: false"></a-camera>
+              </a-entity>
+            </a-scene>
+            </div>
+            <div class="control-row">
+              <label for="rotationRange">Rotacion</label>
+              <input id="rotationRange" type="range" min="0" max="360" value="45" />
+            </div>
+            <div class="control-row">
+              <label for="zoomRange">Zoom</label>
+              <input id="zoomRange" type="range" min="1" max="5" value="3" />
+            </div>
+            <div class="preview-meta" id="previewDesc">---</div>
+            <div class="preview-meta"><strong>Asset:</strong> <span id="previewAsset">---</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu" style="margin-top: 24px;">
+        <button class="menu-btn" data-route="index.html">Volver</button>
+      </div>
+    </div>
+
+    <script type="module">
+      import { registerPlayerAnimator } from '../../game_engine/render/player_animator.js';
+
+      registerPlayerAnimator();
+
+      const ITEMS_URL = '../../game_data/items/latest.json';
+      const ENTITIES_URL = '../../game_data/entities/entities_v0.2.json';
+
+      const searchInput = document.getElementById('searchInput');
+      const entryList = document.getElementById('entryList');
+      const summaryText = document.getElementById('summaryText');
+      const previewTitle = document.getElementById('previewTitle');
+      const previewType = document.getElementById('previewType');
+      const previewDesc = document.getElementById('previewDesc');
+      const previewAsset = document.getElementById('previewAsset');
+      const previewImage = document.getElementById('previewImage');
+      const previewScene = document.getElementById('previewScene');
+      const previewModel = document.getElementById('previewModel');
+      const previewRig = document.getElementById('previewRig');
+      const previewCamera = document.getElementById('previewCamera');
+      const favoriteBtn = document.getElementById('favoriteBtn');
+      const discoveredBtn = document.getElementById('discoveredBtn');
+      const autoRotateBtn = document.getElementById('autoRotateBtn');
+      const idleAnimBtn = document.getElementById('idleAnimBtn');
+      const rotationRange = document.getElementById('rotationRange');
+      const zoomRange = document.getElementById('zoomRange');
+
+      const tabs = Array.from(document.querySelectorAll('.tab-btn[data-type]'));
+      const filterButtons = Array.from(document.querySelectorAll('.tab-btn[data-filter]'));
+      let entries = { items: [], enemies: [], players: [] };
+      let activeType = 'items';
+      let activeId = null;
+      let filterMode = 'all';
+      let autoRotate = true;
+      let idleAnim = true;
+      let currentEntry = null;
+
+      const FAVORITES_KEY = 'diary_favorites_v1';
+      const DISCOVERED_KEY = 'diary_discovered_v1';
+
+      function loadSet(key) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return new Set();
+          const data = JSON.parse(raw);
+          return new Set(Array.isArray(data) ? data : []);
+        } catch {
+          return new Set();
+        }
+      }
+
+      function saveSet(key, set) {
+        localStorage.setItem(key, JSON.stringify(Array.from(set)));
+      }
+
+      const favorites = loadSet(FAVORITES_KEY);
+      const discovered = loadSet(DISCOVERED_KEY);
+
+      const GAME_ROOT = new URL('../../', import.meta.url);
+      function resolveAsset(path) {
+        return new URL(path, GAME_ROOT).href;
+      }
+
+      function isModel(asset) {
+        return asset && asset.toLowerCase().endsWith('.glb');
+      }
+
+      function isTrapEntry(entry) {
+        if (!entry?.id) return false;
+        return entry.id.startsWith('trap_') || entry.id.endsWith('_trap');
+      }
+
+      function isEnemyEntry(entry) {
+        return entry?.type === 'enemigo';
+      }
+
+      function isPlayerEntry(entry) {
+        return entry?.type === 'jugador';
+      }
+
+      function normalizeTrapMaterial(mesh) {
+        if (!mesh || !window.THREE) return;
+        mesh.traverse((node) => {
+          if (!node.isMesh || !node.material) return;
+          const mats = Array.isArray(node.material) ? node.material : [node.material];
+          const next = mats.map((mat) => {
+            if (!mat || mat.isMeshStandardMaterial) return mat;
+            if (!mat.isMeshBasicMaterial && !mat.isMeshLambertMaterial && !mat.isMeshPhongMaterial) return mat;
+            const std = new THREE.MeshStandardMaterial({
+              map: mat.map || null,
+              color: mat.color ? mat.color.clone() : new THREE.Color(0xffffff),
+              transparent: Boolean(mat.transparent),
+              opacity: Number.isFinite(mat.opacity) ? mat.opacity : 1,
+              alphaTest: Number.isFinite(mat.alphaTest) ? mat.alphaTest : 0,
+              side: mat.side,
+              metalness: 0.1,
+              roughness: 0.8,
+            });
+            if (mat.emissive) std.emissive = mat.emissive.clone();
+            if (mat.emissiveMap) std.emissiveMap = mat.emissiveMap;
+            if (mat.normalMap) std.normalMap = mat.normalMap;
+            if (mat.roughnessMap) std.roughnessMap = mat.roughnessMap;
+            if (mat.metalnessMap) std.metalnessMap = mat.metalnessMap;
+            if (mat.aoMap) std.aoMap = mat.aoMap;
+            if (mat.alphaMap) std.alphaMap = mat.alphaMap;
+            std.needsUpdate = true;
+            return std;
+          });
+          node.material = Array.isArray(node.material) ? next : next[0];
+        });
+      }
+
+      function applyColorMask(mesh, colorHex, strength = 0.3) {
+        if (!mesh || !window.THREE) return;
+        const mask = new THREE.Color(colorHex || '#ff4d6d');
+        mesh.traverse((node) => {
+          if (!node.isMesh || !node.material) return;
+          const mats = Array.isArray(node.material) ? node.material : [node.material];
+          const cloned = mats.map((mat) => {
+            if (!mat) return mat;
+            return mat.userData?.__cloned ? mat : mat.clone();
+          });
+          cloned.forEach((mat) => {
+            if (!mat || !mat.color) return;
+            if (!mat.userData) mat.userData = {};
+            mat.userData.__cloned = true;
+            if (!mat.userData.baseColor) mat.userData.baseColor = mat.color.clone();
+            mat.color.copy(mat.userData.baseColor).lerp(mask, strength);
+            if ('emissive' in mat) {
+              if (!mat.userData.baseEmissive) mat.userData.baseEmissive = (mat.emissive ? mat.emissive.clone() : new THREE.Color(0x000000));
+              mat.emissive.copy(mat.userData.baseEmissive).lerp(mask, strength * 0.35);
+            }
+            mat.needsUpdate = true;
+          });
+          node.material = Array.isArray(node.material) ? cloned : cloned[0];
+        });
+      }
+
+      function fixText(value) {
+        if (typeof value !== 'string') return value;
+        if (!/[ÃÂ]/.test(value)) return value;
+        try {
+          return decodeURIComponent(escape(value));
+        } catch {
+          return value;
+        }
+      }
+
+      function buildEntry(def, type) {
+        const asset = typeof def.asset === 'string' ? def.asset.trim() : '';
+        return {
+          id: def.id,
+          name: fixText(def.nombre || def.name || def.id),
+          desc: fixText(def.descripcion || def.description || 'Sin descripcion'),
+          asset,
+          color: def.color || '#2bd8ff',
+          scale: def.scale ?? 0.6,
+          type,
+        };
+      }
+
+      function hasAsset(entry) {
+        return Boolean(entry?.asset && entry.asset.trim());
+      }
+
+      function renderList() {
+        const query = searchInput.value.trim().toLowerCase();
+        const list = entries[activeType] || [];
+        const filtered = list.filter((entry) => {
+          if (!query) return true;
+          return entry.name.toLowerCase().includes(query) || entry.id.toLowerCase().includes(query);
+        }).filter((entry) => {
+          if (filterMode === 'favorites') return favorites.has(entry.id);
+          if (filterMode === 'discovered') return discovered.has(entry.id);
+          return true;
+        });
+
+        summaryText.textContent = `${filtered.length} entradas`;
+        entryList.innerHTML = '';
+
+        filtered.forEach((entry) => {
+          const btn = document.createElement('button');
+          btn.className = 'entry-btn' + (entry.id === activeId ? ' active' : '');
+          const favIcon = favorites.has(entry.id) ? '★' : '';
+          const discIcon = discovered.has(entry.id) ? '●' : '';
+          btn.innerHTML = `<span>${entry.name}</span><span class="entry-tag">${favIcon}${discIcon} ${entry.id}</span>`;
+          btn.addEventListener('click', () => {
+            activeId = entry.id;
+            renderList();
+            renderPreview(entry);
+          });
+          entryList.appendChild(btn);
+        });
+
+        if (!activeId && filtered[0]) {
+          activeId = filtered[0].id;
+          renderPreview(filtered[0]);
+          renderList();
+        }
+      }
+
+      function renderPreview(entry) {
+        currentEntry = entry;
+        previewTitle.textContent = entry.name;
+        previewType.textContent = entry.type.toUpperCase();
+        previewDesc.textContent = entry.desc;
+        previewAsset.textContent = entry.asset || '-';
+
+        if (!discovered.has(entry.id)) {
+          discovered.add(entry.id);
+          saveSet(DISCOVERED_KEY, discovered);
+          renderList();
+        }
+
+        favoriteBtn.classList.toggle('active', favorites.has(entry.id));
+        discoveredBtn.classList.toggle('active', discovered.has(entry.id));
+
+        if (entry.asset && isModel(entry.asset)) {
+          const useIdle = isEnemyEntry(entry) || isPlayerEntry(entry);
+          if (useIdle) {
+            previewModel.setAttribute('player-animator', 'idle: idle; walk: walk; run: run; attack: attack; death: death; jump: jump;');
+          } else {
+            previewModel.removeAttribute('player-animator');
+          }
+          previewImage.style.opacity = '0';
+          previewImage.style.visibility = 'hidden';
+          previewScene.style.opacity = '1';
+          previewScene.style.visibility = 'visible';
+          const assetUrl = resolveAsset(entry.asset);
+          previewModel.setAttribute('gltf-model', assetUrl);
+          const scale = entry.scale || 0.6;
+          previewModel.setAttribute('scale', `${scale} ${scale} ${scale}`);
+          const yaw = Number(rotationRange.value) || 45;
+          if (previewRig) previewRig.setAttribute('rotation', `0 ${yaw} 0`);
+          const zoom = Number(zoomRange.value) || 3;
+          if (previewCamera) previewCamera.setAttribute('position', `0 0 ${zoom}`);
+          if (typeof previewScene?.resize === 'function') {
+            requestAnimationFrame(() => previewScene.resize());
+          }
+          if (typeof previewScene?.play === 'function') {
+            previewScene.play();
+          }
+          const applyVisuals = () => {
+            const mesh = previewModel.getObject3D('mesh');
+            if (!mesh) return;
+            if (isTrapEntry(entry)) {
+              normalizeTrapMaterial(mesh);
+              applyColorMask(mesh, '#ff4d6d', 0.35);
+            } else if (isEnemyEntry(entry)) {
+              const maskDef = entry.mask;
+              const maskColor = typeof maskDef === 'string' ? maskDef : maskDef?.color;
+              if (maskColor) {
+                const strength = Number.isFinite(maskDef?.strength) ? maskDef.strength : 0.9;
+                applyColorMask(mesh, maskColor, strength);
+                mesh.traverse((node) => {
+                  if (!node.isMesh || !node.material) return;
+                  const mats = Array.isArray(node.material) ? node.material : [node.material];
+                  mats.forEach((mat) => {
+                    if (!mat) return;
+                    if (Number.isFinite(mat.roughness)) mat.roughness = Number.isFinite(maskDef?.roughness) ? maskDef.roughness : 0.35;
+                    if (Number.isFinite(mat.metalness)) mat.metalness = Number.isFinite(maskDef?.metalness) ? maskDef.metalness : 0.2;
+                    if ('emissiveIntensity' in mat) mat.emissiveIntensity = Number.isFinite(maskDef?.emissiveIntensity) ? maskDef.emissiveIntensity : 0.5;
+                  });
+                });
+              }
+            }
+          };
+
+          const applyIdle = () => {
+            if (!useIdle) {
+              idleAnimBtn?.setAttribute('disabled', 'true');
+              idleAnimBtn?.classList.remove('active');
+              return;
+            }
+            idleAnimBtn?.removeAttribute('disabled');
+            idleAnimBtn?.classList.toggle('active', idleAnim);
+            const animator = previewModel.components?.['player-animator'];
+            if (!animator) return;
+            if (idleAnim) {
+              animator.setPaused(false);
+              animator.setState('idle', { force: true });
+            } else {
+              animator.setPaused(true);
+            }
+          };
+
+          const onLoaded = () => {
+            applyVisuals();
+            applyIdle();
+          };
+
+          if (previewModel.getObject3D('mesh')) {
+            onLoaded();
+          } else {
+            previewModel.addEventListener('model-loaded', onLoaded, { once: true });
+          }
+          if (autoRotate) {
+            previewRig?.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear');
+          } else {
+            previewRig?.removeAttribute('animation');
+          }
+        } else if (entry.asset) {
+          previewScene.style.opacity = '0';
+          previewScene.style.visibility = 'hidden';
+          previewImage.style.opacity = '1';
+          previewImage.style.visibility = 'visible';
+          previewImage.src = resolveAsset(entry.asset);
+          previewModel.removeAttribute('player-animator');
+          idleAnimBtn?.setAttribute('disabled', 'true');
+          idleAnimBtn?.classList.remove('active');
+        } else {
+          previewScene.style.opacity = '0';
+          previewScene.style.visibility = 'hidden';
+          previewImage.style.opacity = '0';
+          previewImage.style.visibility = 'hidden';
+          previewModel.removeAttribute('player-animator');
+          idleAnimBtn?.setAttribute('disabled', 'true');
+          idleAnimBtn?.classList.remove('active');
+        }
+      }
+
+      function updateIdleStateOnly() {
+        if (!currentEntry) return;
+        if (!isEnemyEntry(currentEntry) && !isPlayerEntry(currentEntry)) return;
+        idleAnimBtn?.classList.toggle('active', idleAnim);
+        const animator = previewModel.components?.['player-animator'];
+        if (!animator) return;
+        if (idleAnim) {
+          animator.setPaused(false);
+          animator.setState('idle', { force: true });
+        } else {
+          animator.setPaused(true);
+        }
+      }
+
+      function setActiveTab(type) {
+        activeType = type;
+        activeId = null;
+        tabs.forEach((tab) => tab.classList.toggle('active', tab.dataset.type === type));
+        renderList();
+      }
+
+      function setFilter(mode) {
+        filterMode = mode;
+        filterButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.filter === mode));
+        renderList();
+      }
+
+      favoriteBtn.addEventListener('click', () => {
+        if (!activeId) return;
+        if (favorites.has(activeId)) {
+          favorites.delete(activeId);
+        } else {
+          favorites.add(activeId);
+        }
+        saveSet(FAVORITES_KEY, favorites);
+        renderList();
+        favoriteBtn.classList.toggle('active', favorites.has(activeId));
+      });
+
+      discoveredBtn.addEventListener('click', () => {
+        if (!activeId) return;
+        if (discovered.has(activeId)) {
+          discovered.delete(activeId);
+        } else {
+          discovered.add(activeId);
+        }
+        saveSet(DISCOVERED_KEY, discovered);
+        renderList();
+        discoveredBtn.classList.toggle('active', discovered.has(activeId));
+      });
+
+      autoRotateBtn.addEventListener('click', () => {
+        autoRotate = !autoRotate;
+        autoRotateBtn.classList.toggle('active', autoRotate);
+        const entry = entries[activeType].find((e) => e.id === activeId);
+        if (entry) renderPreview(entry);
+      });
+
+      idleAnimBtn.addEventListener('click', () => {
+        idleAnim = !idleAnim;
+        updateIdleStateOnly();
+      });
+
+      rotationRange.addEventListener('input', () => {
+        autoRotate = false;
+        autoRotateBtn.classList.remove('active');
+        const yaw = Number(rotationRange.value) || 45;
+        if (previewRig) {
+          previewRig.removeAttribute('animation');
+          previewRig.setAttribute('rotation', `0 ${yaw} 0`);
+        }
+      });
+
+      zoomRange.addEventListener('input', () => {
+        const zoom = Number(zoomRange.value) || 3;
+        if (previewCamera) previewCamera.setAttribute('position', `0 0 ${zoom}`);
+      });
+
+      async function loadData() {
+        const [items, entities] = await Promise.all([
+          fetch(ITEMS_URL).then((r) => r.json()).catch(() => []),
+          fetch(ENTITIES_URL).then((r) => r.json()).catch(() => ({})),
+        ]);
+
+        entries.items = Array.isArray(items)
+          ? items.map((i) => buildEntry(i, 'item')).filter((e) => hasAsset(e))
+          : [];
+        entries.enemies = Array.isArray(entities.enemies)
+          ? entities.enemies.map((e) => buildEntry(e, 'enemigo')).filter((e) => hasAsset(e))
+          : [];
+        entries.players = Array.isArray(entities.players)
+          ? entities.players.map((p) => buildEntry(p, 'jugador')).filter((e) => hasAsset(e))
+          : [];
+
+        renderList();
+      }
+
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => setActiveTab(tab.dataset.type));
+      });
+      filterButtons.forEach((btn) => {
+        btn.addEventListener('click', () => setFilter(btn.dataset.filter));
+      });
+      searchInput.addEventListener('input', renderList);
+
+      loadData();
+    </script>
+    <script type="module" src="../ui/router.js"></script>
+  </body>
+</html>

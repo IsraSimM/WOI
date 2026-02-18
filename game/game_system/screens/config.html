@@ -1,0 +1,241 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Configuracion</title>
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <link rel="stylesheet" href="../styles/config.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="title-section">
+        <h1 class="title">
+          <span class="title-world">ENGINE</span>
+          <span class="title-it">CONFIG</span>
+        </h1>
+      </div>
+
+      <div class="panel">
+        <label>Configuracion de motor</label>
+
+        <div class="switch">
+          <span>Culling activo</span>
+          <input id="cullingEnabled" type="checkbox" />
+        </div>
+
+        <label for="cullingDistance">Distancia de culling</label>
+        <input id="cullingDistance" type="range" min="20" max="120" value="60" />
+        <div class="slider-meta">
+          <span>Corto</span>
+          <span id="cullingDistanceValue">60</span>
+          <span>Largo</span>
+        </div>
+
+        <label for="lodMode">LOD</label>
+        <select id="lodMode">
+          <option value="quality">CALIDAD</option>
+          <option value="balanced">BALANCEADO</option>
+          <option value="aggressive">AGRESIVO</option>
+        </select>
+
+        <div class="switch">
+          <span>Sombras activas</span>
+          <input id="shadowsEnabled" type="checkbox" />
+        </div>
+
+        <div class="switch">
+          <span>Niebla activa</span>
+          <input id="fogEnabled" type="checkbox" />
+        </div>
+
+        <label for="fogFar">Distancia niebla (far)</label>
+        <input id="fogFar" type="range" min="60" max="220" value="120" />
+        <div class="slider-meta">
+          <span>Cerca</span>
+          <span id="fogFarValue">120</span>
+          <span>Lejos</span>
+        </div>
+
+        <label for="minimapRadius">Radio minimapa (celdas)</label>
+        <input id="minimapRadius" type="range" min="3" max="12" value="7" />
+        <div class="slider-meta">
+          <span>Corto</span>
+          <span id="minimapRadiusValue">7</span>
+          <span>Amplio</span>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="dashDistance">Dash distancia</label>
+            <input id="dashDistance" type="range" min="6" max="18" value="12" />
+            <div class="slider-meta">
+              <span>Bajo</span>
+              <span id="dashDistanceValue">12</span>
+              <span>Alto</span>
+            </div>
+          </div>
+          <div>
+            <label for="dashCooldown">Dash cooldown (s)</label>
+            <input id="dashCooldown" type="range" min="0.5" max="3" step="0.1" value="1.5" />
+            <div class="slider-meta">
+              <span>Rapido</span>
+              <span id="dashCooldownValue">1.5</span>
+              <span>Lento</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="dashWalls">Dash atraviesa muros</label>
+            <select id="dashWalls">
+              <option value="0">0 bloques</option>
+              <option value="1">1 bloque</option>
+              <option value="2">2 bloques</option>
+            </select>
+          </div>
+          <div>
+            <label for="invulnSeconds">Invulnerable al respawn (s)</label>
+            <input id="invulnSeconds" type="range" min="0" max="8" step="0.5" value="5" />
+            <div class="slider-meta">
+              <span>0</span>
+              <span id="invulnSecondsValue">5</span>
+              <span>8</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="menu">
+          <button class="menu-btn primary" id="saveBtn">Guardar</button>
+          <button class="menu-btn" id="resetBtn">Restaurar</button>
+        </div>
+        <div class="status" id="statusMsg">Configuracion no guardada</div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-btn" data-route="index.html">Volver</button>
+      </div>
+    </div>
+
+    <script type="module">
+      const ENGINE_CONFIG_KEY = 'engine_config_v1';
+      const statusMsg = document.getElementById('statusMsg');
+
+      const cullingEnabled = document.getElementById('cullingEnabled');
+      const cullingDistance = document.getElementById('cullingDistance');
+      const cullingDistanceValue = document.getElementById('cullingDistanceValue');
+      const lodMode = document.getElementById('lodMode');
+      const shadowsEnabled = document.getElementById('shadowsEnabled');
+      const fogEnabled = document.getElementById('fogEnabled');
+      const fogFar = document.getElementById('fogFar');
+      const fogFarValue = document.getElementById('fogFarValue');
+      const minimapRadius = document.getElementById('minimapRadius');
+      const minimapRadiusValue = document.getElementById('minimapRadiusValue');
+      const dashDistance = document.getElementById('dashDistance');
+      const dashDistanceValue = document.getElementById('dashDistanceValue');
+      const dashCooldown = document.getElementById('dashCooldown');
+      const dashCooldownValue = document.getElementById('dashCooldownValue');
+      const dashWalls = document.getElementById('dashWalls');
+      const invulnSeconds = document.getElementById('invulnSeconds');
+      const invulnSecondsValue = document.getElementById('invulnSecondsValue');
+
+      const defaults = {
+        cullingEnabled: true,
+        cullingDistance: 60,
+        lodMode: 'balanced',
+        shadowsEnabled: false,
+        fogEnabled: true,
+        fogFar: 120,
+        minimapRadius: 7,
+        dashDistance: 12,
+        dashCooldown: 1.5,
+        dashWalls: 1,
+        invulnMs: 5000,
+      };
+
+      function setStatus(text) {
+        statusMsg.textContent = text;
+      }
+
+      function syncLabels() {
+        cullingDistanceValue.textContent = cullingDistance.value;
+        fogFarValue.textContent = fogFar.value;
+        minimapRadiusValue.textContent = minimapRadius.value;
+        dashDistanceValue.textContent = dashDistance.value;
+        dashCooldownValue.textContent = dashCooldown.value;
+        invulnSecondsValue.textContent = invulnSeconds.value;
+      }
+
+      function loadConfig() {
+        try {
+          const raw = localStorage.getItem(ENGINE_CONFIG_KEY);
+          if (!raw) return;
+          const cfg = JSON.parse(raw);
+          if (typeof cfg.cullingEnabled === 'boolean') cullingEnabled.checked = cfg.cullingEnabled;
+          if (Number.isFinite(cfg.cullingDistance)) cullingDistance.value = cfg.cullingDistance;
+          if (typeof cfg.lodMode === 'string') lodMode.value = cfg.lodMode;
+          if (typeof cfg.shadowsEnabled === 'boolean') shadowsEnabled.checked = cfg.shadowsEnabled;
+          if (typeof cfg.fogEnabled === 'boolean') fogEnabled.checked = cfg.fogEnabled;
+          if (Number.isFinite(cfg.fogFar)) fogFar.value = cfg.fogFar;
+          if (Number.isFinite(cfg.minimapRadius)) minimapRadius.value = cfg.minimapRadius;
+          if (Number.isFinite(cfg.dashDistance)) dashDistance.value = cfg.dashDistance;
+          if (Number.isFinite(cfg.dashCooldown)) dashCooldown.value = cfg.dashCooldown;
+          if (Number.isFinite(cfg.dashWalls)) dashWalls.value = String(cfg.dashWalls);
+          if (Number.isFinite(cfg.invulnMs)) invulnSeconds.value = (cfg.invulnMs / 1000).toFixed(1);
+        } catch {
+          // ignore
+        }
+      }
+
+      function saveConfig() {
+        const cfg = {
+          cullingEnabled: Boolean(cullingEnabled.checked),
+          cullingDistance: Number(cullingDistance.value),
+          lodMode: lodMode.value,
+          shadowsEnabled: Boolean(shadowsEnabled.checked),
+          fogEnabled: Boolean(fogEnabled.checked),
+          fogFar: Number(fogFar.value),
+          minimapRadius: Number(minimapRadius.value),
+          dashDistance: Number(dashDistance.value),
+          dashCooldown: Number(dashCooldown.value),
+          dashWalls: Number(dashWalls.value),
+          invulnMs: Math.max(0, Number(invulnSeconds.value) * 1000),
+        };
+        localStorage.setItem(ENGINE_CONFIG_KEY, JSON.stringify(cfg));
+        setStatus('Configuracion guardada');
+      }
+
+      function resetConfig() {
+        localStorage.removeItem(ENGINE_CONFIG_KEY);
+        cullingEnabled.checked = defaults.cullingEnabled;
+        cullingDistance.value = defaults.cullingDistance;
+        lodMode.value = defaults.lodMode;
+        shadowsEnabled.checked = defaults.shadowsEnabled;
+        fogEnabled.checked = defaults.fogEnabled;
+        fogFar.value = defaults.fogFar;
+        minimapRadius.value = defaults.minimapRadius;
+        dashDistance.value = defaults.dashDistance;
+        dashCooldown.value = defaults.dashCooldown;
+        dashWalls.value = String(defaults.dashWalls);
+        invulnSeconds.value = (defaults.invulnMs / 1000).toFixed(1);
+        syncLabels();
+        setStatus('Configuracion restaurada');
+      }
+
+      [cullingDistance, fogFar, minimapRadius, dashDistance, dashCooldown, invulnSeconds].forEach((el) => {
+        el.addEventListener('input', syncLabels);
+      });
+
+      document.getElementById('saveBtn').addEventListener('click', saveConfig);
+      document.getElementById('resetBtn').addEventListener('click', resetConfig);
+
+      loadConfig();
+      if (localStorage.getItem(ENGINE_CONFIG_KEY) == null) {
+        resetConfig();
+      }
+      syncLabels();
+    </script>
+    <script type="module" src="../ui/router.js"></script>
+  </body>
+</html>

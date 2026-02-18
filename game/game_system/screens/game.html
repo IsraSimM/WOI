@@ -1,0 +1,64 @@
+﻿<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Game</title>
+    <link rel="stylesheet" href="../styles/game.css" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  </head>
+  <body>
+    <div id="hud-root"></div>
+    <div id="crosshair"></div>
+    <div class="loading-overlay active" id="loadingOverlay">
+      <div class="loading-panel">
+        <div class="loading-title">Cargando</div>
+        <div class="loading-sub" id="loadingText">Preparando mundo...</div>
+        <div class="loading-bar"></div>
+      </div>
+    </div>
+    <div class="start-overlay active" id="startOverlay">
+      <div class="overlay-panel">
+        <div class="overlay-title">Inicio</div>
+        <div class="overlay-subtitle" id="startObjective">Preparado</div>
+        <div class="overlay-actions">
+          <button class="overlay-btn primary" id="startBtn">Comenzar</button>
+        </div>
+      </div>
+    </div>
+    <div class="down-overlay" id="downOverlay">
+      <div class="overlay-panel">
+        <div class="overlay-title">Has caido</div>
+        <div class="overlay-subtitle">Reapareceras en el inicio.</div>
+        <div class="overlay-actions">
+          <button class="overlay-btn primary" id="respawnBtn">Reaparecer</button>
+        </div>
+      </div>
+    </div>
+    <div class="result-overlay" id="resultOverlay">
+      <div class="overlay-panel">
+        <div class="overlay-title" id="resultTitle">Resultado</div>
+        <div class="overlay-subtitle" id="resultMessage"></div>
+        <div class="overlay-stats" id="resultStats"></div>
+        <div class="overlay-actions">
+          <button class="overlay-btn primary" id="resultRestart">Reintentar</button>
+          <button class="overlay-btn" id="resultSaveExit">Guardar y salir</button>
+          <button class="overlay-btn" id="resultExit">Salir</button>
+        </div>
+      </div>
+    </div>
+    <div class="pause-overlay" id="pauseOverlay">
+      <iframe class="pause-frame" src="pause.html"></iframe>
+    </div>
+    <a-scene id="scene" embedded>
+      <a-entity id="player" room-player step-bob position="0 0 0">
+        <a-entity camera
+          look-controls="pointerLockEnabled: true"
+          wasd-controls="enabled: false"
+          position="0 1.7 0"
+        ></a-entity>
+      </a-entity>
+    </a-scene>
+    <script type="module" src="../app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,86 @@
+.panel {
+  background: rgba(12, 20, 28, 0.8);
+  border: 1px solid rgba(84, 122, 145, 0.35);
+  border-radius: var(--ui-radius);
+  padding: 18px;
+  max-width: 600px;
+  margin-bottom: 18px;
+}
+label {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+select, input:not([type="range"]):not([type="checkbox"]) {
+  width: 100%;
+  height: 38px;
+  border-radius: var(--ui-radius);
+  border: var(--ui-border);
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  padding: 0 10px;
+  margin-bottom: 12px;
+}
+.row {
+  display: flex;
+  gap: 12px;
+}
+.row > div { flex: 1; }
+.status {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+}
+.menu { width: auto; }
+.slider-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  margin-top: -6px;
+  margin-bottom: 12px;
+}
+.switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: var(--ui-border);
+  background: var(--ui-bg);
+  border-radius: var(--ui-radius);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.switch input[type="checkbox"] {
+  width: 44px;
+  height: 24px;
+  appearance: none;
+  background: rgba(20, 32, 40, 0.7);
+  border: 1px solid rgba(46, 112, 142, 0.5);
+  border-radius: 0;
+  position: relative;
+  cursor: pointer;
+}
+.switch input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: #00d9ff;
+  top: 2px;
+  left: 3px;
+  transition: transform 0.2s ease;
+}
+.switch input[type="checkbox"]:checked::after {
+  transform: translateX(20px);
+  background: #23f1a8;
+}
+@media (max-width: 720px) {
+  .panel { padding: 16px; }
+  .row { flex-direction: column; }
+}

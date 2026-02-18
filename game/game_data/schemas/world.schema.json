@@ -1,0 +1,22 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/world.schema.json",
+  "title": "World Snapshot",
+  "type": "object",
+  "required": ["version", "name", "width", "height", "map"],
+  "properties": {
+    "version": { "type": "number" },
+    "name": { "type": "string" },
+    "createdAt": { "type": "string" },
+    "width": { "type": "number" },
+    "height": { "type": "number" },
+    "map": { "type": "array", "items": { "type": "number" } },
+    "meta": { "type": "object" },
+    "settings": { "type": "object" },
+    "view": { "type": "object" },
+    "assets": { "type": "object" },
+    "template": { "type": "object" },
+    "spawns": { "type": "object" }
+  },
+  "additionalProperties": true
+}

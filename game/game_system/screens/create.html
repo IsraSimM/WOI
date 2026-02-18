@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nueva Expedicion</title>
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <link rel="stylesheet" href="../styles/create.css" />
+  </head>
+  <body>
+    <div class="page">
+      <div class="topbar">
+        <div class="brand">
+          <strong>PROTOCOLO NOVA</strong>
+          <span>SISTEMA DE DESPLIEGUE v4.2</span>
+        </div>
+        <div class="top-actions">
+          <div class="chip" id="operatorLabel">OPERADOR: CMD_VALKYRIE</div>
+          <button class="menu-btn top-exit" data-route="index.html">Salir</button>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="hero">
+          <h1>Nueva Expedicion</h1>
+          <p>Configura los parametros antes de iniciar. Una vez iniciada la secuencia, la expedicion no puede ser abortada.</p>
+        </div>
+
+        <div class="layout">
+          <div class="panel">
+            <div class="field">
+              <label>Nombre de la mision</label>
+              <input type="text" id="missionName" value="EXPEDICION_ANDROMEDA_01" />
+            </div>
+
+            <div class="field">
+              <label>Modo de juego</label>
+              <div class="toggle-group" id="modeGroup"></div>
+            </div>
+
+            <div class="field">
+              <label>Tamano del mapa</label>
+              <div class="toggle-group" id="sizeGroup"></div>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label>Ancho manual</label>
+                <input type="number" id="widthInput" min="5" step="2" value="21" />
+              </div>
+              <div class="field">
+                <label>Alto manual</label>
+                <input type="number" id="heightInput" min="5" step="2" value="21" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Nivel de amenaza</label>
+              <div class="toggle-group" id="diffGroup"></div>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label>Vidas iniciales</label>
+                <input type="number" id="livesInput" min="1" max="6" value="3" />
+              </div>
+              <div class="field">
+                <label>Altura del mapa</label>
+                <input type="number" id="wallHeightInput" min="1" max="4" value="2" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Semilla de generacion (seed)</label>
+              <div class="seed-row">
+                <input type="text" id="seedInput" placeholder="auto" />
+                <button class="seed-btn" id="seedRandom">Aleatorio</button>
+              </div>
+            </div>
+
+            <div class="field slider-row">
+              <label>Radio del minimapa (celdas)</label>
+              <input type="range" id="minimapRadius" min="3" max="12" value="7" />
+              <div class="slider-meta">
+                <span>Corto</span>
+                <span id="minimapRadiusValue">7</span>
+                <span>Amplio</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="switch">
+                <span>Modo pacmanizado</span>
+                <input type="checkbox" id="pacmanToggle" />
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Resumen del sistema</h3>
+            <div class="summary" id="summary"></div>
+            <div class="actions">
+              <button class="action-btn primary" id="startBtn">Comenzar secuencia</button>
+              <button class="action-btn" id="loadBtn">Cargar partida guardada</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      const CONFIG_KEY = 'game_config_v1';
+      const MODE_URL = '../../game_data/modes/modes.json';
+      const DIFF_URL = '../../game_data/difficults/difficults.json';
+
+      const missionName = document.getElementById('missionName');
+      const modeGroup = document.getElementById('modeGroup');
+      const diffGroup = document.getElementById('diffGroup');
+      const sizeGroup = document.getElementById('sizeGroup');
+      const widthInput = document.getElementById('widthInput');
+      const heightInput = document.getElementById('heightInput');
+      const livesInput = document.getElementById('livesInput');
+      const wallHeightInput = document.getElementById('wallHeightInput');
+      const seedInput = document.getElementById('seedInput');
+      const seedRandom = document.getElementById('seedRandom');
+      const pacmanToggle = document.getElementById('pacmanToggle');
+      const minimapRadius = document.getElementById('minimapRadius');
+      const minimapRadiusValue = document.getElementById('minimapRadiusValue');
+      const summary = document.getElementById('summary');
+      const startBtn = document.getElementById('startBtn');
+      const loadBtn = document.getElementById('loadBtn');
+
+      const sizes = [
+        { id: 'small', label: 'PEQUENO', width: 15, height: 15 },
+        { id: 'medium', label: 'MEDIANO', width: 21, height: 21 },
+        { id: 'large', label: 'GRANDE', width: 31, height: 31 },
+      ];
+
+      const state = {
+        name: missionName.value.trim(),
+        mode: 'modo_classic',
+        difficulty: 'normal',
+        width: 21,
+        height: 21,
+        wallHeight: 2,
+        lives: 3,
+        seed: '',
+        pacman: false,
+        minimapRadius: 7,
+      };
+      let modesCache = [];
+      let diffKeys = [];
+
+      function normalizeOdd(value, fallback) {
+        let n = Number(value);
+        if (!Number.isFinite(n)) n = fallback;
+        n = Math.max(5, Math.round(n));
+        if (n % 2 === 0) n += 1;
+        return n;
+      }
+
+      function setActive(group, value) {
+        group.querySelectorAll('.toggle-btn').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.value === value);
+        });
+      }
+
+      function updateSummary() {
+        summary.innerHTML = '';
+        const lines = [
+          ['Mision', state.name || 'SIN NOMBRE'],
+          ['Modo', state.mode],
+          ['Dificultad', state.difficulty],
+          ['Mapa', `${state.width}x${state.height}`],
+          ['Altura', `${state.wallHeight}`],
+          ['Vidas', `${state.lives}`],
+          ['Seed', state.seed || 'AUTO'],
+          ['Minimap', `${state.minimapRadius} celdas`],
+          ['Pacman', state.pacman ? 'ACTIVO' : 'INACTIVO'],
+        ];
+        lines.forEach(([label, value]) => {
+          const row = document.createElement('div');
+          row.className = 'summary-item';
+          row.innerHTML = `<span>${label}</span><span>${value}</span>`;
+          summary.appendChild(row);
+        });
+      }
+
+      function syncState() {
+        state.name = missionName.value.trim();
+        state.width = normalizeOdd(widthInput.value, state.width);
+        state.height = normalizeOdd(heightInput.value, state.height);
+        widthInput.value = state.width;
+        heightInput.value = state.height;
+        state.wallHeight = Math.max(1, Math.min(4, Number(wallHeightInput.value) || 2));
+        wallHeightInput.value = state.wallHeight;
+        state.lives = Math.max(1, Math.min(6, Number(livesInput.value) || 3));
+        livesInput.value = state.lives;
+        state.seed = seedInput.value.trim();
+        state.pacman = pacmanToggle.checked;
+        state.minimapRadius = Math.max(3, Math.min(12, Number(minimapRadius.value) || 7));
+        minimapRadiusValue.textContent = String(state.minimapRadius);
+        updateSummary();
+      }
+
+      function renderDifficultyOptions() {
+        diffGroup.innerHTML = '';
+        const mode = modesCache.find((entry) => entry.id === state.mode);
+        const allowed = Array.isArray(mode?.dificultades_disponibles) ? mode.dificultades_disponibles : diffKeys;
+        const options = allowed.filter((key) => diffKeys.includes(key));
+        if (!options.length) return;
+        if (!options.includes(state.difficulty)) {
+          state.difficulty = options[0];
+        }
+        options.forEach((key) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'toggle-btn';
+          btn.dataset.value = key;
+          btn.textContent = key.toUpperCase();
+          btn.addEventListener('click', () => {
+            state.difficulty = key;
+            setActive(diffGroup, key);
+            updateSummary();
+          });
+          diffGroup.appendChild(btn);
+        });
+        setActive(diffGroup, state.difficulty);
+      }
+
+      async function loadOptions() {
+        try {
+          const modes = await fetch(MODE_URL).then((res) => res.json());
+          modeGroup.innerHTML = '';
+          modesCache = Array.isArray(modes?.modos) ? modes.modos : [];
+          modesCache.forEach((mode) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'toggle-btn';
+            btn.dataset.value = mode.id;
+            btn.textContent = mode.nombre || mode.id;
+            btn.addEventListener('click', () => {
+              state.mode = mode.id;
+              setActive(modeGroup, mode.id);
+              renderDifficultyOptions();
+              updateSummary();
+            });
+            modeGroup.appendChild(btn);
+          });
+        } catch {
+          modeGroup.innerHTML = '';
+          modesCache = [{ id: 'modo_classic', dificultades_disponibles: ['normal'] }];
+          ['modo_classic'].forEach((mode) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'toggle-btn';
+            btn.dataset.value = mode;
+            btn.textContent = mode;
+            btn.addEventListener('click', () => {
+              state.mode = mode;
+              setActive(modeGroup, mode);
+              renderDifficultyOptions();
+              updateSummary();
+            });
+            modeGroup.appendChild(btn);
+          });
+        }
+
+        try {
+          const diff = await fetch(DIFF_URL).then((res) => res.json());
+          diffKeys = Object.keys(diff.niveles || {});
+          renderDifficultyOptions();
+        } catch {
+          diffKeys = ['normal'];
+          renderDifficultyOptions();
+        }
+
+        sizeGroup.innerHTML = '';
+        sizes.forEach((size) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'toggle-btn';
+          btn.dataset.value = size.id;
+          btn.textContent = size.label;
+          btn.addEventListener('click', () => {
+            state.width = size.width;
+            state.height = size.height;
+            widthInput.value = size.width;
+            heightInput.value = size.height;
+            setActive(sizeGroup, size.id);
+            updateSummary();
+          });
+          sizeGroup.appendChild(btn);
+        });
+      }
+
+      function randomSeed() {
+        const parts = ['nova', 'delta', 'orion', 'vega', 'lima', 'echo', 'zen', 'kappa', 'omega'];
+        const code = Math.floor(Math.random() * 900 + 100);
+        return `${parts[Math.floor(Math.random() * parts.length)]}-${parts[Math.floor(Math.random() * parts.length)]}-${code}`;
+      }
+
+      function loadConfig() {
+        try {
+          const raw = localStorage.getItem(CONFIG_KEY);
+          if (!raw) return;
+          const cfg = JSON.parse(raw);
+          if (cfg.mode) state.mode = cfg.mode;
+          if (cfg.difficulty) state.difficulty = cfg.difficulty;
+          if (cfg.worldWidth) {
+            state.width = normalizeOdd(cfg.worldWidth, state.width);
+            widthInput.value = state.width;
+          }
+          if (cfg.worldHeight) {
+            state.height = normalizeOdd(cfg.worldHeight, state.height);
+            heightInput.value = state.height;
+          }
+          if (cfg.lives) {
+            state.lives = Math.max(1, Math.min(6, Number(cfg.lives) || state.lives));
+            livesInput.value = state.lives;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      function saveConfig() {
+        const cfg = {
+          mode: state.mode,
+          difficulty: state.difficulty,
+          worldWidth: state.width,
+          worldHeight: state.height,
+          lives: state.lives,
+          autosaveOnExit: true,
+        };
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+      }
+
+      function startGame() {
+        syncState();
+        saveConfig();
+        const params = new URLSearchParams();
+        params.set('load', 'new');
+        params.set('mode', state.mode);
+        params.set('difficulty', state.difficulty);
+        params.set('width', state.width);
+        params.set('height', state.height);
+        params.set('wallHeight', state.wallHeight);
+        params.set('minimapRadius', state.minimapRadius);
+        if (state.seed) params.set('seed', state.seed);
+        if (state.name) params.set('name', state.name);
+        if (state.pacman) params.set('pacman', '1');
+        window.location.href = `game.html?${params.toString()}`;
+      }
+
+      missionName.addEventListener('input', syncState);
+      widthInput.addEventListener('change', syncState);
+      heightInput.addEventListener('change', syncState);
+      livesInput.addEventListener('change', syncState);
+      wallHeightInput.addEventListener('change', syncState);
+      seedInput.addEventListener('input', syncState);
+      pacmanToggle.addEventListener('change', syncState);
+      minimapRadius.addEventListener('input', syncState);
+
+      seedRandom.addEventListener('click', () => {
+        seedInput.value = randomSeed();
+        syncState();
+      });
+
+      startBtn.addEventListener('click', startGame);
+      loadBtn.addEventListener('click', () => {
+        window.location.href = 'worlds.html';
+      });
+
+      await loadOptions();
+      loadConfig();
+      setActive(modeGroup, state.mode);
+      renderDifficultyOptions();
+      setActive(sizeGroup, 'medium');
+      syncState();
+    </script>
+    <script type="module" src="../ui/router.js"></script>
+  </body>
+</html>

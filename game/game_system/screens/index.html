@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World IT-Over</title>
+    <link rel="stylesheet" href="../styles/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Information -->
+        <div class="header-info">
+            <div class="location">
+                <span class="label">UBICACIÓN ACTUAL</span>
+                <span class="value">SECTOR 7-B // VOID MARGINS</span>
+            </div>
+            
+            <div class="user-id">
+                <span class="label">IDENTIDAD DE USUARIO</span>
+                <div class="user-row">
+                    <span class="value">OPERATIVO_724</span>
+                    <button class="icon-btn" data-route="config.html" aria-label="Configuraci&oacute;n">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01A1.65 1.65 0 0 0 9 4.6V4a2 2 0 0 1 4 0v.09c0 .69.4 1.31 1.02 1.59.61.28 1.33.17 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01c.28.62.9 1.02 1.59 1.02H21a2 2 0 0 1 0 4h-.09c-.69 0-1.31.4-1.51 1z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Title -->
+        <div class="title-section">
+            <h1 class="title">
+                <span class="title-world">WORLD</span>
+                <span class="title-it">IT-OVER</span>
+            </h1>
+        </div>
+
+        <!-- Menu Buttons -->
+        <div class="menu">
+            <button class="menu-btn" data-route="game.html?load=latest">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"></path>
+                    <path d="M1 14l5.37 4.37A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                <span>CARGAR &Uacute;LTIMA PARTIDA</span>
+            </button>
+
+            <button class="menu-btn primary" data-route="create.html">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span>INICIAR PARTIDA</span>
+            </button>
+
+            <button class="menu-btn" data-route="worlds.html">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                <span>CARGAR PARTIDA</span>
+            </button>
+
+            <button class="menu-btn" data-route="diary.html">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span>DIARIO</span>
+            </button>
+
+
+            <button class="menu-btn exit" data-action="exit">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+                    <line x1="12" y1="2" x2="12" y2="12"></line>
+                </svg>
+                <span>SALIR DEL JUEGO</span>
+            </button>
+        </div>
+
+        <!-- Footer Information -->
+        <div class="footer-info">
+            <div class="version">
+                <svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="9" y1="9" x2="15" y2="9"></line>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+                <div>
+                    <span class="label">VERSIÓN DEL SISTEMA</span>
+                    <span class="value">v1.0.4-BETA</span>
+                </div>
+            </div>
+            <div class="network-status">
+                <div>
+                    <span class="label">ESTADO DE RED</span>
+                    <span class="value">ONLINE / SYNCED</span>
+                </div>
+                <div class="status-indicator"></div>
+            </div>
+        </div>
+
+        <!-- Copyright -->
+        <div class="copyright">
+            <span class="security-label">PROTOCOLO DE SEGURIDAD ACTIVO</span>
+            <span>© 2026 TLAHUITOS STUDIOS. TODOS LOS DERECHOS RESERVADOS.</span>
+        </div>
+
+    </div>
+    <script type="module" src="../ui/router.js"></script>
+    
+</body>
+</html>

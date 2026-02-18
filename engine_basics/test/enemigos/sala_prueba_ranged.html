@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sala de Prueba - Enemy Ranged</title>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <style>
+    :root {
+      --panel-bg: rgba(12, 16, 22, 0.9);
+      --panel-border: rgba(255, 255, 255, 0.15);
+      --text: #e8e7e4;
+      --accent: #22d3ee;
+      --danger: #ff6b6b;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #0f172a;
+    }
+
+    .hud {
+      position: fixed;
+      left: 16px;
+      top: 16px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 13px;
+      z-index: 10;
+      min-width: 220px;
+    }
+
+    .hud .title {
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+
+    .hud .row {
+      display: flex;
+      justify-content: space-between;
+      margin: 4px 0;
+    }
+
+    .hud .status {
+      margin-top: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: rgba(34, 211, 238, 0.12);
+      border: 1px solid rgba(34, 211, 238, 0.3);
+    }
+
+    .hud .status.hit {
+      background: rgba(255, 107, 107, 0.15);
+      border-color: rgba(255, 107, 107, 0.4);
+      color: var(--danger);
+    }
+  </style>
+</head>
+
+<body>
+  <a-scene background="color: #101824" renderer="antialias: true; colorManagement: true;">
+    <a-assets>
+      <a-asset-item id="enemyModel" src="../../../game/game_data/assets/characters/enemy_Shoot.glb"></a-asset-item>
+    </a-assets>
+
+    <a-entity light="type: ambient; color: #d7dee8; intensity: 0.65"></a-entity>
+    <a-entity light="type: directional; color: #ffffff; intensity: 0.65" position="-4 8 -6"></a-entity>
+
+    <a-entity id="player" position="2 0 2" room-player="speed: 5; jump: 6; gravity: 18; radius: 0.35; height: 1.6; sprintMult: 1.3">
+      <a-entity id="head" step-bob="enabled: true; intensity: 0.02; frequency: 3.6; sway: 0.4; maxSpeed: 7">
+        <a-entity camera look-controls="mouseSensitivity: 0.08; touchSensitivity: 0.8" position="0 1.6 0"></a-entity>
+      </a-entity>
+      <a-entity id="player-body">
+        <a-cylinder radius="0.3" height="1.2" color="#38bdf8" position="0 0.6 0"></a-cylinder>
+        <a-sphere radius="0.24" color="#f97316" position="0 1.45 0"></a-sphere>
+      </a-entity>
+    </a-entity>
+
+    <a-entity id="enemy" gltf-model="#enemyModel" rotation="0 180 0" position="14 0 14" scale="0.6 0.6 0.6"></a-entity>
+
+    <a-entity id="room"></a-entity>
+
+    <a-plane id="floor" position="10 0 10" rotation="-90 0 0" width="26" height="26" color="#273244"></a-plane>
+    <a-sky color="#0f172a"></a-sky>
+  </a-scene>
+
+  <div class="hud" id="hud">
+    <div class="title">Sala de Prueba - Ranged</div>
+    <div class="row"><span>Salud</span><span id="hudHealth">100</span></div>
+    <div class="row"><span>Distancia</span><span id="hudDist">-</span></div>
+    <div class="status" id="hudStatus">Listo</div>
+  </div>
+
+  <script type="module">
+    import { CELL } from '../../../game/game_engine/core/constants.js';
+    import { createCollisionSystem } from '../../../game/game_engine/world/systems/collision_system.js';
+    import { registerMovementSystem, registerStepBob } from '../../../game/game_engine/world/systems/movement_system.js';
+    import { createAISystem } from '../../../game/game_engine/world/systems/ai_system.js';
+
+    const cellSize = 2;
+    const width = 11;
+    const height = 11;
+    const wallHeight = 2;
+
+    const sceneEl = document.querySelector('a-scene');
+    const roomEl = document.getElementById('room');
+    const playerEl = document.getElementById('player');
+    const playerBodyEl = document.getElementById('player-body');
+    const enemyEl = document.getElementById('enemy');
+
+    const hudHealth = document.getElementById('hudHealth');
+    const hudStatus = document.getElementById('hudStatus');
+    const hudDist = document.getElementById('hudDist');
+
+    let enemyMixer = null;
+    let enemyAction = null;
+    let enemyAttackClip = null;
+
+    const map = new Uint8Array(width * height);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const isBorder = x === 0 || y === 0 || x === width - 1 || y === height - 1;
+        if (isBorder) map[y * width + x] = CELL.WALL;
+      }
+    }
+
+    const extraWalls = [
+      { x: 3, y: 3 },
+      { x: 3, y: 4 },
+      { x: 3, y: 5 },
+      { x: 7, y: 5 },
+      { x: 7, y: 6 },
+      { x: 5, y: 7 },
+    ];
+    extraWalls.forEach((cell) => {
+      map[cell.y * width + cell.x] = CELL.WALL;
+    });
+
+    function buildRoom() {
+      roomEl.innerHTML = '';
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (map[y * width + x] !== CELL.WALL) continue;
+          const wall = document.createElement('a-box');
+          wall.setAttribute('width', cellSize);
+          wall.setAttribute('height', wallHeight);
+          wall.setAttribute('depth', cellSize);
+          wall.setAttribute('color', '#3b4a61');
+          wall.setAttribute('position', `${x * cellSize} ${wallHeight / 2} ${y * cellSize}`);
+          roomEl.appendChild(wall);
+        }
+      }
+    }
+
+    buildRoom();
+
+    const collisionSystem = createCollisionSystem(map, width, height, cellSize, wallHeight);
+    registerMovementSystem({ collisionSystem, bodyEl: playerBodyEl });
+    registerStepBob();
+
+    const playerState = { health: 100 };
+
+    let statusUntil = 0;
+
+    function setStatus(text, isHit = false, durationMs = 500) {
+      hudStatus.textContent = text;
+      hudStatus.classList.toggle('hit', isHit);
+      statusUntil = performance.now() + durationMs;
+    }
+
+    function applyDamage(amount) {
+      playerState.health = Math.max(0, playerState.health - amount);
+      hudHealth.textContent = String(playerState.health);
+      setStatus('Impacto recibido', true, 900);
+      if (playerState.health <= 0) {
+        setStatus('Sin salud - recarga la sala', true, 2000);
+      }
+    }
+
+    function findWallHit(origin, dir, range) {
+      const step = Math.max(0.4, cellSize * 0.2);
+      const steps = Math.ceil(range / step);
+      for (let i = 0; i <= steps; i += 1) {
+        const dist = i * step;
+        if (dist > range) break;
+        const x = origin.x + dir.x * dist;
+        const y = origin.y + dir.y * dist;
+        const z = origin.z + dir.z * dist;
+        if (collisionSystem.collidesAt(x, y, z, 0.12, 0.4)) {
+          return { distance: dist };
+        }
+      }
+      return null;
+    }
+
+    const shotOrigin = new THREE.Vector3();
+    const shotTarget = new THREE.Vector3();
+    const shotDir = new THREE.Vector3();
+    const traceUp = new THREE.Vector3(0, 1, 0);
+    const traceQuat = new THREE.Quaternion();
+    const traceEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+    const tmpVec = new THREE.Vector3();
+    const aimVec = new THREE.Vector3();
+
+    function spawnTracer(origin, dir, length, color) {
+      const tracer = document.createElement('a-entity');
+      const radius = 0.05;
+      const height = Math.max(0.2, length);
+      tracer.setAttribute('geometry', `primitive: cylinder; radius: ${radius}; height: ${height}`);
+      tracer.setAttribute(
+        'material',
+        `color: ${color}; emissive: ${color}; emissiveIntensity: 0.9; opacity: 0.85; transparent: true`,
+      );
+      const mid = tmpVec.copy(origin).addScaledVector(dir, height * 0.5);
+      tracer.setAttribute('position', `${mid.x} ${mid.y} ${mid.z}`);
+      traceQuat.setFromUnitVectors(traceUp, dir);
+      traceEuler.setFromQuaternion(traceQuat, 'YXZ');
+      const deg = THREE.MathUtils.radToDeg;
+      tracer.setAttribute('rotation', `${deg(traceEuler.x)} ${deg(traceEuler.y)} ${deg(traceEuler.z)}`);
+      sceneEl.appendChild(tracer);
+      setTimeout(() => tracer.parentNode?.removeChild(tracer), 120);
+    }
+
+    function facePlayer(enemy) {
+      const enemyPos = enemy.el.object3D.position;
+      const playerPos = playerEl.object3D.position;
+      const dx = playerPos.x - enemyPos.x;
+      const dz = playerPos.z - enemyPos.z;
+      if (Math.abs(dx) < 0.001 && Math.abs(dz) < 0.001) return;
+      const yaw = Math.atan2(dx, dz) + (enemy?.yawOffset || 0);
+      enemy.el.object3D.rotation.set(0, yaw, 0);
+    }
+
+    function fireEnemyProjectile(enemy) {
+      const timeToFire = enemyAttackClip ? (enemyAttackClip.duration * 6) / 20 : 0;
+      facePlayer(enemy);
+      if (enemyAction) {
+        enemyAction.reset();
+        enemyAction.setLoop(THREE.LoopOnce, 1);
+        enemyAction.clampWhenFinished = true;
+        enemyAction.play();
+      }
+
+      setTimeout(() => {
+        const hitChance = enemy?.rangedHitChance ?? 0.7;
+        const willHit = Math.random() <= hitChance;
+        const origin = enemy.el.object3D.position;
+        shotOrigin.copy(origin).add(new THREE.Vector3(0, 1.2, 0));
+        shotTarget.copy(playerEl.object3D.position).add(new THREE.Vector3(0, 1.2, 0));
+        shotDir.copy(shotTarget).sub(shotOrigin);
+        let dist = shotDir.length();
+        if (dist <= 0.1) return;
+        shotDir.normalize();
+
+        if (!willHit) {
+          const missOffset = 0.8 + Math.random() * 1.4;
+          aimVec.set(shotDir.z, 0, -shotDir.x).normalize();
+          shotTarget.addScaledVector(aimVec, missOffset);
+          shotDir.copy(shotTarget).sub(shotOrigin);
+          dist = shotDir.length();
+          if (dist <= 0.1) return;
+          shotDir.normalize();
+        }
+
+        const wallHit = findWallHit(shotOrigin, shotDir, dist);
+        const hitDist = wallHit ? wallHit.distance : dist;
+        spawnTracer(shotOrigin, shotDir, hitDist, enemy.projectileColor);
+        if (wallHit) return;
+
+        if (willHit) {
+          applyDamage(12);
+        } else {
+          setStatus('Disparo fallado', false, 700);
+        }
+      }, timeToFire * 1000);
+    }
+
+    enemyEl.addEventListener('model-loaded', () => {
+      const mesh = enemyEl.getObject3D('mesh');
+      if (!mesh || !mesh.animations || mesh.animations.length === 0) return;
+      enemyAttackClip =
+        mesh.animations.find((clip) => /attack|atack|shoot|fire/i.test(clip.name)) ||
+        mesh.animations[0];
+      enemyMixer = new THREE.AnimationMixer(mesh);
+      enemyAction = enemyMixer.clipAction(enemyAttackClip);
+      enemyAction.setLoop(THREE.LoopOnce, 1);
+      enemyAction.clampWhenFinished = true;
+    });
+
+    const enemyObj = {
+      id: 'enemy_ranged',
+      el: enemyEl,
+      speed: 1.0,
+      baseSpeed: 1.0,
+      behavior: 'ranged',
+      turnSpeed: 6,
+      yawOffset: 0,
+      hitRadius: cellSize * 0.35,
+      attack: 2,
+      rangedRange: cellSize * 6,
+      rangedMinRange: cellSize * 2.5,
+      rangedCooldownMs: 3000,
+      rangedHitChance: 0.4,
+      projectileColor: '#44dddd',
+      spawnedAt: performance.now(),
+      anim: {
+        lastPos: enemyEl.object3D.position.clone(),
+        current: null,
+        attackUntil: 0,
+      },
+    };
+
+    const aiSystem = createAISystem({
+      map,
+      width,
+      height,
+      cellSize,
+      enemies: [enemyObj],
+      getPlayerPosition: () => playerEl.object3D.position,
+      onPlayerHit: (enemy) => {
+        setStatus('Contacto melee', true, 700);
+        applyDamage((enemy?.attack || 1) * 6);
+      },
+      onRangedAttack: (enemy) => fireEnemyProjectile(enemy),
+    });
+
+    function loop() {
+      requestAnimationFrame(loop);
+      const now = performance.now();
+      const delta = Math.min(0.05, (now - (loop.lastTime || now)) / 1000);
+      loop.lastTime = now;
+      if (enemyMixer) enemyMixer.update(delta);
+      const playerPos = playerEl.object3D.position;
+      const enemyPos = enemyEl.object3D.position;
+      const dist = Math.hypot(playerPos.x - enemyPos.x, playerPos.z - enemyPos.z);
+      hudDist.textContent = dist.toFixed(2);
+      if (performance.now() > statusUntil) {
+        hudStatus.textContent = 'Listo';
+        hudStatus.classList.remove('hit');
+      }
+      aiSystem.update(1 / 60);
+    }
+
+    loop();
+  </script>
+</body>
+
+</html>

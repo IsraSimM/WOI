@@ -1,0 +1,30 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/entity.schema.json",
+  "title": "Entities",
+  "type": "object",
+  "required": ["players", "enemies", "bots"],
+  "properties": {
+    "players": { "type": "array", "items": { "$ref": "#/definitions/entity" } },
+    "enemies": { "type": "array", "items": { "$ref": "#/definitions/entity" } },
+    "bots": { "type": "array", "items": { "$ref": "#/definitions/entity" } }
+  },
+  "definitions": {
+    "entity": {
+      "type": "object",
+      "required": ["id", "nombre", "descripcion", "stats"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "nombre": { "type": "string" },
+        "descripcion": { "type": "string" },
+        "nivel_min": { "type": "number" },
+        "puntos_muerte": { "type": "number" },
+        "stats": { "type": "object" },
+        "base_modificadores": { "type": "object" },
+        "color": { "type": "string" },
+        "asset": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

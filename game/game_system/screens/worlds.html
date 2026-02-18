@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Worlds</title>
+    <link rel="stylesheet" href="../styles/styles.css" />
+    <link rel="stylesheet" href="../styles/worlds.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="title-section">
+        <h1 class="title">
+          <span class="title-world">WORLD</span>
+          <span class="title-it">SELECT</span>
+        </h1>
+      </div>
+
+      <div class="panel" id="byWorldPanel">
+        <h2>Seccion 1: Por mundo</h2>
+        <p>Un guardado por cada mundo. Continua donde lo dejaste.</p>
+        <div class="grid-3" id="worldSavesGrid"></div>
+        <div class="meta" id="worldSavesEmpty">No hay guardados.</div>
+      </div>
+
+      <div class="panel" id="levelsPanel">
+        <h2>Seccion 2: Niveles</h2>
+        <p>Mundos predefinidos para jugar. Completa un nivel para desbloquear el siguiente.</p>
+        <div class="grid-3" id="levelsGrid"></div>
+      </div>
+
+      <div class="menu">
+        <button class="menu-btn" data-route="config.html">Configuracion</button>
+        <button class="menu-btn" data-route="index.html">Volver</button>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal-panel">
+        <div class="modal-title" id="modalTitle">Confirmar</div>
+        <div class="modal-message" id="modalMessage">?Seguro?</div>
+        <div class="modal-field" id="modalInputWrap">
+          <label class="modal-label" for="modalInput">Nombre</label>
+          <input id="modalInput" type="text" />
+        </div>
+        <div class="modal-field" id="modalSelectWrap">
+          <label class="modal-label">Dificultad</label>
+          <div class="toggle-group" id="modalSelectGroup"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="menu-btn" id="modalCancel">Cancelar</button>
+          <button class="menu-btn primary" id="modalConfirm">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      const SAVE_LIST_KEY = 'world_snapshots_v1';
+      const SAVE_LATEST_KEY = 'world_snapshot_latest_v1';
+      const LEVELS_PROGRESS_KEY = 'levels_progress_v1';
+      const LEVELS = ['world_01', 'world_02'];
+      const DIFFICULTIES = ['facil', 'normal', 'dificil', 'experto', 'pesadilla'];
+
+      const worldSavesGrid = document.getElementById('worldSavesGrid');
+      const worldSavesEmpty = document.getElementById('worldSavesEmpty');
+      const levelsGrid = document.getElementById('levelsGrid');
+
+      const modalOverlay = document.getElementById('modalOverlay');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalMessage = document.getElementById('modalMessage');
+      const modalInputWrap = document.getElementById('modalInputWrap');
+      const modalInput = document.getElementById('modalInput');
+      const modalSelectWrap = document.getElementById('modalSelectWrap');
+      const modalSelectGroup = document.getElementById('modalSelectGroup');
+      const modalCancel = document.getElementById('modalCancel');
+      const modalConfirm = document.getElementById('modalConfirm');
+
+      let modalConfirmHandler = null;
+      let modalSelected = null;
+
+      function loadList() {
+        try {
+          const raw = localStorage.getItem(SAVE_LIST_KEY);
+          if (!raw) return [];
+          const list = JSON.parse(raw);
+          return Array.isArray(list) ? list : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function saveList(list) {
+        localStorage.setItem(SAVE_LIST_KEY, JSON.stringify(list));
+      }
+
+      function loadProgress() {
+        try {
+          const raw = localStorage.getItem(LEVELS_PROGRESS_KEY);
+          if (!raw) return [];
+          const list = JSON.parse(raw);
+          return Array.isArray(list) ? list : [];
+        } catch {
+          return [];
+        }
+      }
+
+      function formatMeta(entry) {
+        const created = entry.createdAt ? new Date(entry.createdAt).toLocaleString() : 'desconocido';
+        const saveName = entry.name || 'Sin nombre';
+        const width = entry.data?.width ?? entry.data?.settings?.mapWidth;
+        const height = entry.data?.height ?? entry.data?.settings?.mapHeight;
+        const size = width && height ? `${width}x${height}` : 'N/A';
+        const wallHeight = entry.data?.settings?.wallHeight;
+        const wallText = Number.isFinite(wallHeight) ? `Altura: ${wallHeight}` : 'Altura: N/A';
+        const diff = entry.data?.settings?.difficulty || 'normal';
+        return `Nombre: ${saveName} | Guardado: ${created} | Mapa: ${size} | ${wallText} | Dif: ${diff}`;
+      }
+
+      function getWorldId(entry) {
+        return entry.data?.settings?.worldId
+          || entry.data?.meta?.name
+          || entry.data?.name
+          || entry.name
+          || 'procedural';
+      }
+
+      function latestByWorld(list) {
+        const map = new Map();
+        list.forEach((entry) => {
+          const worldId = getWorldId(entry);
+          const current = map.get(worldId);
+          if (!current) {
+            map.set(worldId, entry);
+            return;
+          }
+          const a = new Date(current.createdAt || 0).getTime();
+          const b = new Date(entry.createdAt || 0).getTime();
+          if (b >= a) map.set(worldId, entry);
+        });
+        return Array.from(map.entries()).map(([worldId, entry]) => ({ worldId, entry }));
+      }
+
+      function openModal({
+        title,
+        message,
+        inputValue = '',
+        showInput = false,
+        showSelect = false,
+        selectOptions = [],
+        selected = null,
+        confirmLabel = 'Confirmar',
+        onConfirm,
+      }) {
+        modalTitle.textContent = title || 'Confirmar';
+        modalMessage.textContent = message || '';
+        modalConfirm.textContent = confirmLabel || 'Confirmar';
+        modalInputWrap.style.display = showInput ? 'grid' : 'none';
+        modalSelectWrap.style.display = showSelect ? 'grid' : 'none';
+        if (showInput) {
+          modalInput.value = inputValue || '';
+          modalInput.focus();
+        }
+        modalSelected = selected;
+        if (showSelect) {
+          modalSelectGroup.innerHTML = '';
+          selectOptions.forEach((opt) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'toggle-btn' + (opt === selected ? ' active' : '');
+            btn.textContent = opt.toUpperCase();
+            btn.addEventListener('click', () => {
+              modalSelected = opt;
+              Array.from(modalSelectGroup.children).forEach((child) => child.classList.remove('active'));
+              btn.classList.add('active');
+            });
+            modalSelectGroup.appendChild(btn);
+          });
+        }
+        modalConfirmHandler = onConfirm;
+        modalOverlay.classList.add('active');
+      }
+
+      function closeModal() {
+        modalOverlay.classList.remove('active');
+        modalConfirmHandler = null;
+      }
+
+      modalCancel.addEventListener('click', closeModal);
+      modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeModal();
+      });
+      modalConfirm.addEventListener('click', () => {
+        if (typeof modalConfirmHandler === 'function') {
+          const value = modalInput.value.trim();
+          modalConfirmHandler({ value, selected: modalSelected });
+        }
+        closeModal();
+      });
+
+      function renderWorldSaves(list) {
+        worldSavesGrid.innerHTML = '';
+        const grouped = latestByWorld(list);
+        if (!grouped.length) {
+          worldSavesEmpty.style.display = 'block';
+          return;
+        }
+        worldSavesEmpty.style.display = 'none';
+
+        grouped.forEach(({ worldId, entry }) => {
+          const card = document.createElement('div');
+          card.className = 'save-card';
+
+          const title = document.createElement('div');
+          title.className = 'save-title';
+          title.textContent = worldId;
+
+          const meta = document.createElement('div');
+          meta.className = 'save-meta';
+          meta.textContent = formatMeta(entry);
+
+          const actions = document.createElement('div');
+          actions.className = 'save-actions';
+
+          const loadBtn = document.createElement('button');
+          loadBtn.className = 'menu-btn primary';
+          loadBtn.textContent = 'Cargar';
+          loadBtn.onclick = () => {
+            window.location.href = `game.html?load=save&id=${entry.id}`;
+          };
+
+          const renameBtn = document.createElement('button');
+          renameBtn.className = 'menu-btn';
+          renameBtn.textContent = 'Renombrar';
+          renameBtn.onclick = () => {
+            openModal({
+              title: 'Cambiar nombre',
+              message: `Mundo: ${worldId}`,
+              showInput: true,
+              inputValue: entry.name || worldId,
+              confirmLabel: 'Guardar',
+              onConfirm: ({ value }) => {
+                if (!value) return;
+                entry.name = value;
+                saveList(list);
+                render();
+              },
+            });
+          };
+
+          const diffBtn = document.createElement('button');
+          diffBtn.className = 'menu-btn';
+          diffBtn.textContent = 'Dificultad';
+          diffBtn.onclick = () => {
+            openModal({
+              title: 'Cambiar dificultad',
+              message: `Mundo: ${worldId}`,
+              showSelect: true,
+              selectOptions: DIFFICULTIES,
+              selected: entry.data?.settings?.difficulty || 'normal',
+              confirmLabel: 'Guardar',
+              onConfirm: ({ selected }) => {
+                if (!selected) return;
+                if (!entry.data.settings) entry.data.settings = {};
+                entry.data.settings.difficulty = selected;
+                saveList(list);
+                render();
+              },
+            });
+          };
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'menu-btn';
+          deleteBtn.textContent = 'Borrar';
+          deleteBtn.onclick = () => {
+            openModal({
+              title: 'Borrar guardado',
+              message: `?Eliminar el guardado de ${worldId}?`,
+              confirmLabel: 'Eliminar',
+              onConfirm: () => {
+                const updated = list.filter((s) => getWorldId(s) !== worldId);
+                saveList(updated);
+                if (updated.length) {
+                  localStorage.setItem(SAVE_LATEST_KEY, updated[updated.length - 1].id);
+                } else {
+                  localStorage.removeItem(SAVE_LATEST_KEY);
+                }
+                render();
+              },
+            });
+          };
+
+          actions.appendChild(loadBtn);
+          actions.appendChild(renameBtn);
+          actions.appendChild(diffBtn);
+          actions.appendChild(deleteBtn);
+
+          card.appendChild(title);
+          card.appendChild(meta);
+          card.appendChild(actions);
+          worldSavesGrid.appendChild(card);
+        });
+      }
+
+      async function loadLevelInfo(id) {
+        const url = `../../game_data/worlds/${id}/map_data.json`;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) return { id, name: id };
+          const data = await res.json();
+          return {
+            id,
+            name: data.name || id,
+            width: data.width,
+            height: data.height,
+          };
+        } catch {
+          return { id, name: id };
+        }
+      }
+
+      async function renderLevels() {
+        levelsGrid.innerHTML = '';
+        const progress = loadProgress();
+        const levelInfos = await Promise.all(LEVELS.map(loadLevelInfo));
+        levelInfos.forEach((info, idx) => {
+          const prevId = LEVELS[idx - 1];
+          const unlocked = idx === 0 || (prevId && progress.includes(prevId));
+          const completed = progress.includes(info.id);
+          const card = document.createElement('div');
+          card.className = `save-card level-card${unlocked ? '' : ' locked'}`;
+
+          const title = document.createElement('div');
+          title.className = 'save-title';
+          title.textContent = info.name || info.id;
+
+          const meta = document.createElement('div');
+          meta.className = 'save-meta';
+          const size = info.width && info.height ? `${info.width}x${info.height}` : 'N/A';
+          meta.textContent = `Mapa: ${size}${completed ? ' | COMPLETADO' : ''}`;
+
+          const actions = document.createElement('div');
+          actions.className = 'save-actions';
+
+          const playBtn = document.createElement('button');
+          playBtn.className = 'menu-btn primary';
+          playBtn.textContent = unlocked ? 'Jugar' : 'Bloqueado';
+          playBtn.disabled = !unlocked;
+          if (unlocked) {
+            playBtn.onclick = () => {
+              window.location.href = `game.html?load=${info.id}`;
+            };
+          }
+
+          actions.appendChild(playBtn);
+          card.appendChild(title);
+          card.appendChild(meta);
+          card.appendChild(actions);
+          levelsGrid.appendChild(card);
+        });
+      }
+
+      function render() {
+        const list = loadList();
+        renderWorldSaves(list);
+        renderLevels();
+      }
+
+      render();
+    </script>
+    <script type="module" src="../ui/router.js"></script>
+  </body>
+</html>

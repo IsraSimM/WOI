@@ -1,0 +1,731 @@
+﻿[
+    {
+        "id": "power_pellet",
+        "nombre": "Pastilla de Poder",
+        "descripcion": "Convierte al jugador en cazador temporal: puede eliminar enemigos al tocarlos.",
+        "tipo_efecto": "transformacion_ofensiva",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 1,
+        "cooldown_ms": 12000,
+        "rareza": 4,
+        "efectos": {
+            "duracion_ms": 8000,
+            "invulnerabilidad": true,
+            "toque_eliminatorio": true,
+            "velocidad_multiplicador": 1.25,
+            "color_fantasma_inverso": true
+        },
+        "color": "#FFB8D1",
+        "asset": "game_data/assets/items/power_pill.glb"
+    },
+    {
+        "id": "speed_boost",
+        "nombre": "Acelerador",
+        "descripcion": "Aumenta significativamente la velocidad de movimiento.",
+        "tipo_efecto": "movilidad",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 2,
+        "cooldown_ms": 7000,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 6000,
+            "velocidad_multiplicador": 1.6
+        },
+        "color": "#FF6B6B",
+        "asset": "game_data/assets/items/speeder.glb"
+    },
+    {
+        "id": "shield",
+        "nombre": "Escudo Temporal",
+        "descripcion": "Absorbe un impacto enemigo (o dos en algunos casos).",
+        "tipo_efecto": "defensa",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 2,
+        "cooldown_ms": 10000,
+        "rareza": 3,
+        "efectos": {
+            "duracion_ms": 12000,
+            "golpes_absorbidos": 1,
+            "vidas_bonus": 0
+        },
+        "color": "#4ECDC4",
+        "asset": "game_data/assets/items/shield.glb"
+    },
+    {
+        "id": "extra_points",
+        "nombre": "Puntos Bonus",
+        "descripcion": "Otorga una cantidad considerable de puntos al instante.",
+        "tipo_efecto": "recompensa",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 3000,
+        "rareza": 1,
+        "efectos": {
+            "puntos": 500
+        },
+        "color": "#FFE66D",
+        "asset": "game_data/assets/items/double_points.glb"
+    },
+    {
+        "id": "ammo_light",
+        "nombre": "Munición ligera",
+        "descripcion": "Recarga munición para minigun.",
+        "tipo_efecto": "municion",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 0,
+        "rareza": 1,
+        "efectos": {
+            "balas": 0
+        },
+        "color": "#9fd7ff",
+        "asset": ""
+    },
+    {
+        "id": "ammo_heavy",
+        "nombre": "Munición pesada",
+        "descripcion": "Recarga munición para sniper.",
+        "tipo_efecto": "municion",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 0,
+        "rareza": 2,
+        "efectos": {
+            "balas": 0
+        },
+        "color": "#ffd1a3",
+        "asset": ""
+    },
+    {
+        "id": "freeze",
+        "nombre": "CongelaciÃ³n",
+        "descripcion": "Detiene completamente a todos los enemigos cercanos o en pantalla.",
+        "tipo_efecto": "control_enemigos",
+        "aplicacion": "enemigos",
+        "es_instantaneo": false,
+        "usos": 1,
+        "cooldown_ms": 12000,
+        "rareza": 4,
+        "efectos": {
+            "duracion_ms": 5000,
+            "velocidad_multiplicador": 0.0,
+            "rango": "global"
+        },
+        "color": "#A8E6CF",
+        "asset": "game_data/assets/items/freezer.glb"
+    },
+    {
+        "id": "slow",
+        "nombre": "RalentizaciÃ³n",
+        "descripcion": "Reduce drÃ¡sticamente la velocidad de los enemigos.",
+        "tipo_efecto": "control_enemigos",
+        "aplicacion": "enemigos",
+        "es_instantaneo": false,
+        "usos": 1,
+        "cooldown_ms": 9000,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 7000,
+            "velocidad_multiplicador": 0.4,
+            "rango": "global"
+        },
+        "color": "#FFD700",
+        "asset": "game_data/assets/items/slower.glb"
+    },
+    {
+        "id": "extra_life",
+        "nombre": "Vida Extra",
+        "descripcion": "AÃ±ade una vida adicional al jugador de forma permanente.",
+        "tipo_efecto": "supervivencia",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 0,
+        "rareza": 5,
+        "efectos": {
+            "vidas_bonus": 1
+        },
+        "color": "#FF4500",
+        "asset": "game_data/assets/items/extra_life.glb"
+    },
+    {
+        "id": "bomb",
+        "nombre": "Bomba de Ãrea",
+        "descripcion": "ExplosiÃ³n que elimina a todos los enemigos en un radio considerable.",
+        "tipo_efecto": "daÃ±o_area",
+        "aplicacion": "enemigos",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 15000,
+        "rareza": 4,
+        "efectos": {
+            "radio_explosion": 120,
+            "daÃ±o": "eliminacion_total"
+        },
+        "color": "#DC143C",
+        "asset": "game_data/assets/items/bomb.glb"
+    },
+    {
+        "id": "map_enemies",
+        "nombre": "Radar de Enemigos",
+        "descripcion": "Muestra la posiciÃ³n de todos los enemigos en el minimapa.",
+        "tipo_efecto": "vision",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": -1,
+        "cooldown_ms": 8000,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 10000,
+            "revelar": "enemigos",
+            "rango": "global"
+        },
+        "color": "#00CED1",
+        "asset": ""
+    },
+    {
+        "id": "map_boosts",
+        "nombre": "Radar de Power-ups",
+        "descripcion": "Revela la ubicaciÃ³n de los power-ups/boosts mÃ¡s cercanos.",
+        "tipo_efecto": "vision",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": -1,
+        "cooldown_ms": 9000,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 12000,
+            "revelar": "boosts",
+            "cantidad": 4
+        },
+        "color": "#20B2AA",
+        "asset": "game_data/assets/items/map_boosts.glb"
+    },
+    {
+        "id": "invisibility",
+        "nombre": "Invisibilidad",
+        "descripcion": "El jugador se vuelve invisible para los enemigos (no detectado).",
+        "tipo_efecto": "sigilo",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 2,
+        "cooldown_ms": 10000,
+        "rareza": 4,
+        "efectos": {
+            "duracion_ms": 7000,
+            "invisible": true,
+            "deteccion_reducida": 0
+        },
+        "color": "#C0C0C0",
+        "asset": "game_data/assets/items/invisibility.glb"
+    },
+    {
+        "id": "end_exit",
+        "nombre": "BrÃºjula de Salida",
+        "descripcion": "Indica la direcciÃ³n exacta hacia la salida mÃ¡s cercana.",
+        "tipo_efecto": "navegacion",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": -1,
+        "cooldown_ms": 15000,
+        "rareza": 3,
+        "efectos": {
+            "duracion_ms": 15000,
+            "revelar": "salida",
+            "flecha_direccion": true
+        },
+        "color": "#708090",
+        "asset": "game_data/assets/items/the_end.glb"
+    },
+    {
+        "id": "mass_damage",
+        "nombre": "DaÃ±o Masivo",
+        "descripcion": "Inflige daÃ±o significativo a todos los enemigos en el mapa (no eliminaciÃ³n instantÃ¡nea).",
+        "tipo_efecto": "daÃ±o_global",
+        "aplicacion": "enemigos",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 14000,
+        "rareza": 5,
+        "efectos": {
+            "daÃ±o": 3,
+            "rango": "global"
+        },
+        "color": "#000000",
+        "asset": "game_data/assets/items/mass_damage.glb"
+    },
+    {
+        "id": "double_score",
+        "nombre": "PuntuaciÃ³n Doble",
+        "descripcion": "Duplica todos los puntos obtenidos durante un tiempo.",
+        "tipo_efecto": "recompensa",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 2,
+        "cooldown_ms": 8000,
+        "rareza": 3,
+        "efectos": {
+            "duracion_ms": 10000,
+            "multiplicador_puntos": 2.0
+        },
+        "color": "#FFD700",
+        "asset": "game_data/assets/items/double_points.glb"
+    },
+    {
+        "id": "hard_world",
+        "nombre": "El Mundo es Duro",
+        "descripcion": "Reduce todas las vidas a 1 para todos y desactiva boosts que aumenten vidas o den escudos.",
+        "tipo_efecto": "debuff_global",
+        "aplicacion": "todos",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 20000,
+        "rareza": 5,
+        "efectos": {
+            "set_vidas": 1,
+            "disable_boosts": [
+                "supervivencia",
+                "defensa"
+            ],
+            "rango": "global"
+        },
+        "color": "#8B0000",
+        "asset": "game_data/assets/items/world_is_hard.glb"
+    },
+    {
+        "id": "hard_run",
+        "nombre": "Duro de Correr",
+        "descripcion": "Otorga invulnerabilidad y prolonga efectos activos, pero reduce la visiÃ³n y activa un temporizador de 1 minuto para completar el mapa (falla resulta en muerte).",
+        "tipo_efecto": "challenge_mode",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 1,
+        "cooldown_ms": 20000,
+        "rareza": 4,
+        "efectos": {
+            "invulnerabilidad": true,
+            "prolong_effects": true,
+            "vision_reduction_multiplicador": 0.5,
+            "duracion_ms": 60000,
+            "failure_effect": "muerte"
+        },
+        "color": "#FF8C00",
+        "asset": "game_data/assets/items/hard_to_run.glb"
+    },
+    {
+        "id": "map_shuffle",
+        "nombre": "Â¿Y si Muevo Esto?",
+        "descripcion": "Modifica drÃ¡sticamente el mapa de forma aleatoria y reposiciona a todos los jugadores y enemigos.",
+        "tipo_efecto": "map_alteration",
+        "aplicacion": "mapa",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 20000,
+        "rareza": 5,
+        "efectos": {
+            "shuffle_map": true,
+            "reposition_all": true,
+            "rango": "global"
+        },
+        "color": "#556B2F",
+        "asset": "game_data/assets/items/map_boosts.glb"
+    },
+    {
+        "id": "fake_exit",
+        "nombre": "Salida??",
+        "descripcion": "Crea una salida falsa en el mapa; si se activa, encierra al jugador por 20 segundos.",
+        "tipo_efecto": "trampa",
+        "aplicacion": "mapa",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 12000,
+        "rareza": 4,
+        "efectos": {
+            "create_fake_exit": true,
+            "trap_duracion_ms": 20000,
+            "daÃ±o": 0
+        },
+        "color": "#696969",
+        "asset": "game_data/assets/items/the_end.glb"
+    },
+    {
+        "id": "fake_boost",
+        "nombre": "Boost??",
+        "descripcion": "Un boost falso que inflige daÃ±o al jugador que lo recoge.",
+        "tipo_efecto": "trampa",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 7000,
+        "rareza": 3,
+        "efectos": {
+            "daÃ±o": 1
+        },
+        "color": "#B22222",
+        "asset": "game_data/assets/items/speeder.glb"
+    },
+    {
+        "id": "teleport_swap",
+        "nombre": "Intercambio Teleport",
+        "descripcion": "Intercambia la posiciÃ³n del jugador con un enemigo aleatorio para crear caos o escapes rÃ¡pidos.",
+        "tipo_efecto": "movilidad",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "usos": 3,
+        "cooldown_ms": 5000,
+        "rareza": 3,
+        "efectos": {
+            "swap_with": "enemigo_aleatorio"
+        },
+        "color": "#9370DB",
+        "asset": "game_data/assets/items/invisibility.glb"
+    },
+    {
+        "id": "enemy_confusion",
+        "nombre": "ConfusiÃ³n Enemiga",
+        "descripcion": "Hace que los enemigos se muevan de forma errÃ¡tica e impredecible por un tiempo, reduciendo su efectividad.",
+        "tipo_efecto": "control_enemigos",
+        "aplicacion": "enemigos",
+        "es_instantaneo": false,
+        "usos": 2,
+        "cooldown_ms": 9000,
+        "rareza": 3,
+        "efectos": {
+            "duracion_ms": 10000,
+            "movement_mode": "random",
+            "rango": "global"
+        },
+        "color": "#FF69B4",
+        "asset": "game_data/assets/items/slower.glb"
+    },
+    {
+        "id": "bomb_trap",
+        "nombre": "Bomba de Ãrea Trampa",
+        "descripcion": "Trampa: ExplosiÃ³n que elimina a todos los enemigos en un radio considerable.",
+        "tipo_efecto": "daÃ±o_area",
+        "aplicacion": "enemigos",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 15000,
+        "rareza": 4,
+        "efectos": {
+            "radio_explosion": 120,
+            "daÃ±o": "eliminacion_total"
+        },
+        "color": "#DC143C",
+        "asset": "game_data/assets/items/bomb_trap.glb"
+    },
+    {
+        "id": "double_points_trap",
+        "nombre": "PuntuaciÃ³n Doble Trampa",
+        "descripcion": "Trampa: Duplica todos los puntos obtenidos durante un tiempo.",
+        "tipo_efecto": "recompensa",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 2,
+        "cooldown_ms": 8000,
+        "rareza": 3,
+        "efectos": {
+            "duracion_ms": 10000,
+            "multiplicador_puntos": 2.0
+        },
+        "color": "#FFD700",
+        "asset": "game_data/assets/items/double_points_trap.glb"
+    },
+    {
+        "id": "extra_life_trap",
+        "nombre": "Vida Extra Trampa",
+        "descripcion": "Trampa: AÃ±ade una vida adicional al jugador de forma permanente.",
+        "tipo_efecto": "supervivencia",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 0,
+        "rareza": 5,
+        "efectos": {
+            "vidas_bonus": 1
+        },
+        "color": "#FF4500",
+        "asset": "game_data/assets/items/extra_life_trap.glb"
+    },
+    {
+        "id": "freezer_trap",
+        "nombre": "CongelaciÃ³n Trampa",
+        "descripcion": "Trampa: Detiene completamente a todos los enemigos cercanos o en pantalla.",
+        "tipo_efecto": "control_enemigos",
+        "aplicacion": "enemigos",
+        "es_instantaneo": false,
+        "usos": 1,
+        "cooldown_ms": 12000,
+        "rareza": 4,
+        "efectos": {
+            "duracion_ms": 5000,
+            "velocidad_multiplicador": 0.0,
+            "rango": "global"
+        },
+        "color": "#A8E6CF",
+        "asset": "game_data/assets/items/freezer_trap.glb"
+    },
+    {
+        "id": "hard_to_run_trap",
+        "nombre": "Duro de Correr Trampa",
+        "descripcion": "Trampa: Otorga invulnerabilidad y prolonga efectos activos, pero reduce la visiÃ³n y activa un temporizador de 1 minuto para completar el mapa (falla resulta en muerte).",
+        "tipo_efecto": "challenge_mode",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 1,
+        "cooldown_ms": 20000,
+        "rareza": 4,
+        "efectos": {
+            "invulnerabilidad": true,
+            "prolong_effects": true,
+            "vision_reduction_multiplicador": 0.5,
+            "duracion_ms": 60000,
+            "failure_effect": "muerte"
+        },
+        "color": "#FF8C00",
+        "asset": "game_data/assets/items/hard_to_run_trap.glb"
+    },
+    {
+        "id": "invisibility_trap",
+        "nombre": "Invisibilidad Trampa",
+        "descripcion": "Trampa: El jugador se vuelve invisible para los enemigos (no detectado).",
+        "tipo_efecto": "sigilo",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 2,
+        "cooldown_ms": 10000,
+        "rareza": 4,
+        "efectos": {
+            "duracion_ms": 7000,
+            "invisible": true,
+            "deteccion_reducida": 0
+        },
+        "color": "#C0C0C0",
+        "asset": "game_data/assets/items/invisibility_trap.glb"
+    },
+    {
+        "id": "map_boosts_trap",
+        "nombre": "Radar de Power-ups Trampa",
+        "descripcion": "Trampa: Revela la ubicaciÃ³n de los power-ups/boosts mÃ¡s cercanos.",
+        "tipo_efecto": "vision",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": -1,
+        "cooldown_ms": 9000,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 12000,
+            "revelar": "boosts",
+            "cantidad": 4
+        },
+        "color": "#20B2AA",
+        "asset": "game_data/assets/items/map_boosts_trap.glb"
+    },
+    {
+        "id": "map_enemies_trap",
+        "nombre": "Radar de Enemigos Trampa",
+        "descripcion": "Trampa: Muestra la posiciÃ³n de todos los enemigos en el minimapa.",
+        "tipo_efecto": "vision",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": -1,
+        "cooldown_ms": 8000,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 10000,
+            "revelar": "enemigos",
+            "rango": "global"
+        },
+        "color": "#00CED1",
+        "asset": "game_data/assets/items/map_enemies_trap.glb"
+    },
+    {
+        "id": "map_enemys",
+        "nombre": "Radar de Enemigos",
+        "descripcion": "Muestra la posiciÃ³n de todos los enemigos en el minimapa.",
+        "tipo_efecto": "vision",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": -1,
+        "cooldown_ms": 8000,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 10000,
+            "revelar": "enemigos",
+            "rango": "global"
+        },
+        "color": "#00CED1",
+        "asset": "game_data/assets/items/map_enemys.glb"
+    },
+    {
+        "id": "map_enemys_trap",
+        "nombre": "Radar de Enemigos Trampa",
+        "descripcion": "Trampa: Muestra la posiciÃ³n de todos los enemigos en el minimapa.",
+        "tipo_efecto": "vision",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": -1,
+        "cooldown_ms": 8000,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 10000,
+            "revelar": "enemigos",
+            "rango": "global"
+        },
+        "color": "#00CED1",
+        "asset": "game_data/assets/items/map_enemys_trap.glb"
+    },
+    {
+        "id": "mass_damage_trap",
+        "nombre": "DaÃ±o Masivo Trampa",
+        "descripcion": "Trampa: Inflige daÃ±o significativo a todos los enemigos en el mapa (no eliminaciÃ³n instantÃ¡nea).",
+        "tipo_efecto": "daÃ±o_global",
+        "aplicacion": "enemigos",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 14000,
+        "rareza": 5,
+        "efectos": {
+            "daÃ±o": 3,
+            "rango": "global"
+        },
+        "color": "#000000",
+        "asset": "game_data/assets/items/mass_damage_trap.glb"
+    },
+    {
+        "id": "power_pill_trap",
+        "nombre": "Pastilla de Poder Trampa",
+        "descripcion": "Trampa: Convierte al jugador en cazador temporal: puede eliminar enemigos al tocarlos.",
+        "tipo_efecto": "transformacion_ofensiva",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 1,
+        "cooldown_ms": 12000,
+        "rareza": 4,
+        "efectos": {
+            "duracion_ms": 8000,
+            "invulnerabilidad": true,
+            "toque_eliminatorio": true,
+            "velocidad_multiplicador": 1.25,
+            "color_fantasma_inverso": true
+        },
+        "color": "#FFB8D1",
+        "asset": "game_data/assets/items/power_pill_trap.glb"
+    },
+    {
+        "id": "shield_trap",
+        "nombre": "Escudo Temporal Trampa",
+        "descripcion": "Trampa: Absorbe un impacto enemigo (o dos en algunos casos).",
+        "tipo_efecto": "defensa",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 2,
+        "cooldown_ms": 10000,
+        "rareza": 3,
+        "efectos": {
+            "duracion_ms": 12000,
+            "golpes_absorbidos": 1,
+            "vidas_bonus": 0
+        },
+        "color": "#4ECDC4",
+        "asset": "game_data/assets/items/shield_trap.glb"
+    },
+    {
+        "id": "slower_trap",
+        "nombre": "RalentizaciÃ³n Trampa",
+        "descripcion": "Trampa: Reduce drÃ¡sticamente la velocidad de los enemigos.",
+        "tipo_efecto": "control_enemigos",
+        "aplicacion": "enemigos",
+        "es_instantaneo": false,
+        "usos": 1,
+        "cooldown_ms": 9000,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 7000,
+            "velocidad_multiplicador": 0.4,
+            "rango": "global"
+        },
+        "color": "#FFD700",
+        "asset": "game_data/assets/items/slower_trap.glb"
+    },
+    {
+        "id": "speeder_trap",
+        "nombre": "Acelerador Trampa",
+        "descripcion": "Trampa: Aumenta significativamente la velocidad de movimiento.",
+        "tipo_efecto": "movilidad",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": 2,
+        "cooldown_ms": 7000,
+        "rareza": 2,
+        "efectos": {
+            "duracion_ms": 6000,
+            "velocidad_multiplicador": 1.6
+        },
+        "color": "#FF6B6B",
+        "asset": "game_data/assets/items/speeder_trap.glb"
+    },
+    {
+        "id": "the_end_trap",
+        "nombre": "BrÃºjula de Salida Trampa",
+        "descripcion": "Trampa: Indica la direcciÃ³n exacta hacia la salida mÃ¡s cercana.",
+        "tipo_efecto": "navegacion",
+        "aplicacion": "jugador",
+        "es_instantaneo": false,
+        "usos": -1,
+        "cooldown_ms": 15000,
+        "rareza": 3,
+        "efectos": {
+            "duracion_ms": 15000,
+            "revelar": "salida",
+            "flecha_direccion": true
+        },
+        "color": "#708090",
+        "asset": "game_data/assets/items/the_end_trap.glb"
+    },
+    {
+        "id": "trap_bomb",
+        "nombre": "Bomba de Ãrea Trampa",
+        "descripcion": "Trampa: ExplosiÃ³n que elimina a todos los enemigos en un radio considerable.",
+        "tipo_efecto": "daÃ±o_area",
+        "aplicacion": "enemigos",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 15000,
+        "rareza": 4,
+        "efectos": {
+            "radio_explosion": 120,
+            "daÃ±o": "eliminacion_total"
+        },
+        "color": "#DC143C",
+        "asset": "game_data/assets/items/trap_bomb.glb"
+    },
+    {
+        "id": "world_is_hard_trap",
+        "nombre": "El Mundo es Duro Trampa",
+        "descripcion": "Trampa: Reduce todas las vidas a 1 para todos y desactiva boosts que aumenten vidas o den escudos.",
+        "tipo_efecto": "debuff_global",
+        "aplicacion": "todos",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 20000,
+        "rareza": 5,
+        "efectos": {
+            "set_vidas": 1,
+            "disable_boosts": [
+                "supervivencia",
+                "defensa"
+            ],
+            "rango": "global"
+        },
+        "color": "#8B0000",
+        "asset": "game_data/assets/items/world_is_hard_trap.glb"
+    }
+]

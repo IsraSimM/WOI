@@ -1,0 +1,755 @@
+{
+    "enemies": [
+        {
+            "id": "enemy_basic",
+            "nombre": "Fantasma BÃ¡sico",
+            "descripcion": "Enemigo simple y predecible, patrulla rutas fijas y persigue al jugador cuando lo detecta. FÃ¡cil de evadir para principiantes.",
+            "nivel_min": 1,
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 110,
+                "ataque": 1,
+                "robo": 0,
+                "defensa": 0,
+                "estrategia": 1,
+                "velocidad": 0.9,
+                "sigilo": 0
+            },
+            "base_modificadores": {},
+            "puntos_muerte": 40,
+            "boost_drop_prob": 0.03,
+            "tamaÃ±o_visual": 1.0,
+            "color": "#FF4444",
+            "asset": "game_data/assets/characters/enemy.glb",
+            "scale": 0.6,
+            "yOffset": 0,
+            "mask": {
+                "color": "#FF4444",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
+        },
+        {
+            "id": "enemy_advanced",
+            "nombre": "Fantasma Avanzado",
+            "descripcion": "VersiÃ³n equilibrada con detecciÃ³n media y resistencia ligera. Combina persecuciÃ³n con bloqueo ocasional de rutas.",
+            "nivel_min": 2,
+            "mask": {
+                "color": "#fff",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            },
+            "stats": {
+                "vidas": 2,
+                "invulnerabilidad": false,
+                "deteccion": 150,
+                "ataque": 1.5,
+                "robo": 0,
+                "defensa": 1,
+                "estrategia": 2,
+                "velocidad": 1.0,
+                "sigilo": 0.5
+            },
+            "base_modificadores": {},
+            "puntos_muerte": 80,
+            "boost_drop_prob": 0.06,
+            "tamaÃ±o_visual": 1.05,
+            "color": "#FF8888",
+            "asset": "game_data/assets/characters/bot_advanced.glb",
+            "scale": 0.6,
+            "yOffset": 0
+        },
+        {
+            "id": "enemy_stealth",
+            "nombre": "Fantasma Sigiloso",
+            "descripcion": "Acecha con alto sigilo para emboscadas sorpresa. Bajo en detecciÃ³n frontal, pero letal si se acerca sin ser visto.",
+            "nivel_min": 3,
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 90,
+                "ataque": 2,
+                "robo": 0,
+                "defensa": 0.5,
+                "estrategia": 3,
+                "velocidad": 1.2,
+                "sigilo": 4
+            },
+            "base_modificadores": {
+                "invisibilidad_intermitente": true,
+                "cooldown_modificador": 5.0,
+                "duracion_modificador": 1.2
+            },
+            "puntos_muerte": 100,
+            "boost_drop_prob": 0.08,
+            "tamaÃ±o_visual": 0.85,
+            "color": "#88CCDD",
+            "asset": "game_data/assets/characters/enemy_stealth.glb",
+            "scale": 0.6,
+            "yOffset": 0,
+            "mask": {
+                "color": "#88CCDD",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
+        },
+        {
+            "id": "enemy_tank",
+            "nombre": "Fantasma Tanque",
+            "descripcion": "Resistente y lento, bloquea pasajes clave y absorbe mÃºltiples impactos. Ideal para defender salidas.",
+            "nivel_min": 2,
+            "stats": {
+                "vidas": 4,
+                "invulnerabilidad": false,
+                "deteccion": 120,
+                "ataque": 1.5,
+                "robo": 0,
+                "defensa": 3.5,
+                "estrategia": 1.5,
+                "velocidad": 0.75,
+                "sigilo": 0
+            },
+            "base_modificadores": {
+                "aumento_defensa": true,
+                "cooldown_modificador": 7.0,
+                "duracion_modificador": 1.5
+            },
+            "puntos_muerte": 160,
+            "boost_drop_prob": 0.1,
+            "tamaÃ±o_visual": 1.3,
+            "color": "#DD4444",
+            "asset": "game_data/assets/characters/enemy_tank.glb",
+            "scale": 0.6,
+            "yOffset": 0,
+            "mask": {
+                "color": "#DD4444",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
+        },
+        {
+            "id": "enemy_assassin",
+            "nombre": "Fantasma Asesino",
+            "descripcion": "RÃ¡pido y letal en golpes precisos, prioriza jugadores heridos. FrÃ¡gil pero con alto daÃ±o por impacto.",
+            "nivel_min": 4,
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 180,
+                "ataque": 3.5,
+                "robo": 0,
+                "defensa": 0,
+                "estrategia": 2.5,
+                "velocidad": 1.4,
+                "sigilo": 2.5
+            },
+            "base_modificadores": {
+                "dash_ataque": true,
+                "cooldown_modificador": 4.0,
+                "duracion_modificador": 0.9
+            },
+            "puntos_muerte": 130,
+            "boost_drop_prob": 0.12,
+            "tamaÃ±o_visual": 0.95,
+            "color": "#DDDD44",
+            "asset": "game_data/assets/characters/enemy_assassin.glb",
+            "scale": 0.6,
+            "yOffset": 0,
+            "mask": {
+                "color": "#DDDD44",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
+        },
+        {
+            "id": "enemy_healer",
+            "nombre": "Fantasma Curador",
+            "descripcion": "Soporte que regenera aliados cercanos lentamente. ElimÃ­nalo primero en grupos para romper formaciones.",
+            "nivel_min": 5,
+            "stats": {
+                "vidas": 2,
+                "invulnerabilidad": false,
+                "deteccion": 130,
+                "ataque": 1,
+                "robo": 0,
+                "defensa": 1.5,
+                "estrategia": 4,
+                "velocidad": 0.95,
+                "sigilo": 1
+            },
+            "base_modificadores": {
+                "regeneracion_aliados": true,
+                "cooldown_modificador": 6.0,
+                "duracion_modificador": 2.5,
+                "radio_regeneracion": 120
+            },
+            "puntos_muerte": 140,
+            "boost_drop_prob": 0.09,
+            "tamaÃ±o_visual": 1.1,
+            "color": "#44DD88",
+            "asset": "game_data/assets/characters/enemy_healer.glb",
+            "scale": 0.6,
+            "yOffset": 0,
+            "mask": {
+                "color": "#44DD88",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
+        },
+        {
+            "id": "enemy_speedster",
+            "nombre": "Fantasma Veloz",
+            "descripcion": "Extremadamente Ã¡gil para flanqueos y cortes de escape. Sacrifica todo por velocidad pura.",
+            "nivel_min": 3,
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 140,
+                "ataque": 1.8,
+                "robo": 0,
+                "defensa": 0,
+                "estrategia": 1,
+                "velocidad": 1.65,
+                "sigilo": 1.5
+            },
+            "base_modificadores": {
+                "burst_velocidad": true,
+                "cooldown_modificador": 3.0,
+                "duracion_modificador": 1.2
+            },
+            "puntos_muerte": 90,
+            "boost_drop_prob": 0.07,
+            "tamaÃ±o_visual": 0.8,
+            "color": "#DDDD88",
+            "asset": "game_data/assets/characters/enemy_speedster.glb",
+            "scale": 0.6,
+            "yOffset": 0
+        },
+        {
+            "id": "enemy_strategist",
+            "nombre": "Fantasma Estratega",
+            "descripcion": "Inteligente con predicciÃ³n de rutas y buffs a aliados. Alto valor tÃ¡ctico en oleadas.",
+            "nivel_min": 6,
+            "stats": {
+                "vidas": 2.5,
+                "invulnerabilidad": false,
+                "deteccion": 200,
+                "ataque": 1.2,
+                "robo": 0,
+                "defensa": 1.8,
+                "estrategia": 5,
+                "velocidad": 1.0,
+                "sigilo": 1.2
+            },
+            "base_modificadores": {
+                "buff_aliados": true,
+                "cooldown_modificador": 5.0,
+                "duracion_modificador": 2.0,
+                "radio_buff": 160
+            },
+            "puntos_muerte": 220,
+            "boost_drop_prob": 0.18,
+            "tamaÃ±o_visual": 1.15,
+            "color": "#8888DD",
+            "asset": "game_data/assets/characters/enemy.glb",
+            "scale": 0.6,
+            "yOffset": 0,
+            "mask": {
+                "color": "#8888DD",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
+        },
+        {
+            "id": "enemy_ranged",
+            "nombre": "Fantasma Tirador",
+            "descripcion": "Ataca a distancia con proyectiles lentos pero precisos. MantÃ©n distancia para evitar fuego cruzado.",
+            "nivel_min": 4,
+            "stats": {
+                "vidas": 2,
+                "invulnerabilidad": false,
+                "deteccion": 170,
+                "ataque": 2.5,
+                "robo": 0,
+                "defensa": 1,
+                "estrategia": 2.5,
+                "velocidad": 0.85,
+                "sigilo": 1
+            },
+            "base_modificadores": {
+                "proyectil_rapido": true,
+                "cooldown_modificador": 4.5,
+                "duracion_modificador": 1.0,
+                "rango_ataque": 250
+            },
+            "puntos_muerte": 150,
+            "boost_drop_prob": 0.11,
+            "tamaÃ±o_visual": 1.0,
+            "color": "#44DDDD",
+            "asset": "game_data/assets/characters/enemy_Shoot.glb",
+            "scale": 0.6,
+            "yOffset": 0,
+            "mask": {
+                "color": "#44DDDD",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
+        },
+        {
+            "id": "enemy_kamikaze",
+            "nombre": "Fantasma Kamikaze",
+            "descripcion": "Carga suicida con explosiÃ³n en contacto. Alto daÃ±o en Ã¡rea, pero se autodestruye al impactar.",
+            "nivel_min": 5,
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 130,
+                "ataque": 4,
+                "robo": 0,
+                "defensa": 0,
+                "estrategia": 1.5,
+                "velocidad": 1.55,
+                "sigilo": 0.5
+            },
+            "base_modificadores": {
+                "explosion_contacto": true,
+                "cooldown_modificador": 2.0,
+                "duracion_modificador": 0.5,
+                "radio_explosion": 80
+            },
+            "puntos_muerte": 120,
+            "boost_drop_prob": 0.14,
+            "tamaÃ±o_visual": 1.2,
+            "color": "#FFAA00",
+            "asset": "game_data/assets/characters/enemy.glb",
+            "scale": 0.6,
+            "yOffset": 0,
+            "mask": {
+                "color": "#FFAA00",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
+        }
+    ],
+    "bots": [
+        {
+            "id": "Personaje",
+            "nombre": "Personaje BÃ¡sico",
+            "descripcion": "Un personaje equilibrado para principiantes, enfocado en exploraciÃ³n y supervivencia bÃ¡sica. Ideal para jugadores nuevos que quieren aprender las mecÃ¡nicas sin especializaciones extremas.",
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 150,
+                "ataque": 1,
+                "robo": 0,
+                "defensa": 0,
+                "estrategia": 1,
+                "velocidad": 1.0,
+                "sigilo": 0
+            },
+            "base_modificadores": {},
+            "color": "#FFB8D1",
+            "asset": "game_data/assets/characters/basic_character.glb"
+        },
+        {
+            "id": "Personaje_advanced",
+            "nombre": "Personaje Avanzado",
+            "descripcion": "VersiÃ³n mejorada del bÃ¡sico, con stats equilibrados para ataque, defensa y algo de robo. Perfecto para jugadores intermedios que buscan versatilidad en combates y exploraciÃ³n.",
+            "stats": {
+                "vidas": 2,
+                "invulnerabilidad": false,
+                "deteccion": 180,
+                "ataque": 2,
+                "robo": 1,
+                "defensa": 2,
+                "estrategia": 2,
+                "velocidad": 1.1,
+                "sigilo": 1
+            },
+            "base_modificadores": {},
+            "color": "#4ECDC4",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_stealth",
+            "nombre": "Personaje Sigiloso",
+            "descripcion": "Especializado en evasiÃ³n y adquisiciÃ³n de recursos sin ser detectado. Bajo en combate directo, pero excelente para misiones de infiltraciÃ³n y robo.",
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 100,
+                "ataque": 1,
+                "robo": 3,
+                "defensa": 1,
+                "estrategia": 2,
+                "velocidad": 1.4,
+                "sigilo": 4
+            },
+            "base_modificadores": {
+                "invisibilidad_intermitente": true,
+                "cooldown_modificador": 5.0,
+                "duracion_modificador": 1.2
+            },
+            "color": "#A8E6CF",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_tank",
+            "nombre": "Personaje Tanque",
+            "descripcion": "DiseÃ±ado para absorber daÃ±o y proteger aliados o posiciones. Lento pero resistente, ideal para roles defensivos en equipo o contra mÃºltiples enemigos.",
+            "stats": {
+                "vidas": 4,
+                "invulnerabilidad": false,
+                "deteccion": 130,
+                "ataque": 2,
+                "robo": 0,
+                "defensa": 4,
+                "estrategia": 1,
+                "velocidad": 0.9,
+                "sigilo": 0
+            },
+            "base_modificadores": {
+                "aumento_vidas": true,
+                "cooldown_modificador": 7.0,
+                "duracion_modificador": 1.4
+            },
+            "color": "#FF6B6B",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_asesino",
+            "nombre": "Personaje Asesino",
+            "descripcion": "Enfocado en eliminar objetivos rÃ¡pidamente con alto daÃ±o. FrÃ¡gil en defensas prolongadas, pero letal en emboscadas y persecuciones.",
+            "stats": {
+                "vidas": 2,
+                "invulnerabilidad": false,
+                "deteccion": 160,
+                "ataque": 4,
+                "robo": 0,
+                "defensa": 1,
+                "estrategia": 2,
+                "velocidad": 1.2,
+                "sigilo": 2
+            },
+            "base_modificadores": {
+                "invulnerabilidad_intermitente": true,
+                "cooldown_modificador": 4.5,
+                "duracion_modificador": 1.1
+            },
+            "color": "#FFE66D",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_healer",
+            "nombre": "Personaje Curador",
+            "descripcion": "Especializado en soporte y recuperaciÃ³n, con habilidades para restaurar vidas y buffs. Bajo en ataque directo, pero esencial en equipos para mantener la sostenibilidad.",
+            "stats": {
+                "vidas": 3,
+                "invulnerabilidad": false,
+                "deteccion": 140,
+                "ataque": 1,
+                "robo": 1,
+                "defensa": 2,
+                "estrategia": 4,
+                "velocidad": 1.0,
+                "sigilo": 1
+            },
+            "base_modificadores": {
+                "regeneracion_vidas": true,
+                "cooldown_modificador": 6.0,
+                "duracion_modificador": 1.5
+            },
+            "color": "#95E1D3",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_speedster",
+            "nombre": "Personaje Veloz",
+            "descripcion": "Maestro de la movilidad, perfecto para exploraciÃ³n rÃ¡pida, escapes y golpes sorpresa. Sacrifica defensa por agilidad extrema.",
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 170,
+                "ataque": 2,
+                "robo": 2,
+                "defensa": 0,
+                "estrategia": 1,
+                "velocidad": 1.8,
+                "sigilo": 2
+            },
+            "base_modificadores": {
+                "aumento_velocidad": true,
+                "cooldown_modificador": 3.0,
+                "duracion_modificador": 0.8
+            },
+            "color": "#FFD93D",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_strategist",
+            "nombre": "Personaje Estratega",
+            "descripcion": "Experto en planificaciÃ³n y control del campo, con habilidades para trampas y buffs estratÃ©gicos. Equilibrado pero destaca en inteligencia tÃ¡ctica.",
+            "stats": {
+                "vidas": 2,
+                "invulnerabilidad": false,
+                "deteccion": 200,
+                "ataque": 1,
+                "robo": 1,
+                "defensa": 2,
+                "estrategia": 5,
+                "velocidad": 1.0,
+                "sigilo": 1
+            },
+            "base_modificadores": {
+                "trampas_estrategicas": true,
+                "cooldown_modificador": 5.5,
+                "duracion_modificador": 1.3
+            },
+            "color": "#6A67CE",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_radar",
+            "nombre": "Personaje Radar",
+            "descripcion": "Especialista en detecciÃ³n y reconocimiento, con habilidades para localizar enemigos y objetos ocultos. Ideal para exploraciÃ³n y apoyo tÃ¡ctico.",
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 450,
+                "ataque": 0,
+                "robo": 1,
+                "defensa": 0,
+                "estrategia": 3,
+                "velocidad": 0.8,
+                "sigilo": 1
+            },
+            "base_modificadores": {
+                "mejora_deteccion": true,
+                "cooldown_modificador": 4.0,
+                "duracion_modificador": 1.0
+            },
+            "color": "#FF8C00",
+            "asset": ""
+        }
+    ],
+    "players": [
+        {
+            "id": "Personaje",
+            "nombre": "Personaje BÃ¡sico",
+            "descripcion": "Un personaje equilibrado para principiantes, enfocado en exploraciÃ³n y supervivencia bÃ¡sica. Ideal para jugadores nuevos que quieren aprender las mecÃ¡nicas sin especializaciones extremas.",
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 150,
+                "ataque": 1,
+                "robo": 0,
+                "defensa": 0,
+                "estrategia": 1,
+                "velocidad": 1.0,
+                "sigilo": 0
+            },
+            "base_modificadores": {},
+            "color": "#FFB8D1",
+            "asset": "game_data/assets/characters/basic_character.glb"
+        },
+        {
+            "id": "Personaje_advanced",
+            "nombre": "Personaje Avanzado",
+            "descripcion": "VersiÃ³n mejorada del bÃ¡sico, con stats equilibrados para ataque, defensa y algo de robo. Perfecto para jugadores intermedios que buscan versatilidad en combates y exploraciÃ³n.",
+            "stats": {
+                "vidas": 2,
+                "invulnerabilidad": false,
+                "deteccion": 180,
+                "ataque": 2,
+                "robo": 1,
+                "defensa": 2,
+                "estrategia": 2,
+                "velocidad": 1.1,
+                "sigilo": 1
+            },
+            "base_modificadores": {},
+            "color": "#4ECDC4",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_stealth",
+            "nombre": "Personaje Sigiloso",
+            "descripcion": "Especializado en evasiÃ³n y adquisiciÃ³n de recursos sin ser detectado. Bajo en combate directo, pero excelente para misiones de infiltraciÃ³n y robo.",
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 100,
+                "ataque": 1,
+                "robo": 3,
+                "defensa": 1,
+                "estrategia": 2,
+                "velocidad": 1.4,
+                "sigilo": 4
+            },
+            "base_modificadores": {
+                "invisibilidad_intermitente": true,
+                "cooldown_modificador": 5.0,
+                "duracion_modificador": 1.2
+            },
+            "color": "#A8E6CF",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_tank",
+            "nombre": "Personaje Tanque",
+            "descripcion": "DiseÃ±ado para absorber daÃ±o y proteger aliados o posiciones. Lento pero resistente, ideal para roles defensivos en equipo o contra mÃºltiples enemigos.",
+            "stats": {
+                "vidas": 4,
+                "invulnerabilidad": false,
+                "deteccion": 130,
+                "ataque": 2,
+                "robo": 0,
+                "defensa": 4,
+                "estrategia": 1,
+                "velocidad": 0.9,
+                "sigilo": 0
+            },
+            "base_modificadores": {
+                "aumento_vidas": true,
+                "cooldown_modificador": 7.0,
+                "duracion_modificador": 1.4
+            },
+            "color": "#FF6B6B",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_asesino",
+            "nombre": "Personaje Asesino",
+            "descripcion": "Enfocado en eliminar objetivos rÃ¡pidamente con alto daÃ±o. FrÃ¡gil en defensas prolongadas, pero letal en emboscadas y persecuciones.",
+            "stats": {
+                "vidas": 2,
+                "invulnerabilidad": false,
+                "deteccion": 160,
+                "ataque": 4,
+                "robo": 0,
+                "defensa": 1,
+                "estrategia": 2,
+                "velocidad": 1.2,
+                "sigilo": 2
+            },
+            "base_modificadores": {
+                "invulnerabilidad_intermitente": true,
+                "cooldown_modificador": 4.5,
+                "duracion_modificador": 1.1
+            },
+            "color": "#FFE66D",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_healer",
+            "nombre": "Personaje Curador",
+            "descripcion": "Especializado en soporte y recuperaciÃ³n, con habilidades para restaurar vidas y buffs. Bajo en ataque directo, pero esencial en equipos para mantener la sostenibilidad.",
+            "stats": {
+                "vidas": 3,
+                "invulnerabilidad": false,
+                "deteccion": 140,
+                "ataque": 1,
+                "robo": 1,
+                "defensa": 2,
+                "estrategia": 4,
+                "velocidad": 1.0,
+                "sigilo": 1
+            },
+            "base_modificadores": {
+                "regeneracion_vidas": true,
+                "cooldown_modificador": 6.0,
+                "duracion_modificador": 1.5
+            },
+            "color": "#95E1D3",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_speedster",
+            "nombre": "Personaje Veloz",
+            "descripcion": "Maestro de la movilidad, perfecto para exploraciÃ³n rÃ¡pida, escapes y golpes sorpresa. Sacrifica defensa por agilidad extrema.",
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 170,
+                "ataque": 2,
+                "robo": 2,
+                "defensa": 0,
+                "estrategia": 1,
+                "velocidad": 1.8,
+                "sigilo": 2
+            },
+            "base_modificadores": {
+                "aumento_velocidad": true,
+                "cooldown_modificador": 3.0,
+                "duracion_modificador": 0.8
+            },
+            "color": "#FFD93D",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_strategist",
+            "nombre": "Personaje Estratega",
+            "descripcion": "Experto en planificaciÃ³n y control del campo, con habilidades para trampas y buffs estratÃ©gicos. Equilibrado pero destaca en inteligencia tÃ¡ctica.",
+            "stats": {
+                "vidas": 2,
+                "invulnerabilidad": false,
+                "deteccion": 200,
+                "ataque": 1,
+                "robo": 1,
+                "defensa": 2,
+                "estrategia": 5,
+                "velocidad": 1.0,
+                "sigilo": 1
+            },
+            "base_modificadores": {
+                "trampas_estrategicas": true,
+                "cooldown_modificador": 5.5,
+                "duracion_modificador": 1.3
+            },
+            "color": "#6A67CE",
+            "asset": ""
+        },
+        {
+            "id": "Personaje_radar",
+            "nombre": "Personaje Radar",
+            "descripcion": "Especialista en detecciÃ³n y reconocimiento, con habilidades para localizar enemigos y objetos ocultos. Ideal para exploraciÃ³n y apoyo tÃ¡ctico.",
+            "stats": {
+                "vidas": 1,
+                "invulnerabilidad": false,
+                "deteccion": 450,
+                "ataque": 0,
+                "robo": 1,
+                "defensa": 0,
+                "estrategia": 3,
+                "velocidad": 0.8,
+                "sigilo": 1
+            },
+            "base_modificadores": {
+                "mejora_deteccion": true,
+                "cooldown_modificador": 4.0,
+                "duracion_modificador": 1.0
+            },
+            "color": "#FF8C00",
+            "asset": ""
+        }
+    ]
+}
