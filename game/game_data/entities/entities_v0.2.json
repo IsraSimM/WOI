@@ -301,7 +301,7 @@
             "boost_drop_prob": 0.11,
             "tamaÃ±o_visual": 1.0,
             "color": "#44DDDD",
-            "asset": "game_data/assets/characters/enemy.glb",
+            "asset": "game_data/assets/characters/enemy_Shoot.glb",
             "scale": 0.6,
             "yOffset": 0,
             "mask": {
