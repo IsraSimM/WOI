@@ -27,6 +27,31 @@ function getCalibration() {
   }
 }
 
+function sanitizeAdjust(adjust = {}, cellSize = 6) {
+  const clamp = (value, maxAbs) => {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return 0;
+    return Math.abs(n) > maxAbs ? 0 : n;
+  };
+  const safe = {};
+  const keys = ['unilateral', 'bilateral', 'corner', 'trilateral', 'full'];
+  const maxAbs = Math.max(1, cellSize);
+  keys.forEach((key) => {
+    const entry = adjust?.[key] || {};
+    const pos = entry.pos || {};
+    safe[key] = {
+      pos: {
+        x: clamp(pos.x, maxAbs),
+        y: clamp(pos.y, maxAbs),
+        z: clamp(pos.z, maxAbs),
+      },
+      rotY: Number.isFinite(entry.rotY) ? entry.rotY : 0,
+      scale: Number.isFinite(entry.scale) ? entry.scale : 1,
+    };
+  });
+  return safe;
+}
+
 function rotateMask(mask, steps) {
   let m = mask;
   for (let i = 0; i < steps; i++) {
@@ -153,7 +178,7 @@ export function buildWorldScene({
   const wallScale = Number(calibration.wallScale) || 1;
   const assetOrigin = calibration.assetOrigin === 'base' ? 'base' : 'center';
   const base = calibration.base || {};
-  const adjust = calibration.adjust || {};
+  const adjust = sanitizeAdjust(calibration.adjust || {}, cellSize);
 
   const blockScale = (cellSize / assetSize) * wallScale;
   const blockHeight = cellSize * wallScale;

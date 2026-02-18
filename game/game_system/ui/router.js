@@ -17,6 +17,23 @@
       }
     });
   });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const active = document.activeElement;
+    const tag = active?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+      active.blur();
+      return;
+    }
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+    if (!window.location.pathname.endsWith('/index.html')) {
+      window.location.href = 'index.html';
+    }
+  });
 }
 
 if (document.readyState === 'loading') {

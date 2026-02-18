@@ -1,5 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 html, body { height: 100%; margin: 0; }
-body { background: #0b0f15; overflow: hidden; }
+body { background: #0b0f15; overflow: hidden; font-family: "Rajdhani", "Space Grotesk", "Noto Sans", "Segoe UI", sans-serif; }
 a-scene { position: absolute; inset: 0; }
 #hud-root { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 #crosshair {
@@ -62,7 +64,7 @@ a-scene { position: absolute; inset: 0; }
   box-shadow: inset 0 0 0 1px rgba(43, 216, 255, 0.08);
   text-align: center;
   color: #e8edf3;
-  font-family: "Rajdhani", "Space Grotesk", sans-serif;
+  font-family: "Rajdhani", "Space Grotesk", "Noto Sans", "Segoe UI", sans-serif;
 }
 .loading-title {
   font-size: 14px;
@@ -120,7 +122,7 @@ a-scene { position: absolute; inset: 0; }
   box-shadow: inset 0 0 0 1px rgba(43, 216, 255, 0.08);
   text-align: center;
   color: #e8edf3;
-  font-family: "Rajdhani", "Space Grotesk", sans-serif;
+  font-family: "Rajdhani", "Space Grotesk", "Noto Sans", "Segoe UI", sans-serif;
 }
 .overlay-title {
   font-size: 22px;
@@ -182,7 +184,7 @@ a-scene { position: absolute; inset: 0; }
   gap: 8px;
   z-index: 9;
   pointer-events: auto;
-  font-family: "Rajdhani", "Space Grotesk", sans-serif;
+  font-family: "Rajdhani", "Space Grotesk", "Noto Sans", "Segoe UI", sans-serif;
 }
 .preview-toggle {
   height: 34px;

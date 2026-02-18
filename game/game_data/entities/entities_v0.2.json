@@ -23,13 +23,27 @@
             "color": "#FF4444",
             "asset": "game_data/assets/characters/enemy.glb",
             "scale": 0.6,
-            "yOffset": 0
+            "yOffset": 0,
+            "mask": {
+                "color": "#FF4444",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
         },
         {
             "id": "enemy_advanced",
             "nombre": "Fantasma Avanzado",
             "descripcion": "VersiÃ³n equilibrada con detecciÃ³n media y resistencia ligera. Combina persecuciÃ³n con bloqueo ocasional de rutas.",
             "nivel_min": 2,
+            "mask": {
+                "color": "#fff",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            },
             "stats": {
                 "vidas": 2,
                 "invulnerabilidad": false,
@@ -46,7 +60,7 @@
             "boost_drop_prob": 0.06,
             "tamaÃ±o_visual": 1.05,
             "color": "#FF8888",
-            "asset": "game_data/assets/characters/enemy.glb",
+            "asset": "game_data/assets/characters/bot_advanced.glb",
             "scale": 0.6,
             "yOffset": 0
         },
@@ -75,9 +89,16 @@
             "boost_drop_prob": 0.08,
             "tamaÃ±o_visual": 0.85,
             "color": "#88CCDD",
-            "asset": "game_data/assets/characters/enemy.glb",
+            "asset": "game_data/assets/characters/enemy_stealth.glb",
             "scale": 0.6,
-            "yOffset": 0
+            "yOffset": 0,
+            "mask": {
+                "color": "#88CCDD",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
         },
         {
             "id": "enemy_tank",
@@ -104,9 +125,16 @@
             "boost_drop_prob": 0.1,
             "tamaÃ±o_visual": 1.3,
             "color": "#DD4444",
-            "asset": "game_data/assets/characters/enemy.glb",
+            "asset": "game_data/assets/characters/enemy_tank.glb",
             "scale": 0.6,
-            "yOffset": 0
+            "yOffset": 0,
+            "mask": {
+                "color": "#DD4444",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
         },
         {
             "id": "enemy_assassin",
@@ -133,9 +161,16 @@
             "boost_drop_prob": 0.12,
             "tamaÃ±o_visual": 0.95,
             "color": "#DDDD44",
-            "asset": "game_data/assets/characters/enemy.glb",
+            "asset": "game_data/assets/characters/enemy_assassin.glb",
             "scale": 0.6,
-            "yOffset": 0
+            "yOffset": 0,
+            "mask": {
+                "color": "#DDDD44",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
         },
         {
             "id": "enemy_healer",
@@ -163,9 +198,16 @@
             "boost_drop_prob": 0.09,
             "tamaÃ±o_visual": 1.1,
             "color": "#44DD88",
-            "asset": "game_data/assets/characters/enemy.glb",
+            "asset": "game_data/assets/characters/enemy_healer.glb",
             "scale": 0.6,
-            "yOffset": 0
+            "yOffset": 0,
+            "mask": {
+                "color": "#44DD88",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
         },
         {
             "id": "enemy_speedster",
@@ -192,7 +234,7 @@
             "boost_drop_prob": 0.07,
             "tamaÃ±o_visual": 0.8,
             "color": "#DDDD88",
-            "asset": "game_data/assets/characters/enemy.glb",
+            "asset": "game_data/assets/characters/enemy_speedster.glb",
             "scale": 0.6,
             "yOffset": 0
         },
@@ -224,7 +266,14 @@
             "color": "#8888DD",
             "asset": "game_data/assets/characters/enemy.glb",
             "scale": 0.6,
-            "yOffset": 0
+            "yOffset": 0,
+            "mask": {
+                "color": "#8888DD",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
         },
         {
             "id": "enemy_ranged",
@@ -254,7 +303,14 @@
             "color": "#44DDDD",
             "asset": "game_data/assets/characters/enemy.glb",
             "scale": 0.6,
-            "yOffset": 0
+            "yOffset": 0,
+            "mask": {
+                "color": "#44DDDD",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
         },
         {
             "id": "enemy_kamikaze",
@@ -284,7 +340,14 @@
             "color": "#FFAA00",
             "asset": "game_data/assets/characters/enemy.glb",
             "scale": 0.6,
-            "yOffset": 0
+            "yOffset": 0,
+            "mask": {
+                "color": "#FFAA00",
+                "strength": 0.85,
+                "emissiveIntensity": 1,
+                "roughness": 0.35,
+                "metalness": 0.2
+            }
         }
     ],
     "bots": [

@@ -318,6 +318,10 @@
       border-radius: var(--hud-radius);
       background: rgba(43, 216, 255, 0.25);
     }
+    .ammo-bars span.active {
+      background: rgba(43, 216, 255, 0.9);
+      box-shadow: 0 0 8px rgba(43, 216, 255, 0.65);
+    }
 
     .dash-panel {
       width: 220px;
@@ -607,7 +611,7 @@
     <div class="hud-panel ammo-panel">
       <div class="ammo-count"><span id="hudAmmoCurrent">--</span><span class="ammo-total" id="hudAmmoTotal">/--</span></div>
       <div class="ammo-name" id="hudWeapon">SISTEMA BASICO</div>
-      <div class="ammo-bars">
+      <div class="ammo-bars" id="hudAmmoBars">
         <span></span>
         <span></span>
         <span></span>

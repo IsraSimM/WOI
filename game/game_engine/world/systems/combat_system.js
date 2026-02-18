@@ -36,7 +36,7 @@ export function createCombatSystem({
     let kills = 0;
     for (let i = enemies.length - 1; i >= 0; i -= 1) {
       const enemy = enemies[i];
-      if (!enemy?.el) continue;
+      if (!enemy?.el || enemy.dead) continue;
       const pos = enemy.el.object3D.position;
       toEnemy.set(pos.x - origin.x, 0, pos.z - origin.z);
       const dist = toEnemy.length();

@@ -27,7 +27,10 @@ const server = http.createServer((req, res) => {
       return;
     }
     const ext = path.extname(filePath).toLowerCase();
-    const type = mime[ext] || 'application/octet-stream';
+    let type = mime[ext] || 'application/octet-stream';
+    if (type.startsWith('text/') || type === 'application/json' || type === 'text/javascript') {
+      type = `${type}; charset=utf-8`;
+    }
     res.writeHead(200, { 'Content-Type': type });
     fs.createReadStream(filePath).pipe(res);
   });

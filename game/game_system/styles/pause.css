@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 :root {
   --bg: #0b0f15;
   --panel: rgba(12, 20, 28, 0.96);
@@ -14,7 +16,7 @@
 html, body {
   height: 100%;
   margin: 0;
-  font-family: "Rajdhani", "Space Grotesk", sans-serif;
+  font-family: "Rajdhani", "Space Grotesk", "Noto Sans", "Segoe UI", sans-serif;
   background: transparent;
   color: var(--text);
 }

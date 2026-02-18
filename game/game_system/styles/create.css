@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 :root {
   --bg-0: #0b1216;
   --bg-1: #0f1a20;
@@ -14,7 +16,7 @@
 body {
   background: radial-gradient(circle at top, #0f1f25 0%, #0a1115 40%, #070b0e 100%);
   color: var(--text);
-  font-family: "Rajdhani", "Space Grotesk", sans-serif;
+  font-family: "Rajdhani", "Space Grotesk", "Noto Sans", "Segoe UI", sans-serif;
 }
 
 .page {

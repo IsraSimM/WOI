@@ -1,0 +1,38 @@
+{
+  "minimap": {
+    "radius_cells": 10
+  },
+  "spawn": {
+    "interval_ms": 850,
+    "max_active_base": 12,
+    "max_active_area_div": 55,
+    "min_dist_cells": 6,
+    "max_dist_cells": 14,
+    "near_enemy_dist_cells": 2.5,
+    "despawn_dist_cells": 40,
+    "despawn_check_ms": 2500,
+    "despawn_stuck_ms": 30000,
+    "despawn_inside_wall": true,
+    "spawn_batch": 2,
+    "spawn_attempts": 60,
+    "fallback_attempts": 80,
+    "grace_ms": 2500,
+    "relocate_attempts": 24,
+    "relocate_radius_cells": 4,
+    "goal_pressure": {
+      "radius_cells": 4,
+      "factor": 1.8,
+      "extra_batch": 1
+    },
+    "final_phase": {
+      "factor": 2.6,
+      "extra_batch": 2
+    }
+  },
+  "final_phase": {
+    "duration_ms": 20000,
+    "spawn_interval_ms": 3000,
+    "frenzy_speed_mult": 1.35,
+    "frenzy_cooldown_mult": 0.6
+  }
+}

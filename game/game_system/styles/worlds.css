@@ -4,7 +4,8 @@
   border-radius: var(--ui-radius);
   padding: 16px;
   margin-bottom: 18px;
-  max-width: 760px;
+  max-width: none;
+  width: 100%;
 }
 .panel h2 {
   font-size: 18px;
@@ -27,12 +28,17 @@
   flex-wrap: wrap;
 }
 .menu { width: auto; }
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
 .save-card {
   background: rgba(8, 12, 18, 0.75);
   border: 1px solid rgba(84, 122, 145, 0.25);
   border-radius: var(--ui-radius);
   padding: 12px;
-  margin-bottom: 12px;
+  min-height: 130px;
 }
 .save-title {
   font-size: 14px;
@@ -49,6 +55,87 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 10, 16, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 20;
+}
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal-panel {
+  width: min(440px, 92vw);
+  padding: 20px 22px;
+  border-radius: var(--ui-radius);
+  border: 1px solid rgba(84, 122, 145, 0.35);
+  background: rgba(12, 20, 28, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(43, 216, 255, 0.08);
+  display: grid;
+  gap: 12px;
+}
+.modal-title {
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: #2bd8ff;
+  text-transform: uppercase;
+}
+.modal-message {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+}
+.modal-field {
+  display: grid;
+  gap: 6px;
+}
+.modal-label {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+}
+.modal-field input {
+  height: 40px;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.toggle-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px;
+}
+.toggle-btn {
+  height: 40px;
+  border: 2px solid rgba(74, 158, 255, 0.25);
+  background: rgba(20, 30, 48, 0.6);
+  color: #ffffff;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.toggle-btn.active,
+.toggle-btn:hover {
+  border-color: rgba(74, 158, 255, 0.75);
+  box-shadow: 0 0 10px rgba(74, 158, 255, 0.25);
+}
+.level-card.locked {
+  opacity: 0.55;
+  border-color: rgba(84, 122, 145, 0.15);
+}
+.level-card.locked .menu-btn {
+  pointer-events: none;
+}
 @media (max-width: 720px) {
   .panel {
     padding: 14px;
@@ -60,5 +147,15 @@
   }
   .menu {
     width: 100%;
+  }
+}
+@media (max-width: 960px) {
+  .grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .grid-3 {
+    grid-template-columns: 1fr;
   }
 }

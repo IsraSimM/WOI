@@ -88,6 +88,7 @@ export function createAISystem({ map, width, height, cellSize, enemies, getPlaye
   function update(dt) {
     const playerPos = getPlayerPosition();
     if (!playerPos) return;
+    const now = performance.now();
 
     if (state.lastPlayerPos) {
       state.playerVel.x = playerPos.x - state.lastPlayerPos.x;
@@ -96,7 +97,7 @@ export function createAISystem({ map, width, height, cellSize, enemies, getPlaye
     state.lastPlayerPos = playerPos.clone();
 
     for (const enemy of state.enemies) {
-      if (!enemy?.el) continue;
+      if (!enemy?.el || enemy.dead) continue;
       const pos = enemy.el.object3D.position;
       const currentCell = cellFromWorld(pos, cellSize);
       const targetCell = cellFromWorld(playerPos, cellSize);
@@ -108,67 +109,84 @@ export function createAISystem({ map, width, height, cellSize, enemies, getPlaye
         enemy.ai = { wanderTarget: null, wanderTimer: 0 };
       }
 
-      if (behavior === 'ambusher') {
-        const vel = state.playerVel;
-        const mag = Math.hypot(vel.x, vel.z);
-        if (mag > 0.01) {
-          const dirX = vel.x / mag;
-          const dirZ = vel.z / mag;
-          const lead = enemy.leadSteps || 3;
-          const predicted = {
-            x: Math.round(targetCell.x + dirX * lead),
-            y: Math.round(targetCell.y + dirZ * lead),
-          };
-          goalCell = isWall(map, width, height, predicted.x, predicted.y) ? targetCell : predicted;
-        }
-      }
-
-      if (behavior === 'wanderer') {
-        enemy.ai.wanderTimer -= dt;
-        const reached =
-          enemy.ai.wanderTarget &&
-          enemy.ai.wanderTarget.x === currentCell.x &&
-          enemy.ai.wanderTarget.y === currentCell.y;
-        if (!enemy.ai.wanderTarget || enemy.ai.wanderTimer <= 0 || reached) {
-          const options = openNeighbors(map, width, height, currentCell);
-          enemy.ai.wanderTarget = pickRandom(options) || currentCell;
-          enemy.ai.wanderTimer = 1.2 + Math.random() * 2.5;
-        }
-        goalCell = enemy.ai.wanderTarget || targetCell;
-      }
-
       const distToPlayer = Math.hypot(pos.x - playerPos.x, pos.z - playerPos.z);
       let dirX = 0;
       let dirZ = 0;
 
-      if (distToPlayer < cellSize * 1.6) {
-        // ataque cercano: persigue directo con un leve desvío para evitar ruta perfecta
-        const jitter = enemy.ai.jitter ?? 0;
-        if (!enemy.ai.jitterT || enemy.ai.jitterT <= 0) {
-          enemy.ai.jitterT = 0.6 + Math.random() * 0.8;
-          enemy.ai.jitter = (Math.random() - 0.5) * 0.6;
-        } else {
-          enemy.ai.jitterT -= dt;
-        }
-        const dx = playerPos.x - pos.x;
-        const dz = playerPos.z - pos.z;
-        const ang = Math.atan2(dz, dx) + enemy.ai.jitter;
-        dirX = Math.cos(ang);
-        dirZ = Math.sin(ang);
+      if (enemy.ai.retreatUntil && now < enemy.ai.retreatUntil) {
+        const rdir = enemy.ai.retreatDir;
+        const dx = rdir?.x ?? (pos.x - playerPos.x);
+        const dz = rdir?.z ?? (pos.z - playerPos.z);
+        dirX = dx;
+        dirZ = dz;
       } else {
-        const nextCell = bfsNext(map, width, height, currentCell, goalCell);
-        const nextWorld = worldFromCell(nextCell, cellSize);
-        dirX = nextWorld.x - pos.x;
-        dirZ = nextWorld.z - pos.z;
+        if (behavior === 'ambusher') {
+          const vel = state.playerVel;
+          const mag = Math.hypot(vel.x, vel.z);
+          if (mag > 0.01) {
+            const dirX = vel.x / mag;
+            const dirZ = vel.z / mag;
+            const lead = enemy.leadSteps || 3;
+            const predicted = {
+              x: Math.round(targetCell.x + dirX * lead),
+              y: Math.round(targetCell.y + dirZ * lead),
+            };
+            goalCell = isWall(map, width, height, predicted.x, predicted.y) ? targetCell : predicted;
+          }
+        }
+
+        if (behavior === 'wanderer') {
+          enemy.ai.wanderTimer -= dt;
+          const reached =
+            enemy.ai.wanderTarget &&
+            enemy.ai.wanderTarget.x === currentCell.x &&
+            enemy.ai.wanderTarget.y === currentCell.y;
+          if (!enemy.ai.wanderTarget || enemy.ai.wanderTimer <= 0 || reached) {
+            const options = openNeighbors(map, width, height, currentCell);
+            enemy.ai.wanderTarget = pickRandom(options) || currentCell;
+            enemy.ai.wanderTimer = 1.2 + Math.random() * 2.5;
+          }
+          goalCell = enemy.ai.wanderTarget || targetCell;
+        }
+
+        if (distToPlayer < cellSize * 1.6) {
+          const jitter = enemy.ai.jitter ?? 0;
+          if (!enemy.ai.jitterT || enemy.ai.jitterT <= 0) {
+            enemy.ai.jitterT = 0.6 + Math.random() * 0.8;
+            enemy.ai.jitter = (Math.random() - 0.5) * 0.6;
+          } else {
+            enemy.ai.jitterT -= dt;
+          }
+          const dx = playerPos.x - pos.x;
+          const dz = playerPos.z - pos.z;
+          const ang = Math.atan2(dz, dx) + enemy.ai.jitter;
+          dirX = Math.cos(ang);
+          dirZ = Math.sin(ang);
+        } else {
+          const nextCell = bfsNext(map, width, height, currentCell, goalCell);
+          const nextWorld = worldFromCell(nextCell, cellSize);
+          dirX = nextWorld.x - pos.x;
+          dirZ = nextWorld.z - pos.z;
+        }
       }
 
       const dist = Math.hypot(dirX, dirZ);
       if (dist > 0.01) {
         const step = Math.min(dist, (enemy.speed || 1.2) * cellSize * dt);
-        pos.x += (dirX / dist) * step;
-        pos.z += (dirZ / dist) * step;
-        pos.x = Math.max(0, Math.min(maxX, pos.x));
-        pos.z = Math.max(0, Math.min(maxZ, pos.z));
+        const moveX = (dirX / dist) * step;
+        const moveZ = (dirZ / dist) * step;
+        let nextX = pos.x + moveX;
+        let nextZ = pos.z + moveZ;
+        const cellX = cellFromWorld({ x: nextX, z: pos.z }, cellSize);
+        if (isWall(map, width, height, cellX.x, cellX.y)) {
+          nextX = pos.x;
+        }
+        const cellZ = cellFromWorld({ x: nextX, z: nextZ }, cellSize);
+        if (isWall(map, width, height, cellZ.x, cellZ.y)) {
+          nextZ = pos.z;
+        }
+        pos.x = Math.max(0, Math.min(maxX, nextX));
+        pos.z = Math.max(0, Math.min(maxZ, nextZ));
         if (enemy.el?.object3D) {
           const yaw = Math.atan2(-dirX, -dirZ);
           const yawOffset = Number(enemy.yawOffset) || 0;
@@ -181,7 +199,6 @@ export function createAISystem({ map, width, height, cellSize, enemies, getPlaye
         }
       }
 
-      const now = performance.now();
       const attackRange = cellSize * 1.2;
       if (distToPlayer < attackRange && enemy.anim) {
         if (now > enemy.anim.attackUntil - 120) {

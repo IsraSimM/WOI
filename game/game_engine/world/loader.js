@@ -11,6 +11,32 @@ function normalizeMapData(data) {
   return { map, width, height, meta: data.meta || {} };
 }
 
+function sealBorders(mapData) {
+  if (!mapData?.map || !mapData.width || !mapData.height) return;
+  const { map, width, height, meta } = mapData;
+  const start = meta?.start;
+  const end = meta?.end || meta?.exit;
+  const allow = new Set();
+  if (start && Number.isFinite(start.x) && Number.isFinite(start.y)) {
+    allow.add(`${start.x},${start.y}`);
+  }
+  if (end && Number.isFinite(end.x) && Number.isFinite(end.y)) {
+    allow.add(`${end.x},${end.y}`);
+  }
+  for (let x = 0; x < width; x++) {
+    const topKey = `${x},0`;
+    const bottomKey = `${x},${height - 1}`;
+    if (!allow.has(topKey)) map[0 * width + x] = CELL.WALL;
+    if (!allow.has(bottomKey)) map[(height - 1) * width + x] = CELL.WALL;
+  }
+  for (let y = 0; y < height; y++) {
+    const leftKey = `0,${y}`;
+    const rightKey = `${width - 1},${y}`;
+    if (!allow.has(leftKey)) map[y * width + 0] = CELL.WALL;
+    if (!allow.has(rightKey)) map[y * width + (width - 1)] = CELL.WALL;
+  }
+}
+
 export async function loadWorld({
   worldUrl,
   entitiesUrl,
@@ -47,6 +73,8 @@ export async function loadWorld({
       meta: gen.meta,
     };
   }
+
+  sealBorders(mapData);
 
   let entities = { items: [], enemies: [] };
   if (entitiesUrl) {

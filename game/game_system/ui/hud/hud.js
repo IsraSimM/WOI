@@ -24,6 +24,7 @@ export async function mountHud(rootEl) {
   const ammoCurrentEl = rootEl.querySelector('#hudAmmoCurrent');
   const ammoTotalEl = rootEl.querySelector('#hudAmmoTotal');
   const weaponEl = rootEl.querySelector('#hudWeapon');
+  const ammoBarsEl = rootEl.querySelector('#hudAmmoBars');
   const dashCountEl = rootEl.querySelector('#hudDashCount');
   const dashCooldownEl = rootEl.querySelector('#hudDashCooldown');
   const finalWrapEl = rootEl.querySelector('#hudFinalWrap');
@@ -37,6 +38,7 @@ export async function mountHud(rootEl) {
   const enemyStatsEl = rootEl.querySelector('#hudEnemyStats');
 
   let slotCount = 4;
+  let ammoBars = ammoBarsEl ? Array.from(ammoBarsEl.querySelectorAll('span')) : [];
   const minimapState = {
     ready: false,
     map: null,
@@ -51,6 +53,31 @@ export async function mountHud(rootEl) {
 
   function setText(el, text) {
     if (el) el.textContent = text;
+  }
+
+  function renderAmmoBars(current, max, progress = null) {
+    if (!ammoBarsEl) return;
+    const count = Math.max(0, Math.round(max));
+    if (!ammoBars.length || ammoBars.length !== count) {
+      ammoBarsEl.innerHTML = '';
+      ammoBars = [];
+      for (let i = 0; i < count; i++) {
+        const bar = document.createElement('span');
+        ammoBarsEl.appendChild(bar);
+        ammoBars.push(bar);
+      }
+    }
+    ammoBars.forEach((bar, idx) => {
+      bar.classList.toggle('active', idx < current);
+      bar.style.background = '';
+    });
+    if (Number.isFinite(progress) && ammoBars.length && current < ammoBars.length) {
+      const idx = Math.max(0, Math.min(ammoBars.length - 1, current));
+      const bar = ammoBars[idx];
+      const pct = Math.max(0, Math.min(1, progress)) * 100;
+      bar.style.background = `linear-gradient(180deg, rgba(43, 216, 255, 0.9) ${pct}%, rgba(43, 216, 255, 0.25) ${pct}%)`;
+      bar.classList.add('active');
+    }
   }
 
   function formatTime(ms) {
@@ -182,7 +209,7 @@ export async function mountHud(rootEl) {
     const mapH = minimapState.height;
 
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = 'rgba(8, 12, 18, 0.75)';
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, width, height);
 
     ctx.save();
@@ -195,14 +222,14 @@ export async function mountHud(rootEl) {
     const startY = Math.max(0, player.y - radiusCells);
     const endY = Math.min(mapH - 1, player.y + radiusCells);
 
-    ctx.fillStyle = 'rgba(32, 46, 60, 0.9)';
+    ctx.fillStyle = 'rgba(120, 136, 150, 0.85)';
     for (let y = startY; y <= endY; y++) {
       const row = y * mapW;
       for (let x = startX; x <= endX; x++) {
         const dx = x - player.x;
         const dy = y - player.y;
         if ((dx * dx + dy * dy) > radiusCells * radiusCells) continue;
-        if (map[row + x] !== 1) continue;
+        if (map[row + x] === 1) continue;
         const px = centerX + dx * scale - scale * 0.5;
         const py = centerY + dy * scale - scale * 0.5;
         ctx.fillRect(px, py, scale, scale);
@@ -342,6 +369,9 @@ export async function mountHud(rootEl) {
     setAmmo: (current, total) => {
       if (ammoCurrentEl) ammoCurrentEl.textContent = current != null ? String(current) : '--';
       if (ammoTotalEl) ammoTotalEl.textContent = total != null ? `/${total}` : '/--';
+    },
+    setAmmoBars: (current, max, progress = null) => {
+      renderAmmoBars(Number(current) || 0, Number(max) || 0, progress);
     },
     setDash: (count, cooldownSeconds) => {
       if (dashCountEl) dashCountEl.textContent = Number.isFinite(count) ? String(count) : '--';

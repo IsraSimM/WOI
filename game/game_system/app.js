@@ -6,6 +6,9 @@ import { fetchJson } from '../game_engine/data/json_loader.js';
 import {
   ITEMS_URL,
   ENTITIES_URL,
+  MODES_URL,
+  DIFFICULTS_URL,
+  GAMEPLAY_URL,
   WORLD_01_URL,
   WORLD_01_ENTITIES_URL,
   WORLD_01_PLAYERS_URL,
@@ -23,6 +26,7 @@ import { registerMovementSystem, registerStepBob } from '../game_engine/world/sy
 import { createAISystem } from '../game_engine/world/systems/ai_system.js';
 import { createCombatSystem } from '../game_engine/world/systems/combat_system.js';
 import { createItemSystem } from '../game_engine/world/systems/item_system.js';
+import { createSpawnSystem } from '../game_engine/world/systems/spawn_system.js';
 import { mountHud } from './ui/hud/hud.js';
 import { generateSpawnPoints } from '../game_engine/generation/world_generation/spawns.js';
 
@@ -33,6 +37,7 @@ const AUTO_SAVE_ID = 'auto_latest';
 const AUTO_SAVE_INTERVAL_MS = 45000;
 const CONFIG_KEY = 'game_config_v1';
 const ENGINE_CONFIG_KEY = 'engine_config_v1';
+const LEVELS_PROGRESS_KEY = 'levels_progress_v1';
 const FINAL_DURATION_MS = 20000;
 const FINAL_SPAWN_INTERVAL_MS = 3000;
 const FRENZY_SPEED_MULT = 1.35;
@@ -94,7 +99,7 @@ function loadEngineConfig() {
   const defaults = {
     cullingEnabled: true,
     cullingDistance: 60,
-    minimapRadius: 7,
+    minimapRadius: 10,
     dashDistance: 12,
     dashCooldown: 1.5,
     dashWalls: 1,
@@ -161,6 +166,40 @@ function saveSnapshots(list) {
   localStorage.setItem(SAVE_LIST_KEY, JSON.stringify(list));
 }
 
+function getSnapshotWorldId(snapshot) {
+  return snapshot?.settings?.worldId || snapshot?.meta?.name || snapshot?.name || null;
+}
+
+function pruneSnapshotsForWorld(list, worldId, keepId) {
+  if (!worldId) return list;
+  return list.filter((entry) => entry.id === keepId || getSnapshotWorldId(entry.data) !== worldId);
+}
+
+function loadLevelProgress() {
+  try {
+    const raw = localStorage.getItem(LEVELS_PROGRESS_KEY);
+    if (!raw) return [];
+    const list = JSON.parse(raw);
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLevelProgress(list) {
+  localStorage.setItem(LEVELS_PROGRESS_KEY, JSON.stringify(list));
+}
+
+function markLevelCompleted(worldId) {
+  if (!worldId) return;
+  const id = String(worldId);
+  if (!id.startsWith('world_')) return;
+  const list = loadLevelProgress();
+  if (list.includes(id)) return;
+  list.push(id);
+  saveLevelProgress(list);
+}
+
 function migrateLegacySnapshot() {
   const list = loadSnapshots();
   if (list.length) return;
@@ -209,8 +248,10 @@ function addSnapshot(snapshotData, name) {
     createdAt: snapshotData.createdAt || new Date().toISOString(),
     data: snapshotData,
   };
-  list.push(entry);
-  saveSnapshots(list);
+  const worldId = getSnapshotWorldId(snapshotData);
+  const next = pruneSnapshotsForWorld(list, worldId, id);
+  next.push(entry);
+  saveSnapshots(next);
   localStorage.setItem(SAVE_LATEST_KEY, entry.id);
   return entry;
 }
@@ -223,21 +264,25 @@ function upsertSnapshot(snapshotData, name, id = AUTO_SAVE_ID) {
     createdAt: snapshotData.createdAt || new Date().toISOString(),
     data: snapshotData,
   };
-  const idx = list.findIndex((s) => s.id === id);
-  if (idx >= 0) list[idx] = entry;
-  else list.push(entry);
-  saveSnapshots(list);
+  const worldId = getSnapshotWorldId(snapshotData);
+  const next = pruneSnapshotsForWorld(list, worldId, id);
+  const idx = next.findIndex((s) => s.id === id);
+  if (idx >= 0) next[idx] = entry;
+  else next.push(entry);
+  saveSnapshots(next);
   localStorage.setItem(SAVE_LATEST_KEY, entry.id);
   return entry;
 }
 
 function buildWorldStateFromSnapshot(snapshot) {
   const map = snapshot.map instanceof Uint8Array ? snapshot.map : new Uint8Array(snapshot.map || []);
+  const meta = snapshot.meta || {};
+  if (!meta.name && snapshot.settings?.worldId) meta.name = snapshot.settings.worldId;
   return createWorldState({
     map,
     width: snapshot.width,
     height: snapshot.height,
-    meta: snapshot.meta || {},
+    meta,
     items: snapshot.spawns?.items || [],
     enemies: snapshot.spawns?.enemies || [],
     playerSpawn: snapshot.settings?.playerSpawn || snapshot.meta?.start || { x: 1, y: 1 },
@@ -246,7 +291,17 @@ function buildWorldStateFromSnapshot(snapshot) {
   });
 }
 
-function saveSnapshot({ worldState, itemSystem, enemyEntities, playerEl, playerState, cellSize, saveName, saveId = null }) {
+function saveSnapshot({
+  worldState,
+  itemSystem,
+  enemyEntities,
+  playerEl,
+  playerState,
+  cellSize,
+  wallHeight,
+  saveName,
+  saveId = null,
+}) {
   const playerCell = worldToCell(playerEl.object3D.position, cellSize);
   const items = itemSystem.getRemaining();
   const enemies = enemyEntities.map((enemy) => {
@@ -267,6 +322,7 @@ function saveSnapshot({ worldState, itemSystem, enemyEntities, playerEl, playerS
     meta: worldState.meta,
     spawns: { items, enemies },
     settings: {
+      worldId: worldState.meta?.name || worldState.meta?.id || worldState.name || null,
       mode: worldState.mode,
       difficulty: worldState.difficulty,
       playerSpawn: playerCell,
@@ -274,6 +330,9 @@ function saveSnapshot({ worldState, itemSystem, enemyEntities, playerEl, playerS
       playerAttemptsLimit: playerState.attemptsLimit,
       playerHealth: playerState.health,
       playerLives: Math.max(0, playerState.attemptsLimit - playerState.attemptsUsed),
+      mapWidth: worldState.width,
+      mapHeight: worldState.height,
+      wallHeight: Number.isFinite(wallHeight) ? wallHeight : null,
     },
   });
 
@@ -408,10 +467,55 @@ async function initGame() {
 
     setLoading(true, 'Preparando sistema...');
 
-    const [itemsData, entitiesData] = await Promise.all([
+    const [rawItemsData, rawEntitiesData, rawModesData, rawDifficultsData, rawGameplayData] = await Promise.all([
       fetchJson(ITEMS_URL),
       fetchJson(ENTITIES_URL),
+      fetchJson(MODES_URL),
+      fetchJson(DIFFICULTS_URL),
+      fetchJson(GAMEPLAY_URL),
     ]);
+
+    const fixText = (value) => {
+      if (typeof value !== 'string') return value;
+      if (!/[ÃÂ]/.test(value)) return value;
+      try {
+        return decodeURIComponent(escape(value));
+      } catch {
+        return value;
+      }
+    };
+
+    const gameplayData = rawGameplayData && typeof rawGameplayData === 'object' ? rawGameplayData : {};
+    const finalCfg = gameplayData?.final_phase || {};
+    const finalDurationMs = Math.max(5000, Number(finalCfg.duration_ms) || FINAL_DURATION_MS);
+    const finalSpawnIntervalMs = Math.max(400, Number(finalCfg.spawn_interval_ms) || FINAL_SPAWN_INTERVAL_MS);
+    const frenzySpeedMult = Math.max(0.2, Number(finalCfg.frenzy_speed_mult) || FRENZY_SPEED_MULT);
+    const frenzyCooldownMult = Math.max(0.1, Number(finalCfg.frenzy_cooldown_mult) || FRENZY_COOLDOWN_MULT);
+    const itemsData = Array.isArray(rawItemsData)
+      ? rawItemsData.map((item) => ({
+        ...item,
+        nombre: fixText(item?.nombre),
+        descripcion: fixText(item?.descripcion),
+      }))
+      : [];
+
+    const entitiesData = (() => {
+      const fixList = (list) => (Array.isArray(list)
+        ? list.map((entry) => ({
+          ...entry,
+          nombre: fixText(entry?.nombre),
+          descripcion: fixText(entry?.descripcion),
+        }))
+        : []);
+      return {
+        ...rawEntitiesData,
+        enemies: fixList(rawEntitiesData?.enemies),
+        players: fixList(rawEntitiesData?.players),
+        bots: fixList(rawEntitiesData?.bots),
+      };
+    })();
+    const modesData = rawModesData && typeof rawModesData === 'object' ? rawModesData : {};
+    const difficultsData = rawDifficultsData && typeof rawDifficultsData === 'object' ? rawDifficultsData : {};
 
     const config = loadConfig();
     const engineConfig = loadEngineConfig();
@@ -426,6 +530,11 @@ async function initGame() {
     const paramPacman = params.get('pacman') === '1' || params.get('pacman') === 'true';
     const paramWallHeight = Number(params.get('wallHeight'));
     const paramWorldName = params.get('name');
+    const selectedMode = paramMode || config.mode || 'modo_classic';
+    const modeConfig = Array.isArray(modesData?.modos)
+      ? modesData.modos.find((mode) => mode.id === selectedMode)
+      : null;
+
     const playerDefs = Array.isArray(entitiesData?.players) ? entitiesData.players : [];
     const playerDef = playerDefs.find((p) => p.id === config.playerId) || playerDefs[0] || {};
     const playerStats = playerDef.stats || {};
@@ -436,21 +545,39 @@ async function initGame() {
     const inventorySize = Math.max(3, Math.min(8, 3 + Math.round(playerStrategy)));
 
     const paramMinimapRadius = Number(params.get('minimapRadius'));
+    const configMinimapRadius = Number(gameplayData?.minimap?.radius_cells);
+    const baseMinimapRadius = Math.max(
+      10,
+      playerDetectionCells,
+      Number(engineConfig.minimapRadius) || 0,
+      Number.isFinite(configMinimapRadius) ? configMinimapRadius : 0,
+    );
     const minimapRadius = Math.max(
       3,
-      Number.isFinite(paramMinimapRadius) ? paramMinimapRadius : playerDetectionCells,
+      Number.isFinite(paramMinimapRadius) ? paramMinimapRadius : baseMinimapRadius,
     );
 
     const cameraFirstPos = { x: 0, y: 1.7, z: 0 };
 
+    const allowedBoosts = Array.isArray(modeConfig?.boosts_disponibles)
+      ? modeConfig.boosts_disponibles
+      : null;
     const spawnableItemIds = Array.isArray(itemsData)
       ? Array.from(new Set(itemsData
         .filter((item) => item && item.asset)
+        .filter((item) => !allowedBoosts || allowedBoosts.includes(item.id))
         .map((item) => item.id)))
       : [];
-    const hasAmmoItem = Array.isArray(itemsData) && itemsData.some((item) => item?.id === 'ammo_pack');
+    const hasAmmoLight = Array.isArray(itemsData) && itemsData.some((item) => item?.id === 'ammo_light');
+    const hasAmmoHeavy = Array.isArray(itemsData) && itemsData.some((item) => item?.id === 'ammo_heavy');
     const enemyDefs = Array.isArray(entitiesData?.enemies) ? entitiesData.enemies : [];
-    const enemyIds = Array.from(new Set(enemyDefs.filter((enemy) => enemy && enemy.asset).map((enemy) => enemy.id)));
+    const allowedEnemies = Array.isArray(modeConfig?.enemigos_disponibles)
+      ? modeConfig.enemigos_disponibles
+      : null;
+    const enemyIds = Array.from(new Set(enemyDefs
+      .filter((enemy) => enemy && enemy.asset)
+      .filter((enemy) => !allowedEnemies || allowedEnemies.includes(enemy.id))
+      .map((enemy) => enemy.id)));
     const enemyDefById = new Map(enemyDefs.map((enemy) => [enemy.id, enemy]));
 
     let snapshotEntry = null;
@@ -464,12 +591,16 @@ async function initGame() {
     let playerHealth = 100;
     const healthMax = 100;
     let worldArea = 0;
+    let worldId = null;
+    let snapshotWallHeight = null;
 
     if (snapshotEntry && loadMode !== 'new' && loadMode !== 'world_01') {
       setLoading(true, 'Cargando snapshot...');
       worldState = buildWorldStateFromSnapshot(snapshotEntry.data);
       worldArea = worldState.width * worldState.height;
       const settings = snapshotEntry.data.settings || {};
+      worldId = settings.worldId || snapshotEntry.data?.meta?.name || snapshotEntry.data?.name || null;
+      if (Number.isFinite(settings.wallHeight)) snapshotWallHeight = settings.wallHeight;
       if (Number.isFinite(settings.playerAttemptsLimit)) {
         attemptsLimit = Math.max(1, Math.round(settings.playerAttemptsLimit));
       } else if (Number.isFinite(settings.playerLives)) {
@@ -492,7 +623,9 @@ async function initGame() {
         Number.isFinite(paramHeight) ? paramHeight : config.worldHeight,
         CONFIG.defaults.worldHeight,
       );
+      const worldLoadId = loadMode && loadMode.startsWith('world_') ? loadMode : null;
       const useWorld01 = loadMode === 'world_01';
+      worldId = worldLoadId || null;
       worldArea = width * height;
       const itemsCount = Math.max(8, Math.round(worldArea / 100));
       const enemiesCount = Math.max(enemyIds.length * 3, Math.round(itemsCount * 3));
@@ -502,9 +635,9 @@ async function initGame() {
         setLoading(true, 'Generando mundo...');
       }
       worldState = await loadWorld({
-        worldUrl: useWorld01 ? WORLD_01_URL : null,
-        entitiesUrl: useWorld01 ? WORLD_01_ENTITIES_URL : null,
-        playersUrl: useWorld01 ? WORLD_01_PLAYERS_URL : null,
+        worldUrl: worldLoadId ? resolveGameUrl(`game_data/worlds/${worldLoadId}/map_data.json`) : (useWorld01 ? WORLD_01_URL : null),
+        entitiesUrl: worldLoadId ? resolveGameUrl(`game_data/worlds/${worldLoadId}/entities_data.json`) : (useWorld01 ? WORLD_01_ENTITIES_URL : null),
+        playersUrl: worldLoadId ? resolveGameUrl(`game_data/worlds/${worldLoadId}/players_data.json`) : (useWorld01 ? WORLD_01_PLAYERS_URL : null),
         width,
         height,
         seed: paramSeed || config.seed || null,
@@ -523,13 +656,19 @@ async function initGame() {
       }
     }
 
+    if (worldId) {
+      worldState.meta = worldState.meta || {};
+      if (!worldState.meta.name) worldState.meta.name = worldId;
+    }
+
     const itemIdSet = new Set(spawnableItemIds);
-    if (hasAmmoItem) itemIdSet.add('ammo_pack');
+    if (hasAmmoLight) itemIdSet.add('ammo_light');
+    if (hasAmmoHeavy) itemIdSet.add('ammo_heavy');
     if (Array.isArray(worldState?.items)) {
       worldState.items = worldState.items.filter((entry) => entry && itemIdSet.has(entry.id));
     }
 
-    if (Array.isArray(worldState?.items) && Array.isArray(itemsData) && itemsData.find((i) => i.id === 'ammo_pack')) {
+    if (Array.isArray(worldState?.items) && (hasAmmoLight || hasAmmoHeavy)) {
       const occupied = new Set(worldState.items.map((entry) => `${entry.x},${entry.y}`));
       const borderCells = [];
       const avoid = new Set();
@@ -563,7 +702,13 @@ async function initGame() {
         const key = `${cell.x},${cell.y}`;
         if (occupied.has(key)) continue;
         occupied.add(key);
-        ammoEntries.push({ id: 'ammo_pack', x: cell.x, y: cell.y });
+        let id = 'ammo_light';
+        if (hasAmmoLight && hasAmmoHeavy) {
+          id = Math.random() < 0.75 ? 'ammo_light' : 'ammo_heavy';
+        } else if (!hasAmmoLight && hasAmmoHeavy) {
+          id = 'ammo_heavy';
+        }
+        ammoEntries.push({ id, x: cell.x, y: cell.y });
       }
       if (ammoEntries.length) {
         worldState.items = worldState.items.concat(ammoEntries);
@@ -571,7 +716,9 @@ async function initGame() {
     }
 
     const cellSize = CONFIG.defaults.cellSize;
-    const wallHeight = Number.isFinite(paramWallHeight) ? Math.max(1, Math.round(paramWallHeight)) : CONFIG.defaults.wallHeight;
+    const wallHeight = Number.isFinite(paramWallHeight)
+      ? Math.max(1, Math.round(paramWallHeight))
+      : (Number.isFinite(snapshotWallHeight) ? Math.max(1, Math.round(snapshotWallHeight)) : CONFIG.defaults.wallHeight);
     const lodMode = engineConfig.lodMode || 'balanced';
     const lodFactor = lodMode === 'aggressive' ? 0.7 : lodMode === 'quality' ? 1.2 : 1;
 
@@ -586,7 +733,8 @@ async function initGame() {
       shadowsEnabled: engineConfig.shadowsEnabled,
     });
 
-    const playerAssetUrl = encodeURI(resolveGameUrl(PLAYER_MODEL.asset));
+    const playerAssetPath = playerDef?.asset || PLAYER_MODEL.asset;
+    const playerAssetUrl = encodeURI(resolveGameUrl(playerAssetPath));
     const enemyAssetUrl = encodeURI(resolveGameUrl(ENEMY_MODEL.asset));
     ensureAssets(sceneEl, [
       { id: 'mdl-player', src: playerAssetUrl },
@@ -787,6 +935,8 @@ async function initGame() {
       playerState.health = playerState.healthMax;
       resetRunState();
       playerEl.setAttribute('position', `${spawn.x * cellSize} 0 ${spawn.y * cellSize}`);
+      spawnSystem.clear();
+      spawnSystem.spawnEnemiesFar();
       grantInvulnerability(5000);
       gameState = 'playing';
       downedCameraActive = false;
@@ -826,6 +976,8 @@ async function initGame() {
         ammoMax: 120,
         reserve: 480,
         reloadMs: 900,
+        chargesMax: 5,
+        chargeCooldownMs: 10000,
       },
       {
         id: 'sniper',
@@ -838,7 +990,8 @@ async function initGame() {
         radius: 0.1,
         ammoMax: 8,
         reserve: 32,
-        reloadMs: 1400,
+        reloadMs: 2400,
+        penetration: true,
       },
     ];
     const weapons = weaponModes.map((mode) => {
@@ -846,6 +999,8 @@ async function initGame() {
       const reserveMax = Math.max(0, Math.round(mode.reserve * capacityMult));
       const ammoStart = Math.min(ammoMax, Math.max(1, Math.round(ammoMax * startMult)));
       const reserveStart = Math.max(0, Math.round(reserveMax * startMult));
+      const chargesMax = Number.isFinite(mode.chargesMax) ? Math.max(0, Math.round(mode.chargesMax)) : 0;
+      const chargeShots = chargesMax > 0 ? Math.max(4, Math.round(ammoMax / chargesMax)) : 0;
       return {
         ...mode,
         ammoMax,
@@ -855,6 +1010,12 @@ async function initGame() {
         reloading: false,
         reloadUntil: 0,
         lastShotAt: -Infinity,
+        chargesMax,
+        charges: chargesMax,
+        chargeShots,
+        chargeRemaining: chargeShots,
+        chargeCooldownMs: Number(mode.chargeCooldownMs) || 10000,
+        chargeTimers: [],
       };
     });
     let weaponIndex = 0;
@@ -868,6 +1029,11 @@ async function initGame() {
       if (!weapon) return;
       hud.setWeapon(weapon.name);
       hud.setAmmo(weapon.ammo, weapon.reserveAmmo);
+      if (weapon.id === 'minigun' && typeof hud.setAmmoBars === 'function') {
+        hud.setAmmoBars(weapon.charges, weapon.chargesMax, null);
+      } else if (typeof hud.setAmmoBars === 'function') {
+        hud.setAmmoBars(0, 0, null);
+      }
     }
 
     const startCell = worldState.meta?.start || spawn;
@@ -966,16 +1132,20 @@ async function initGame() {
 
     function spawnEnemyEntity(spawnEntry) {
       const def = entitiesData.enemies?.find((e) => e.id === spawnEntry.id);
-      const baseSpeed = spawnEntry.id === 'enemy_speedster' ? 1.6 : 1.1;
+      const statSpeed = Number(def?.stats?.velocidad);
+      const baseSpeed = Number.isFinite(statSpeed)
+        ? statSpeed
+        : (spawnEntry.id === 'enemy_speedster' ? 1.6 : 1.1);
       const behavior = resolveBehavior(spawnEntry.id, spawnEntry.behavior);
       const posX = spawnEntry.x * cellSize;
       const posZ = spawnEntry.y * cellSize;
 
       let el;
       const baseEntityY = 0;
-      if (ENEMY_MODEL.asset) {
+      const enemyAssetPath = def?.asset || ENEMY_MODEL.asset;
+      if (enemyAssetPath) {
         el = document.createElement('a-entity');
-        el.setAttribute('gltf-model', '#mdl-enemy');
+        el.setAttribute('gltf-model', resolveGameUrl(enemyAssetPath));
         el.setAttribute('player-animator', 'idle: idle; walk: walk; run: run; attack: attack; death: death; jump: jump;');
         if (engineConfig.shadowsEnabled) {
           el.setAttribute('shadow', 'cast: true; receive: false');
@@ -992,12 +1162,17 @@ async function initGame() {
         el.addEventListener('model-loaded', () => {
           const mesh = el.getObject3D('mesh');
           if (!mesh || !window.THREE) return;
-          if (def?.color) applyColorMask(mesh, def.color, 0.85, {
-            emissiveIntensity: 0.45,
-            roughness: 0.35,
-            metalness: 0.2,
-            storeMaskedColor: true,
-          });
+          const maskDef = def?.mask;
+          const maskColor = typeof maskDef === 'string' ? maskDef : maskDef?.color;
+          if (maskColor) {
+            const strength = Number.isFinite(maskDef?.strength) ? maskDef.strength : 0.85;
+            applyColorMask(mesh, maskColor, strength, {
+              emissiveIntensity: Number.isFinite(maskDef?.emissiveIntensity) ? maskDef.emissiveIntensity : 0.45,
+              roughness: Number.isFinite(maskDef?.roughness) ? maskDef.roughness : 0.35,
+              metalness: Number.isFinite(maskDef?.metalness) ? maskDef.metalness : 0.2,
+              storeMaskedColor: true,
+            });
+          }
           const box = new THREE.Box3().setFromObject(mesh);
           const center = box.getCenter(new THREE.Vector3());
           const targetBottom = baseEntityY + yOffset;
@@ -1031,6 +1206,7 @@ async function initGame() {
         attack,
         hp: baseHp,
         maxHp: baseHp,
+        spawnedAt: performance.now(),
         anim: {
           lastPos: new THREE.Vector3(posX, baseEntityY, posZ),
           current: null,
@@ -1045,79 +1221,56 @@ async function initGame() {
       spawnEnemyEntity(enemy);
     });
 
-    const spawnConfig = {
-      intervalMs: 900,
-      maxActive: Math.max(10, Math.round(worldArea / 55)),
-      minDist: cellSize * 4,
-      maxDist: cellSize * 10,
-      despawnDist: cellSize * 18,
-      spawnBatch: 2,
-    };
-    let lastSpawnAt = 0;
-    let lastDespawnAt = 0;
-
-    function pickSpawnCellAroundPlayer() {
-      const playerPos = playerEl.object3D.position;
-      for (let i = 0; i < 40; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = spawnConfig.minDist + Math.random() * (spawnConfig.maxDist - spawnConfig.minDist);
-        const wx = playerPos.x + Math.cos(angle) * dist;
-        const wz = playerPos.z + Math.sin(angle) * dist;
-        const cell = worldToCell({ x: wx, z: wz }, cellSize);
-        if (cell.x < 0 || cell.y < 0 || cell.x >= worldState.width || cell.y >= worldState.height) continue;
-        if (isWall(worldState.map, worldState.width, worldState.height, cell.x, cell.y)) continue;
-        const dx = cell.x - worldToCell(playerPos, cellSize).x;
-        const dy = cell.y - worldToCell(playerPos, cellSize).y;
-        const distCells = Math.hypot(dx, dy) * cellSize;
-        if (distCells < spawnConfig.minDist) continue;
-        return cell;
-      }
-      return null;
-    }
-
-    function spawnNearbyEnemies(now) {
-      if (enemyEntities.length >= spawnConfig.maxActive) return;
-      if (now - lastSpawnAt < spawnConfig.intervalMs) return;
-      lastSpawnAt = now;
-      const toSpawn = Math.min(spawnConfig.spawnBatch, spawnConfig.maxActive - enemyEntities.length);
-      for (let i = 0; i < toSpawn; i++) {
-        const cell = pickSpawnCellAroundPlayer();
-        if (!cell) break;
-        const id = enemyIds[Math.floor(Math.random() * enemyIds.length)];
-        spawnEnemyEntity({ id, x: cell.x, y: cell.y });
-      }
-    }
-
-    function despawnFarEnemies(now) {
-      if (now - lastDespawnAt < 1200) return;
-      lastDespawnAt = now;
-      const playerPos = playerEl.object3D.position;
-      const survivors = [];
-      enemyEntities.forEach((enemy) => {
-        const pos = enemy.el?.object3D?.position;
-        if (!pos) return;
-        const dist = Math.hypot(pos.x - playerPos.x, pos.z - playerPos.z);
-        if (dist > spawnConfig.despawnDist) {
-          enemy.el.parentNode?.removeChild(enemy.el);
-        } else {
-          survivors.push(enemy);
-        }
-      });
-      enemyEntities.length = 0;
-      survivors.forEach((e) => enemyEntities.push(e));
-    }
+    const difficultyCfg = difficultsData?.niveles?.[worldState.difficulty] || {};
+    const retreatOnHit = difficultyCfg?.ajustes_especiales?.retreat_on_hit === true;
+    const spawnSystem = createSpawnSystem({
+      map: worldState.map,
+      width: worldState.width,
+      height: worldState.height,
+      cellSize,
+      collisionSystem,
+      enemyEntities,
+      enemyIds,
+      spawnEnemy: spawnEnemyEntity,
+      getPlayerPosition: () => playerEl.object3D.position,
+      getGoalCell: () => goalCell,
+      worldArea,
+      config: gameplayData,
+      difficulty: difficultyCfg,
+    });
 
     let killCount = 0;
     hud.setElims(killCount);
 
-    function removeEnemy(enemy, reason = '') {
+    function removeEnemy(enemy, reason = '', opts = {}) {
       if (!enemy) return;
+      if (enemy._removed) return;
+      enemy._removed = true;
       if (enemy?.el) enemy.el.parentNode?.removeChild(enemy.el);
       const idx = enemyEntities.indexOf(enemy);
       if (idx >= 0) enemyEntities.splice(idx, 1);
-      killCount += 1;
-      hud.setElims(killCount);
+      if (!opts.silent) {
+        killCount += 1;
+        hud.setElims(killCount);
+      }
       if (reason) hud.setStatus(reason);
+    }
+
+    function killEnemy(enemy, reason = '') {
+      if (!enemy || enemy.dead) return;
+      enemy.dead = true;
+      enemy.speed = 0;
+      enemy.hitRadius = 0;
+      const animator = enemy.el?.components?.['player-animator'];
+      setEnemyAnim(enemy, 'death', { once: true, force: true });
+      let durationMs = 600;
+      if (animator?.getClipDuration) {
+        const clipDur = animator.getClipDuration('death');
+        if (Number.isFinite(clipDur) && clipDur > 0) durationMs = clipDur * 1000;
+      }
+      setTimeout(() => {
+        removeEnemy(enemy, reason);
+      }, durationMs);
     }
 
     const activeEffects = [];
@@ -1193,7 +1346,7 @@ async function initGame() {
         hud.setHealth(playerState.health, playerState.healthMax);
       }
       if (typeof hud.setSpeed === 'function') {
-        const speedFactor = playerState.speedMult * (frenzyActive ? FRENZY_SPEED_MULT : 1);
+        const speedFactor = playerState.speedMult * (frenzyActive ? frenzySpeedMult : 1);
         hud.setSpeed(speedFactor);
       }
       syncInventoryHud(now);
@@ -1247,7 +1400,14 @@ async function initGame() {
       const weapon = currentWeapon();
       if (!weapon) return;
       const now = performance.now();
-      const fireMs = weapon.fireMs * (frenzyActive ? FRENZY_COOLDOWN_MULT : 1);
+      if (weapon.id === 'minigun') {
+        updateWeaponCharges(now, weapon, true);
+        if (weapon.charges <= 0) {
+          hud.setStatus('Minigun recargando');
+          return;
+        }
+      }
+      const fireMs = weapon.fireMs * (frenzyActive ? frenzyCooldownMult : 1);
       if (now - weapon.lastShotAt < fireMs) return;
       if (weapon.reloading) return;
       if (weapon.ammo <= 0) {
@@ -1263,6 +1423,18 @@ async function initGame() {
       attackUntil = now + attackDuration;
       setPlayerAnim('attack', { once: true, force: true });
       performShot(weapon);
+
+      if (weapon.id === 'minigun' && weapon.chargesMax > 0) {
+        weapon.chargeRemaining = Math.max(0, weapon.chargeRemaining - 1);
+        if (weapon.chargeRemaining <= 0) {
+          weapon.charges = Math.max(0, weapon.charges - 1);
+          weapon.chargeTimers.push(now + weapon.chargeCooldownMs);
+          if (weapon.charges > 0) {
+            weapon.chargeRemaining = weapon.chargeShots;
+          }
+        }
+        updateWeaponCharges(now, weapon);
+      }
     }
 
     function performShot(weapon) {
@@ -1279,14 +1451,23 @@ async function initGame() {
 
       const range = Math.max(0.5, weapon.range || cellSize * 6);
       const wallHit = findWallHit(bulletOrigin, bulletDir, range);
-      const enemyHit = findEnemyHit(bulletOrigin, rayDirXZ, range);
+      const wallDistance = wallHit ? wallHit.distance : range;
 
-      let hitDistance = range;
-      let hitPosition = rayPos.copy(bulletOrigin).addScaledVector(bulletDir, range);
-      if (wallHit && wallHit.distance < hitDistance) {
-        hitDistance = wallHit.distance;
-        hitPosition = wallHit.position;
+      if (weapon.penetration) {
+        const hits = findEnemyHits(bulletOrigin, rayDirXZ, wallDistance);
+        spawnTracer(bulletOrigin, bulletDir, wallDistance, weapon);
+        hits.forEach((hit) => {
+          spawnImpact(hit.enemy.el.object3D.position, '#ff2d2d');
+          applyDamage(hit.enemy, weapon.damage, weapon);
+        });
+        if (wallHit) spawnImpact(wallHit.position);
+        return;
       }
+
+      const enemyHit = findEnemyHit(bulletOrigin, rayDirXZ, wallDistance);
+
+      let hitDistance = wallDistance;
+      let hitPosition = rayPos.copy(bulletOrigin).addScaledVector(bulletDir, hitDistance);
       if (enemyHit && enemyHit.distance < hitDistance) {
         hitDistance = enemyHit.distance;
         hitPosition = enemyHit.position;
@@ -1328,8 +1509,9 @@ async function initGame() {
 
     function applyItemEffect(item) {
       const effects = item.efectos || {};
-      if (item.id === 'ammo_pack') {
-        const weapon = currentWeapon();
+      if (item.id === 'ammo_light' || item.id === 'ammo_heavy') {
+        const targetId = item.id === 'ammo_light' ? 'minigun' : 'sniper';
+        const weapon = weapons.find((w) => w.id === targetId);
         if (weapon) {
           const totalMax = (weapon.ammoMax || 0) + (weapon.reserveMax || 0);
           const currentTotal = (weapon.ammo || 0) + (weapon.reserveAmmo || 0);
@@ -1341,9 +1523,9 @@ async function initGame() {
           const remaining = Math.max(0, give - toAmmo);
           const reserveCap = Number.isFinite(weapon.reserveMax) ? weapon.reserveMax : Infinity;
           weapon.reserveAmmo = Math.min(reserveCap, weapon.reserveAmmo + remaining);
-          updateWeaponHud();
+          if (currentWeapon()?.id === weapon.id) updateWeaponHud();
         }
-        addEffect('Municion', 1500);
+        return;
       }
       if (item.id === 'speed_boost') {
         playerState.speedMult = effects.velocidad_multiplicador || 1.4;
@@ -1389,7 +1571,7 @@ async function initGame() {
           const epos = enemy.el.object3D.position;
           const dist = Math.hypot(epos.x - pos.x, epos.z - pos.z);
           if (dist <= radius) {
-            removeEnemy(enemy, 'Explosion');
+          killEnemy(enemy, 'Explosion');
           }
         });
         addEffect('Explosion', 1200);
@@ -1420,9 +1602,9 @@ async function initGame() {
     syncInventoryHud();
 
     function addToInventory(def) {
-      if (def?.id === 'ammo_pack') {
+      if (def?.id === 'ammo_light' || def?.id === 'ammo_heavy') {
         applyItemEffect(def);
-        hud.setStatus('Municion recogida');
+        hud.setStatus(def?.id === 'ammo_light' ? 'Munición ligera' : 'Munición pesada');
         return true;
       }
       const slot = inventory.findIndex((item, idx) => idx > 0 && !item);
@@ -1448,9 +1630,41 @@ async function initGame() {
 
     function startReload(weapon) {
       if (!weapon || weapon.reloading || weapon.reserveAmmo <= 0) return;
+      if (weapon.ammo >= weapon.ammoMax) return;
       weapon.reloading = true;
       weapon.reloadUntil = performance.now() + weapon.reloadMs;
       hud.setStatus(`Recargando ${weapon.name}`);
+    }
+
+    function updateWeaponCharges(now, weapon = null, onlyTick = false) {
+      const target = weapon || currentWeapon();
+      if (!target || target.id !== 'minigun' || target.chargesMax <= 0) return;
+      if (!Array.isArray(target.chargeTimers)) target.chargeTimers = [];
+      let progress = null;
+      if (target.chargeTimers.length) {
+        const remaining = [];
+        for (const t of target.chargeTimers) {
+          if (now >= t) {
+            target.charges = Math.min(target.chargesMax, target.charges + 1);
+          } else {
+            remaining.push(t);
+          }
+        }
+        target.chargeTimers = remaining;
+        if (remaining.length) {
+          const next = Math.min(...remaining);
+          const total = target.chargeCooldownMs || 10000;
+          progress = 1 - Math.max(0, Math.min(1, (next - now) / total));
+        }
+      }
+      if (target.charges > 0 && target.chargeRemaining <= 0) {
+        target.chargeRemaining = target.chargeShots;
+      }
+      if (!onlyTick && typeof hud.setAmmoBars === 'function') {
+        hud.setAmmoBars(target.charges, target.chargesMax, progress);
+      } else if (typeof hud.setAmmoBars === 'function') {
+        hud.setAmmoBars(target.charges, target.chargesMax, progress);
+      }
     }
 
     function applyDamage(enemy, damage, weapon = null) {
@@ -1482,7 +1696,7 @@ async function initGame() {
       enemy.hp = Number(enemy.hp) - finalDamage;
       flashEnemy(enemy, 90);
       if (enemy.hp <= 0) {
-        removeEnemy(enemy, 'Enemigo eliminado');
+        killEnemy(enemy, 'Enemigo eliminado');
       }
     }
 
@@ -1549,7 +1763,7 @@ async function initGame() {
       let best = null;
       let bestDist = Infinity;
       for (const enemy of enemyEntities) {
-        if (!enemy?.el) continue;
+        if (!enemy?.el || enemy.dead || enemy._removed) continue;
         const epos = enemy.el.object3D.position;
         enemyVec.set(epos.x - origin.x, 0, epos.z - origin.z);
         const t = enemyVec.dot(dir);
@@ -1571,6 +1785,27 @@ async function initGame() {
       return best;
     }
 
+    function findEnemyHits(origin, dir, range) {
+      const hits = [];
+      for (const enemy of enemyEntities) {
+        if (!enemy?.el || enemy.dead || enemy._removed) continue;
+        const epos = enemy.el.object3D.position;
+        enemyVec.set(epos.x - origin.x, 0, epos.z - origin.z);
+        const t = enemyVec.dot(dir);
+        if (t <= 0 || t > range) continue;
+        rayTmp.copy(origin).addScaledVector(dir, t);
+        const dx = epos.x - rayTmp.x;
+        const dz = epos.z - rayTmp.z;
+        const dist = Math.hypot(dx, dz);
+        const hitRadius = enemy.hitRadius || cellSize * 0.3;
+        if (dist <= hitRadius) {
+          hits.push({ enemy, distance: t });
+        }
+      }
+      hits.sort((a, b) => a.distance - b.distance);
+      return hits;
+    }
+
     updateWeaponHud();
     function consumeSlot(slotIdx) {
       if (slotIdx <= 0 || slotIdx >= inventory.length) return;
@@ -1583,7 +1818,7 @@ async function initGame() {
       const item = inventory[slotIdx];
       if (!item || item.locked) return false;
       const now = performance.now();
-      const cooldown = item.cooldownMs * (frenzyActive ? FRENZY_COOLDOWN_MULT : 1);
+      const cooldown = item.cooldownMs * (frenzyActive ? frenzyCooldownMult : 1);
       if (cooldown > 0 && now - item.lastUsedAt < cooldown) {
         hud.setStatus('Item en cooldown');
         return false;
@@ -1618,6 +1853,7 @@ async function initGame() {
     const focusVec = new THREE.Vector3();
     const enemyFocusDir = new THREE.Vector3();
     const enemyFocusVec = new THREE.Vector3();
+    const enemyFocusOrigin = new THREE.Vector3();
     const downedCamOffset = new THREE.Vector3(0, 6.5, 0);
     let focusedItemId = null;
     let focusedEnemyId = null;
@@ -1637,20 +1873,22 @@ async function initGame() {
       const playerCell = worldToCell(playerEl.object3D.position, cellSize);
       const now = performance.now();
 
+      const visibleRadius = Math.max(minimapRadius, playerDetectionCells);
       const itemCells = itemSystem.getRemaining().filter((item) => {
         const dx = item.x - playerCell.x;
         const dy = item.y - playerCell.y;
-        return Math.hypot(dx, dy) <= playerDetectionCells;
+        return Math.hypot(dx, dy) <= visibleRadius;
       }).map((item) => ({ x: item.x, y: item.y }));
 
       const enemyCells = [];
       enemyEntities.forEach((enemy) => {
+        if (enemy?.dead || enemy?._removed) return;
         if (!enemy?.el) return;
         const cell = worldToCell(enemy.el.object3D.position, cellSize);
         const def = enemyDefById.get(enemy.id);
         const stats = def?.stats || {};
         const detection = Number(stats.deteccion) || 100;
-        const detectCells = Math.max(3, Math.min(14, Math.round(detection / 20)));
+        const detectCells = Math.max(visibleRadius, Math.max(3, Math.min(14, Math.round(detection / 20))));
         const dx = cell.x - playerCell.x;
         const dy = cell.y - playerCell.y;
         const dist = Math.hypot(dx, dy);
@@ -1749,13 +1987,14 @@ async function initGame() {
       enemyFocusDir.normalize();
 
       const playerPos = playerEl.object3D.position;
+      enemyFocusOrigin.set(playerPos.x, 0.35, playerPos.z);
       const maxDist = cellSize * 7;
       const minDot = Math.cos(Math.PI * 0.3);
       let best = null;
       let bestScore = -Infinity;
 
       for (const enemy of enemyEntities) {
-        if (!enemy?.el) continue;
+        if (!enemy?.el || enemy.dead || enemy._removed) continue;
         const pos = enemy.el.object3D.position;
         enemyFocusVec.set(pos.x - playerPos.x, 0, pos.z - playerPos.z);
         const dist = enemyFocusVec.length();
@@ -1763,6 +2002,10 @@ async function initGame() {
         enemyFocusVec.divideScalar(dist);
         const dot = enemyFocusVec.dot(enemyFocusDir);
         if (dot < minDot) continue;
+        if (collisionSystem?.collidesAt) {
+          const wallHit = findWallHit(enemyFocusOrigin, enemyFocusVec, Math.max(0.1, dist - cellSize * 0.25));
+          if (wallHit) continue;
+        }
         const score = dot * 2 - dist / maxDist;
         if (score > bestScore) {
           bestScore = score;
@@ -1836,6 +2079,7 @@ async function initGame() {
     let finalEndsAt = 0;
     let lastEnemySpawnAt = 0;
     let frenzyActive = false;
+    let firing = false;
 
     function setEffect(name, durationMs) {
       const now = performance.now();
@@ -1860,8 +2104,8 @@ async function initGame() {
       if (finalPhase) return;
       finalPhase = true;
       frenzyActive = true;
-      finalEndsAt = performance.now() + FINAL_DURATION_MS;
-      setEffect('Frenesi', FINAL_DURATION_MS);
+      finalEndsAt = performance.now() + finalDurationMs;
+      setEffect('Frenesi', finalDurationMs);
       hud.setStatus('FRENESI ACTIVADO');
       refreshHud();
     }
@@ -1883,6 +2127,7 @@ async function initGame() {
     function beginGame() {
       if (gameState !== 'ready') return;
       gameState = 'playing';
+      paused = false;
       if (startOverlay) startOverlay.classList.remove('active');
       hud.setStatus('Esc para pausar');
       grantInvulnerability(5000);
@@ -1901,12 +2146,14 @@ async function initGame() {
       paused = true;
       stopAudio();
       sceneEl?.pause?.();
-      setAnimatorsPaused(true);
       finalPhase = false;
       frenzyActive = false;
       hud.setFinalTimer(0, false);
       if (pauseOverlay) pauseOverlay.classList.remove('active');
       if (resultOverlay) resultOverlay.classList.add('active');
+      if (outcome === 'won') {
+        markLevelCompleted(worldState?.meta?.name || worldId);
+      }
 
       const title = outcome === 'won' ? 'Victoria' : 'Derrota';
       const msg = outcome === 'won'
@@ -1919,7 +2166,19 @@ async function initGame() {
       hud.setTime(elapsedMs);
       hud.setStatus(title);
       if (outcome !== 'won') {
+        setAnimatorsPaused(false);
         setPlayerAnim('death', { once: true, force: true });
+        const animator = playerBodyEl?.components?.['player-animator'];
+        let freezeMs = 650;
+        if (animator?.getClipDuration) {
+          const clip = animator.getClipDuration('death');
+          if (Number.isFinite(clip) && clip > 0) {
+            freezeMs = Math.max(250, clip * 1000);
+          }
+        }
+        setTimeout(() => setAnimatorsPaused(true), freezeMs);
+      } else {
+        setAnimatorsPaused(true);
       }
     }
 
@@ -1932,8 +2191,22 @@ async function initGame() {
       getPlayerPosition: () => playerEl.object3D.position,
       onPlayerHit: (enemy) => {
         const now = performance.now();
+        if (enemy && retreatOnHit) {
+          if (!enemy.ai) enemy.ai = {};
+          const epos = enemy.el?.object3D?.position;
+          const ppos = playerEl.object3D.position;
+          if (epos && ppos) {
+            const dx = epos.x - ppos.x;
+            const dz = epos.z - ppos.z;
+            const len = Math.hypot(dx, dz) || 1;
+            enemy.ai.retreatDir = { x: dx / len, z: dz / len };
+          } else {
+            enemy.ai.retreatDir = null;
+          }
+          enemy.ai.retreatUntil = now + 900;
+        }
         if (activeEffects.find((e) => e.name === 'Caza')) {
-          removeEnemy(enemy, 'Enemigo eliminado');
+          killEnemy(enemy, 'Enemigo eliminado');
           return;
         }
         if (playerState.invisible) {
@@ -1969,7 +2242,7 @@ async function initGame() {
       cameraEl,
       enemies: enemyEntities,
       cellSize,
-      onKill: (enemy) => removeEnemy(enemy, 'Enemigo eliminado'),
+      onKill: (enemy) => killEnemy(enemy, 'Enemigo eliminado'),
     });
 
     function togglePause(force) {
@@ -1977,6 +2250,7 @@ async function initGame() {
       paused = typeof force === 'boolean' ? force : !paused;
       if (pauseOverlay) pauseOverlay.classList.toggle('active', paused);
       if (paused) {
+        firing = false;
         pauseAudio();
         sceneEl?.pause?.();
         setAnimatorsPaused(true);
@@ -1991,9 +2265,15 @@ async function initGame() {
     }
 
     window.addEventListener('keydown', (e) => {
-      if (gameState === 'ready' && (e.code === 'Space' || e.code === 'Enter')) {
-        beginGame();
-        return;
+      if (gameState === 'ready') {
+        if (e.code === 'Space' || e.code === 'Enter') {
+          beginGame();
+          return;
+        }
+        const quickStartKeys = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+        if (quickStartKeys.has(e.code)) {
+          beginGame();
+        }
       }
       if (e.code === 'Escape') togglePause();
       if (e.code === 'KeyQ') {
@@ -2039,6 +2319,9 @@ async function initGame() {
     }, { passive: true });
 
     window.addEventListener('pointerdown', (e) => {
+      if (gameState === 'ready') {
+        beginGame();
+      }
       if (e.button !== 0) return;
       if (gameState !== 'playing') return;
       const locked = document.pointerLockElement || document.mozPointerLockElement;
@@ -2054,8 +2337,20 @@ async function initGame() {
       }
       if (selectedSlot > 0 && inventory[selectedSlot]) {
         useSlot(selectedSlot);
-      } else {
-        shootAttack();
+        return;
+      }
+      firing = true;
+      shootAttack();
+    });
+
+    window.addEventListener('pointerup', (e) => {
+      if (e.button !== 0) return;
+      firing = false;
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      if (!(document.pointerLockElement || document.mozPointerLockElement)) {
+        firing = false;
       }
     });
 
@@ -2074,12 +2369,30 @@ async function initGame() {
         if (data.action === 'resume') togglePause(false);
         if (data.action === 'save_exit') {
           stopAudio();
-          saveSnapshot({ worldState, itemSystem, enemyEntities, playerEl, playerState, cellSize, saveName: `Manual ${new Date().toLocaleString()}` });
+          saveSnapshot({
+            worldState,
+            itemSystem,
+            enemyEntities,
+            playerEl,
+            playerState,
+            cellSize,
+            wallHeight,
+            saveName: `Manual ${new Date().toLocaleString()}`,
+          });
           window.location.href = 'index.html';
         }
         if (data.action === 'exit') {
           if (config.autosaveOnExit) {
-            saveSnapshot({ worldState, itemSystem, enemyEntities, playerEl, playerState, cellSize, saveName: `Auto ${new Date().toLocaleString()}` });
+            saveSnapshot({
+              worldState,
+              itemSystem,
+              enemyEntities,
+              playerEl,
+              playerState,
+              cellSize,
+              wallHeight,
+              saveName: `Auto ${new Date().toLocaleString()}`,
+            });
           }
           stopAudio();
           window.location.href = 'index.html';
@@ -2102,7 +2415,16 @@ async function initGame() {
     });
     if (resultSaveExit) resultSaveExit.addEventListener('click', () => {
       stopAudio();
-      saveSnapshot({ worldState, itemSystem, enemyEntities, playerEl, playerState, cellSize, saveName: `Final ${new Date().toLocaleString()}` });
+      saveSnapshot({
+        worldState,
+        itemSystem,
+        enemyEntities,
+        playerEl,
+        playerState,
+        cellSize,
+        wallHeight,
+        saveName: `Final ${new Date().toLocaleString()}`,
+      });
       window.location.href = 'index.html';
     });
     if (resultExit) resultExit.addEventListener('click', () => {
@@ -2158,16 +2480,25 @@ async function initGame() {
       const now = performance.now();
       const weapon = currentWeapon();
       if (weapon?.reloading && now >= weapon.reloadUntil) {
-        const needed = weapon.ammoMax;
+        const needed = Math.max(0, weapon.ammoMax - weapon.ammo);
         const take = Math.min(needed, weapon.reserveAmmo);
-        weapon.ammo = take;
+        weapon.ammo += take;
         weapon.reserveAmmo -= take;
         weapon.reloading = false;
         updateWeaponHud();
         hud.setStatus('Recarga completa');
       }
-      spawnNearbyEnemies(now);
-      despawnFarEnemies(now);
+      if (weapon?.id === 'minigun') {
+        updateWeaponCharges(now, weapon);
+      }
+      spawnSystem.update(now, { finalPhase });
+
+      if (firing && selectedSlot === 0) {
+        const weapon = currentWeapon();
+        if (weapon?.id === 'minigun') {
+          shootAttack();
+        }
+      }
 
       const remaining = [];
       for (const eff of activeEffects) {
@@ -2185,11 +2516,27 @@ async function initGame() {
         refreshHud();
       }
 
-      const frenzySpeed = frenzyActive ? FRENZY_SPEED_MULT : 1;
+      const frenzySpeed = frenzyActive ? frenzySpeedMult : 1;
       playerEl.setAttribute('room-player', 'speed', baseSpeed * playerState.speedMult * frenzySpeed);
-      const dashCooldown = engineConfig.dashCooldown * (frenzyActive ? FRENZY_COOLDOWN_MULT : 1);
+      const dashCooldown = engineConfig.dashCooldown * (frenzyActive ? frenzyCooldownMult : 1);
       playerEl.setAttribute('room-player', 'dashCooldown', dashCooldown);
       itemSystem.update(playerEl.object3D.position);
+      if (gameState === 'playing') {
+        const pickupRadius = cellSize * 1.6;
+        const playerPos = playerEl.object3D.position;
+        for (const item of itemSystem.items) {
+          if (!item || item.picked) continue;
+          const id = item.def?.id;
+          if (id !== 'ammo_light' && id !== 'ammo_heavy') continue;
+          const pos = item.el?.object3D?.position;
+          if (!pos) continue;
+          const dist = Math.hypot(pos.x - playerPos.x, pos.z - playerPos.z);
+          if (dist <= pickupRadius) {
+            const picked = itemSystem.pickup(item);
+            if (picked) addToInventory(item.def);
+          }
+        }
+      }
       updateItemFocus();
       aiSystem.update(dt);
       updatePlayerAnim(dt);
@@ -2206,6 +2553,7 @@ async function initGame() {
 
       enemyEntities.forEach((enemy) => {
         if (!enemy?.el || !enemy.anim) return;
+        if (enemy.dead) return;
         const pos = enemy.el.object3D.position;
         const lastPos = enemy.anim.lastPos;
         const dx = pos.x - lastPos.x;
@@ -2247,6 +2595,7 @@ async function initGame() {
           playerEl,
           playerState,
           cellSize,
+          wallHeight,
           saveName: 'Auto (ultimo)',
           saveId: AUTO_SAVE_ID,
         });
@@ -2263,7 +2612,7 @@ async function initGame() {
       if (finalPhase) {
         const remaining = finalEndsAt - now;
         hud.setFinalTimer(remaining, true);
-        const spawnInterval = FINAL_SPAWN_INTERVAL_MS * (frenzyActive ? FRENZY_COOLDOWN_MULT : 1);
+        const spawnInterval = finalSpawnIntervalMs * (frenzyActive ? frenzyCooldownMult : 1);
         if (now - lastEnemySpawnAt >= spawnInterval) {
           lastEnemySpawnAt = now;
           spawnEnemyWave(1);

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 /* Reset and Base Styles */
 * {
     margin: 0;
@@ -15,7 +17,7 @@
 }
 
 body {
-    font-family: 'Rajdhani', 'Orbitron', 'Roboto Mono', monospace;
+    font-family: 'Rajdhani', 'Space Grotesk', 'Noto Sans', 'Segoe UI', 'Arial', sans-serif;
     background: #0a0e1a;
     color: #ffffff;
     overflow-x: hidden;

@@ -214,12 +214,22 @@
         });
       }
 
+      function fixText(value) {
+        if (typeof value !== 'string') return value;
+        if (!/[ÃÂ]/.test(value)) return value;
+        try {
+          return decodeURIComponent(escape(value));
+        } catch {
+          return value;
+        }
+      }
+
       function buildEntry(def, type) {
         const asset = typeof def.asset === 'string' ? def.asset.trim() : '';
         return {
           id: def.id,
-          name: def.nombre || def.name || def.id,
-          desc: def.descripcion || def.description || 'Sin descripcion',
+          name: fixText(def.nombre || def.name || def.id),
+          desc: fixText(def.descripcion || def.description || 'Sin descripcion'),
           asset,
           color: def.color || '#2bd8ff',
           scale: def.scale ?? 0.6,
@@ -315,18 +325,22 @@
               normalizeTrapMaterial(mesh);
               applyColorMask(mesh, '#ff4d6d', 0.35);
             } else if (isEnemyEntry(entry)) {
-              const tint = entry.color || '#ff5a66';
-              applyColorMask(mesh, tint, 0.9);
-              mesh.traverse((node) => {
-                if (!node.isMesh || !node.material) return;
-                const mats = Array.isArray(node.material) ? node.material : [node.material];
-                mats.forEach((mat) => {
-                  if (!mat) return;
-                  if (Number.isFinite(mat.roughness)) mat.roughness = 0.35;
-                  if (Number.isFinite(mat.metalness)) mat.metalness = 0.2;
-                  if ('emissiveIntensity' in mat) mat.emissiveIntensity = 0.5;
+              const maskDef = entry.mask;
+              const maskColor = typeof maskDef === 'string' ? maskDef : maskDef?.color;
+              if (maskColor) {
+                const strength = Number.isFinite(maskDef?.strength) ? maskDef.strength : 0.9;
+                applyColorMask(mesh, maskColor, strength);
+                mesh.traverse((node) => {
+                  if (!node.isMesh || !node.material) return;
+                  const mats = Array.isArray(node.material) ? node.material : [node.material];
+                  mats.forEach((mat) => {
+                    if (!mat) return;
+                    if (Number.isFinite(mat.roughness)) mat.roughness = Number.isFinite(maskDef?.roughness) ? maskDef.roughness : 0.35;
+                    if (Number.isFinite(mat.metalness)) mat.metalness = Number.isFinite(maskDef?.metalness) ? maskDef.metalness : 0.2;
+                    if ('emissiveIntensity' in mat) mat.emissiveIntensity = Number.isFinite(maskDef?.emissiveIntensity) ? maskDef.emissiveIntensity : 0.5;
+                  });
                 });
-              });
+              }
             }
           };
 

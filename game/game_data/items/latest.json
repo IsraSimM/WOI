@@ -71,9 +71,9 @@
         "asset": "game_data/assets/items/double_points.glb"
     },
     {
-        "id": "ammo_pack",
-        "nombre": "MuniciÃ³n",
-        "descripcion": "Recarga municiÃ³n para el arma actual.",
+        "id": "ammo_light",
+        "nombre": "Munición ligera",
+        "descripcion": "Recarga munición para minigun.",
         "tipo_efecto": "municion",
         "aplicacion": "jugador",
         "es_instantaneo": true,
@@ -81,9 +81,25 @@
         "cooldown_ms": 0,
         "rareza": 1,
         "efectos": {
-            "balas": 40
+            "balas": 0
         },
-        "color": "#F2E06E",
+        "color": "#9fd7ff",
+        "asset": ""
+    },
+    {
+        "id": "ammo_heavy",
+        "nombre": "Munición pesada",
+        "descripcion": "Recarga munición para sniper.",
+        "tipo_efecto": "municion",
+        "aplicacion": "jugador",
+        "es_instantaneo": true,
+        "usos": 1,
+        "cooldown_ms": 0,
+        "rareza": 2,
+        "efectos": {
+            "balas": 0
+        },
+        "color": "#ffd1a3",
         "asset": ""
     },
     {
@@ -171,7 +187,7 @@
             "rango": "global"
         },
         "color": "#00CED1",
-        "asset": "game_data/assets/items/map_enemies.glb"
+        "asset": ""
     },
     {
         "id": "map_boosts",
