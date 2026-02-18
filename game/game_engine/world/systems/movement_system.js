@@ -34,6 +34,27 @@
       this.lastDashAt = -Infinity;
       this.dashCharges = this.data.dashUses;
       this.bodyEl = bodyEl;
+      this.virtual = {
+        moveX: 0,
+        moveZ: 0,
+        dash: false,
+        jump: false,
+        sprint: false,
+      };
+      this.setVirtualMove = (x = 0, z = 0) => {
+        const clamp = (value) => Math.max(-1, Math.min(1, Number(value) || 0));
+        this.virtual.moveX = clamp(x);
+        this.virtual.moveZ = clamp(z);
+      };
+      this.triggerVirtualDash = () => {
+        this.virtual.dash = true;
+      };
+      this.triggerVirtualJump = () => {
+        this.virtual.jump = true;
+      };
+      this.setVirtualSprinting = (active) => {
+        this.virtual.sprint = Boolean(active);
+      };
 
       window.addEventListener('keydown', (e) => {
         if (!this.keys.has(e.code)) this.justPressed.add(e.code);
@@ -54,7 +75,7 @@
       const dt = Math.min(0.05, timeDelta / 1000);
       if (!dt) return;
 
-      const sprinting = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight');
+      const sprinting = this.keys.has('ShiftLeft') || this.keys.has('ShiftRight') || this.virtual.sprint;
       this.sprinting = sprinting;
 
       const speed = this.data.speed * (sprinting ? this.data.sprintMult : 1);
@@ -83,7 +104,8 @@
 
       const dashFromKey = this.data.dashKey && this.justPressed.has(this.data.dashKey);
       const dashFromMouse = this.justPressed.has(this.data.dashMouseKey);
-      if (dashFromKey || dashFromMouse) {
+      const dashFromVirtual = this.virtual.dash;
+      if (dashFromKey || dashFromMouse || dashFromVirtual) {
         const cooldownMs = Math.max(0, this.data.dashCooldown * 1000);
         if (time - this.lastDashAt >= cooldownMs && this.dashCharges > 0) {
           const dir = forward.clone();
@@ -124,23 +146,27 @@
           }
         }
       }
+      this.virtual.dash = false;
       this.justPressed.clear();
 
-      const moveZ = (this.keys.has('KeyW') ? 1 : 0) - (this.keys.has('KeyS') ? 1 : 0);
-      const moveX = (this.keys.has('KeyD') ? 1 : 0) - (this.keys.has('KeyA') ? 1 : 0);
+      const moveZ = ((this.keys.has('KeyW') ? 1 : 0) - (this.keys.has('KeyS') ? 1 : 0)) + this.virtual.moveZ;
+      const moveX = ((this.keys.has('KeyD') ? 1 : 0) - (this.keys.has('KeyA') ? 1 : 0)) + this.virtual.moveX;
+      const clampedZ = Math.max(-1, Math.min(1, moveZ));
+      const clampedX = Math.max(-1, Math.min(1, moveX));
 
       const dir = new THREE.Vector3();
-      dir.addScaledVector(forward, moveZ);
-      dir.addScaledVector(right, moveX);
+      dir.addScaledVector(forward, clampedZ);
+      dir.addScaledVector(right, clampedX);
       if (dir.lengthSq() > 0) dir.normalize();
 
       this.velocity.x = dir.x * speed;
       this.velocity.z = dir.z * speed;
 
-      if (this.keys.has('Space') && this.grounded) {
+      if ((this.keys.has('Space') || this.virtual.jump) && this.grounded) {
         this.velocity.y = jump;
         this.grounded = false;
       }
+      this.virtual.jump = false;
 
       this.velocity.y -= gravity * dt;
 

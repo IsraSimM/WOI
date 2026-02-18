@@ -2,7 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <title>Game</title>
     <link rel="stylesheet" href="../styles/game.css" />
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
@@ -10,6 +10,20 @@
   <body>
     <div id="hud-root"></div>
     <div id="crosshair"></div>
+    <div id="mobile-controls" class="mobile-controls" aria-hidden="true">
+      <div class="mobile-left">
+        <div class="joystick" id="moveStick" aria-label="Mover">
+          <div class="joystick-base"></div>
+          <div class="joystick-thumb" id="moveThumb"></div>
+        </div>
+      </div>
+      <div class="mobile-right">
+        <button class="mobile-btn primary" id="btnAttack" aria-label="Ataque">ATAQUE</button>
+        <button class="mobile-btn" id="btnDash" aria-label="Dash">DASH</button>
+        <button class="mobile-btn" id="btnInteract" aria-label="Usar">USAR</button>
+        <button class="mobile-btn" id="btnJump" aria-label="Salto">SALTO</button>
+      </div>
+    </div>
     <div class="loading-overlay active" id="loadingOverlay">
       <div class="loading-panel">
         <div class="loading-title">Cargando</div>

@@ -2447,6 +2447,174 @@ async function initGame() {
       }
     }
 
+    function tryInteract() {
+      if (gameState !== 'playing') return;
+      const nearest = itemSystem.findNearest(playerEl.object3D.position, cellSize * 0.55);
+      if (nearest) {
+        const picked = itemSystem.pickup(nearest);
+        if (picked) addToInventory(nearest.def);
+      } else {
+        hud.setStatus('Sin item cercano');
+      }
+    }
+
+    const supportsPointerLock = Boolean(sceneEl?.canvas?.requestPointerLock);
+    let pointerLockFailed = false;
+    document.addEventListener('pointerlockerror', () => {
+      pointerLockFailed = true;
+    });
+
+    const pointerCoarse = typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+    const isTouchDevice = pointerCoarse || (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
+
+    const mobileControls = document.getElementById('mobile-controls');
+    const moveStick = document.getElementById('moveStick');
+    const moveThumb = document.getElementById('moveThumb');
+    const btnAttack = document.getElementById('btnAttack');
+    const btnDash = document.getElementById('btnDash');
+    const btnInteract = document.getElementById('btnInteract');
+    const btnJump = document.getElementById('btnJump');
+
+    if (mobileControls) {
+      mobileControls.classList.toggle('active', isTouchDevice);
+      if (isTouchDevice) document.body.classList.add('touch-ui');
+    }
+
+    const getPlayerComp = () => playerEl?.components?.['room-player'];
+
+    const bindButton = (el, { onPress, onRelease } = {}) => {
+      if (!el) return;
+      const press = (e) => {
+        if (e?.cancelable) e.preventDefault();
+        e?.stopPropagation?.();
+        onPress?.();
+      };
+      const release = (e) => {
+        if (e?.cancelable) e.preventDefault();
+        e?.stopPropagation?.();
+        onRelease?.();
+      };
+      el.addEventListener('pointerdown', press, { passive: false });
+      el.addEventListener('pointerup', release, { passive: false });
+      el.addEventListener('pointercancel', release, { passive: false });
+      el.addEventListener('pointerleave', release, { passive: false });
+    };
+
+    if (isTouchDevice && moveStick && moveThumb) {
+      let stickPointerId = null;
+      let stickRect = null;
+      let stickCenter = { x: 0, y: 0 };
+      let stickRadius = 0;
+
+      const updateStickBounds = () => {
+        stickRect = moveStick.getBoundingClientRect();
+        stickRadius = Math.min(stickRect.width, stickRect.height) * 0.5;
+        stickCenter = {
+          x: stickRect.left + stickRect.width * 0.5,
+          y: stickRect.top + stickRect.height * 0.5,
+        };
+      };
+
+      const applyStick = (dx, dy) => {
+        const max = Math.max(10, stickRadius * 0.7);
+        const dist = Math.hypot(dx, dy);
+        const scale = dist > max ? max / dist : 1;
+        const clampedX = dx * scale;
+        const clampedY = dy * scale;
+        moveThumb.style.transform = `translate3d(${clampedX}px, ${clampedY}px, 0)`;
+
+        let moveX = clampedX / max;
+        let moveZ = -clampedY / max;
+        const mag = Math.hypot(moveX, moveZ);
+        const deadZone = 0.15;
+        if (mag < deadZone) {
+          moveX = 0;
+          moveZ = 0;
+        } else {
+          const scaled = (mag - deadZone) / (1 - deadZone);
+          moveX = (moveX / mag) * scaled;
+          moveZ = (moveZ / mag) * scaled;
+        }
+        getPlayerComp()?.setVirtualMove?.(moveX, moveZ);
+      };
+
+      const resetStick = () => {
+        moveThumb.style.transform = 'translate3d(0, 0, 0)';
+        getPlayerComp()?.setVirtualMove?.(0, 0);
+      };
+
+      updateStickBounds();
+      window.addEventListener('resize', updateStickBounds);
+
+      moveStick.addEventListener('pointerdown', (e) => {
+        if (e?.cancelable) e.preventDefault();
+        e?.stopPropagation?.();
+        if (gameState === 'ready') beginGame();
+        stickPointerId = e.pointerId;
+        moveStick.setPointerCapture?.(stickPointerId);
+        updateStickBounds();
+        applyStick(e.clientX - stickCenter.x, e.clientY - stickCenter.y);
+      }, { passive: false });
+
+      moveStick.addEventListener('pointermove', (e) => {
+        if (stickPointerId == null || e.pointerId !== stickPointerId) return;
+        if (e?.cancelable) e.preventDefault();
+        e?.stopPropagation?.();
+        applyStick(e.clientX - stickCenter.x, e.clientY - stickCenter.y);
+      }, { passive: false });
+
+      const endStick = (e) => {
+        if (stickPointerId == null || e.pointerId !== stickPointerId) return;
+        if (e?.cancelable) e.preventDefault();
+        e?.stopPropagation?.();
+        stickPointerId = null;
+        resetStick();
+      };
+
+      moveStick.addEventListener('pointerup', endStick, { passive: false });
+      moveStick.addEventListener('pointercancel', endStick, { passive: false });
+      moveStick.addEventListener('lostpointercapture', endStick, { passive: false });
+    }
+
+    bindButton(btnAttack, {
+      onPress: () => {
+        if (gameState === 'ready') beginGame();
+        if (gameState !== 'playing') return;
+        if (selectedSlot > 0 && inventory[selectedSlot]) {
+          useSlot(selectedSlot);
+          return;
+        }
+        firing = true;
+        shootAttack();
+      },
+      onRelease: () => {
+        firing = false;
+      },
+    });
+
+    bindButton(btnDash, {
+      onPress: () => {
+        if (gameState === 'ready') beginGame();
+        if (gameState !== 'playing') return;
+        getPlayerComp()?.triggerVirtualDash?.();
+      },
+    });
+
+    bindButton(btnInteract, {
+      onPress: () => {
+        if (gameState === 'ready') beginGame();
+        tryInteract();
+      },
+    });
+
+    bindButton(btnJump, {
+      onPress: () => {
+        if (gameState === 'ready') beginGame();
+        if (gameState !== 'playing') return;
+        getPlayerComp()?.triggerVirtualJump?.();
+      },
+    });
+
     window.addEventListener('keydown', (e) => {
       if (gameState === 'ready') {
         if (e.code === 'Space' || e.code === 'Enter') {
@@ -2465,15 +2633,7 @@ async function initGame() {
         hud.setStatus(`Arma: ${currentWeapon().name}`);
       }
       if (e.code === 'KeyF') shootAttack();
-      if (gameState === 'playing' && e.code === 'KeyE') {
-        const nearest = itemSystem.findNearest(playerEl.object3D.position, cellSize * 0.55);
-        if (nearest) {
-          const picked = itemSystem.pickup(nearest);
-          if (picked) addToInventory(nearest.def);
-        } else {
-          hud.setStatus('Sin item cercano');
-        }
-      }
+      if (gameState === 'playing' && e.code === 'KeyE') tryInteract();
       if (gameState === 'playing' && e.code.startsWith('Digit')) {
         const idx = Number(e.code.replace('Digit', '')) - 1;
         if (Number.isInteger(idx) && idx >= 0 && idx < inventory.length) {
@@ -2508,10 +2668,14 @@ async function initGame() {
       if (e.button !== 0) return;
       if (gameState !== 'playing') return;
       const locked = document.pointerLockElement || document.mozPointerLockElement;
-      if (!locked) {
-        if (sceneEl?.canvas?.requestPointerLock) {
-          sceneEl.canvas.requestPointerLock();
-        }
+      const shouldUsePointerLock = supportsPointerLock && !pointerLockFailed && !isTouchDevice;
+      if (shouldUsePointerLock && !locked) {
+        sceneEl?.canvas?.requestPointerLock?.();
+        setTimeout(() => {
+          if (!(document.pointerLockElement || document.mozPointerLockElement)) {
+            pointerLockFailed = true;
+          }
+        }, 200);
         return;
       }
       const target = e.target;
@@ -2544,6 +2708,10 @@ async function initGame() {
     window.addEventListener('keydown', () => {
       if (gameState === 'playing') startAudio();
     }, { once: true });
+
+    window.addEventListener('touchstart', () => {
+      if (gameState === 'playing') startAudio();
+    }, { once: true, passive: true });
 
     window.addEventListener('message', (event) => {
       const data = event.data;
