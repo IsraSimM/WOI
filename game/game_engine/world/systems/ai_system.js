@@ -72,7 +72,7 @@ function bfsNext(map, width, height, start, goal, maxSteps = 2000) {
   return start;
 }
 
-export function createAISystem({ map, width, height, cellSize, enemies, getPlayerPosition, onPlayerHit }) {
+export function createAISystem({ map, width, height, cellSize, enemies, getPlayerPosition, onPlayerHit, onRangedAttack }) {
   const state = {
     map,
     width,
@@ -167,6 +167,34 @@ export function createAISystem({ map, width, height, cellSize, enemies, getPlaye
           const nextWorld = worldFromCell(nextCell, cellSize);
           dirX = nextWorld.x - pos.x;
           dirZ = nextWorld.z - pos.z;
+        }
+
+        if (behavior === 'ranged') {
+          const rangedRange = Number(enemy.rangedRange) || (cellSize * 6);
+          const rangedMin = Number(enemy.rangedMinRange) || (cellSize * 2.5);
+          const cooldownMs = Number(enemy.rangedCooldownMs) || 3000;
+          if (!Number.isFinite(enemy.ai.nextShotAt)) enemy.ai.nextShotAt = 0;
+
+          if (distToPlayer <= rangedRange && now >= enemy.ai.nextShotAt) {
+            if (typeof onRangedAttack === 'function') {
+              onRangedAttack(enemy, { x: pos.x, z: pos.z }, { x: playerPos.x, z: playerPos.z }, distToPlayer);
+            }
+            enemy.ai.nextShotAt = now + cooldownMs;
+            if (enemy.anim) enemy.anim.attackUntil = now + 420;
+          }
+
+          if (distToPlayer < rangedMin) {
+            dirX = pos.x - playerPos.x;
+            dirZ = pos.z - playerPos.z;
+          } else if (distToPlayer > rangedRange * 0.9) {
+            const nextCell = bfsNext(map, width, height, currentCell, targetCell);
+            const nextWorld = worldFromCell(nextCell, cellSize);
+            dirX = nextWorld.x - pos.x;
+            dirZ = nextWorld.z - pos.z;
+          } else {
+            dirX = 0;
+            dirZ = 0;
+          }
         }
       }
 

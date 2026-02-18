@@ -345,6 +345,7 @@ function resolveBehavior(id, behavior) {
   if (behavior) return behavior;
   if (id === 'enemy_advanced' || id === 'enemy_strategist') return 'ambusher';
   if (id === 'enemy_speedster') return 'wanderer';
+  if (id === 'enemy_ranged') return 'ranged';
   return 'chaser';
 }
 
@@ -1194,6 +1195,11 @@ async function initGame() {
       const hitRadius = Number.isFinite(def?.hitRadius) ? def.hitRadius : (cellSize * 0.32);
       const baseHp = Number.isFinite(def?.stats?.vidas) ? def.stats.vidas : 1;
       const attack = Number.isFinite(def?.stats?.ataque) ? def.stats.ataque : 1;
+      const rangedBase = Number(def?.base_modificadores?.rango_ataque);
+      const rangedRange = Number.isFinite(rangedBase)
+        ? Math.max(cellSize * 3, (rangedBase / 20) * cellSize)
+        : (cellSize * 6);
+      const projectileColor = def?.mask?.color || def?.color || '#44dddd';
       const enemyObj = {
         id: spawnEntry.id,
         el,
@@ -1206,6 +1212,10 @@ async function initGame() {
         attack,
         hp: baseHp,
         maxHp: baseHp,
+        rangedRange,
+        rangedMinRange: cellSize * 2.5,
+        rangedCooldownMs: 3000,
+        projectileColor,
         spawnedAt: performance.now(),
         anim: {
           lastPos: new THREE.Vector3(posX, baseEntityY, posZ),
@@ -1721,6 +1731,9 @@ async function initGame() {
     const traceQuat = new THREE.Quaternion();
     const traceEuler = new THREE.Euler(0, 0, 0, 'YXZ');
     const enemyVec = new THREE.Vector3();
+    const enemyShotOrigin = new THREE.Vector3();
+    const enemyShotTarget = new THREE.Vector3();
+    const enemyShotDir = new THREE.Vector3();
 
     function spawnTracer(origin, dir, length, weapon) {
       if (!sceneEl || !weapon) return;
@@ -1742,6 +1755,28 @@ async function initGame() {
       setTimeout(() => {
         tracer.parentNode?.removeChild(tracer);
       }, 80);
+    }
+
+    function spawnEnemyTracer(origin, dir, length, color = '#44dddd') {
+      if (!sceneEl) return;
+      const tracer = document.createElement('a-entity');
+      const radius = 0.04;
+      const height = Math.max(0.2, length);
+      tracer.setAttribute('geometry', `primitive: cylinder; radius: ${radius}; height: ${height}`);
+      tracer.setAttribute(
+        'material',
+        `color: ${color}; emissive: ${color}; emissiveIntensity: 0.9; opacity: 0.85; transparent: true`,
+      );
+      const mid = rayPos.copy(origin).addScaledVector(dir, height * 0.5);
+      tracer.setAttribute('position', `${mid.x} ${mid.y} ${mid.z}`);
+      traceQuat.setFromUnitVectors(traceUp, dir);
+      traceEuler.setFromQuaternion(traceQuat, 'YXZ');
+      const deg = THREE.MathUtils.radToDeg;
+      tracer.setAttribute('rotation', `${deg(traceEuler.x)} ${deg(traceEuler.y)} ${deg(traceEuler.z)}`);
+      sceneEl.appendChild(tracer);
+      setTimeout(() => {
+        tracer.parentNode?.removeChild(tracer);
+      }, 120);
     }
 
     function findWallHit(origin, dir, range) {
@@ -2182,6 +2217,72 @@ async function initGame() {
       }
     }
 
+    function handlePlayerHit(enemy, options = {}) {
+      const now = performance.now();
+      if (enemy && retreatOnHit && !options.skipRetreat) {
+        if (!enemy.ai) enemy.ai = {};
+        const epos = enemy.el?.object3D?.position;
+        const ppos = playerEl.object3D.position;
+        if (epos && ppos) {
+          const dx = epos.x - ppos.x;
+          const dz = epos.z - ppos.z;
+          const len = Math.hypot(dx, dz) || 1;
+          enemy.ai.retreatDir = { x: dx / len, z: dz / len };
+        } else {
+          enemy.ai.retreatDir = null;
+        }
+        enemy.ai.retreatUntil = now + 900;
+      }
+      if (activeEffects.find((e) => e.name === 'Caza')) {
+        killEnemy(enemy, 'Enemigo eliminado');
+        return;
+      }
+      if (playerState.invisible) {
+        hud.setStatus('Invisible');
+        return;
+      }
+      if (enemy?.anim) {
+        enemy.anim.attackUntil = now + 420;
+        setEnemyAnim(enemy, 'attack', { once: true, force: true });
+      }
+      if (now < invulnerableUntil) {
+        hud.setStatus('Invulnerable');
+        return;
+      }
+      if (playerState.shield > 0) {
+        playerState.shield -= 1;
+        hud.setStatus('Escudo absorbio el golpe');
+        refreshHud();
+        return;
+      }
+      const attack = Number(enemy?.attack) || 1;
+      const defense = Number(playerStats?.defensa) || 0;
+      const baseDamage = attack * 12;
+      const mitigated = baseDamage / (1 + defense * 0.4);
+      const damage = Math.max(4, mitigated);
+      hud.setStatus('Te golpearon');
+      applyPlayerDamage(damage);
+    }
+
+    function fireEnemyProjectile(enemy) {
+      if (!enemy?.el || !collisionSystem?.collidesAt) return;
+      const origin = enemy.el.object3D.position;
+      enemyShotOrigin.copy(origin);
+      enemyShotOrigin.y += 1.2;
+      enemyShotTarget.copy(playerEl.object3D.position);
+      enemyShotTarget.y += 1.2;
+      enemyShotDir.copy(enemyShotTarget).sub(enemyShotOrigin);
+      const dist = enemyShotDir.length();
+      if (dist <= 0.1) return;
+      enemyShotDir.normalize();
+
+      const wallHit = findWallHit(enemyShotOrigin, enemyShotDir, dist);
+      const hitDist = wallHit ? wallHit.distance : dist;
+      spawnEnemyTracer(enemyShotOrigin, enemyShotDir, hitDist, enemy.projectileColor);
+      if (wallHit) return;
+      handlePlayerHit(enemy, { skipRetreat: true });
+    }
+
     const aiSystem = createAISystem({
       map: worldState.map,
       width: worldState.width,
@@ -2189,52 +2290,8 @@ async function initGame() {
       cellSize,
       enemies: enemyEntities,
       getPlayerPosition: () => playerEl.object3D.position,
-      onPlayerHit: (enemy) => {
-        const now = performance.now();
-        if (enemy && retreatOnHit) {
-          if (!enemy.ai) enemy.ai = {};
-          const epos = enemy.el?.object3D?.position;
-          const ppos = playerEl.object3D.position;
-          if (epos && ppos) {
-            const dx = epos.x - ppos.x;
-            const dz = epos.z - ppos.z;
-            const len = Math.hypot(dx, dz) || 1;
-            enemy.ai.retreatDir = { x: dx / len, z: dz / len };
-          } else {
-            enemy.ai.retreatDir = null;
-          }
-          enemy.ai.retreatUntil = now + 900;
-        }
-        if (activeEffects.find((e) => e.name === 'Caza')) {
-          killEnemy(enemy, 'Enemigo eliminado');
-          return;
-        }
-        if (playerState.invisible) {
-          hud.setStatus('Invisible');
-          return;
-        }
-        if (enemy?.anim) {
-          enemy.anim.attackUntil = now + 420;
-          setEnemyAnim(enemy, 'attack', { once: true, force: true });
-        }
-        if (now < invulnerableUntil) {
-          hud.setStatus('Invulnerable');
-          return;
-        }
-        if (playerState.shield > 0) {
-          playerState.shield -= 1;
-          hud.setStatus('Escudo absorbio el golpe');
-          refreshHud();
-          return;
-        }
-        const attack = Number(enemy?.attack) || 1;
-        const defense = Number(playerStats?.defensa) || 0;
-        const baseDamage = attack * 12;
-        const mitigated = baseDamage / (1 + defense * 0.4);
-        const damage = Math.max(4, mitigated);
-        hud.setStatus('Te golpearon');
-        applyPlayerDamage(damage);
-      },
+      onPlayerHit: (enemy) => handlePlayerHit(enemy),
+      onRangedAttack: (enemy) => fireEnemyProjectile(enemy),
     });
 
     combatSystem = createCombatSystem({
